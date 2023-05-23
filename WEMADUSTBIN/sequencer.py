@@ -446,7 +446,7 @@ class Sequencer:
         enc_status = g_dev['enc'].status
         events = g_dev['events']
         
-        
+        plog("ping the scheduler")
         # Do this in case of WEMA faults.... they can crash these sequencer 
         # things when it looks for shutter_status
         if enc_status == None:
