@@ -26,10 +26,10 @@ import json
 # NB NB NB json is not bi-directional with tuples (), instead, use lists [], nested if tuples are needed.
 degree_symbol = "°"
 site_name = 'mrc'
-obs_id = None  # NB These must be unique across all of PTR. Pre-pend with airport code if needed: 'sba_wmdo'
+#obs_id = None  # NB These must be unique across all of PTR. Pre-pend with airport code if needed: 'sba_wmdo'
 
 
-obs_id = None    #NB These must be unique across all of PTR. Pre-pend with airport code if needed: 'sba_wmdo'
+#obs_id = None    #NB These must be unique across all of PTR. Pre-pend with airport code if needed: 'sba_wmdo'
 
 site_config = {
 
