@@ -29,13 +29,13 @@ import math
 import requests
 import redis
 
-import ptr_config
+import wema_config
 from api_calls import API_calls
-import ptr_events
+import wema_events
 from devices.observing_conditions import ObservingConditions
 from devices.enclosure import Enclosure
 from global_yard import g_dev
-from ptr_utility import plog
+from wema_utility import plog
 from pyowm import OWM
 from pyowm.utils import config
 from pyowm.utils import timestamps
@@ -130,7 +130,7 @@ class WxEncAgent:
             g_dev["site_path"] = self.site_path
             g_dev["wema_write_share_path"] = self.site_path  # Just to be safe.
             self.wema_path = g_dev["wema_write_share_path"]
-        if self.config["obsid_is_specific"]:
+        if self.config["site_is_specific"]:
             self.site_is_specific = True
         else:
             self.site_is_specific = False
@@ -138,10 +138,11 @@ class WxEncAgent:
         self.last_request = None
         self.stopped = False
         self.site_message = "-"
-        self.site_mode = config["obsid_in_automatic_default"]
+        self.site_mode = config["site_in_automatic_default"]
         self.device_types = config["wema_types"]
-        self.astro_events = ptr_events.Events(self.config)
+        self.astro_events = wema_events.Events(self.config)
         self.astro_events.compute_day_directory()
+        self.astro_events.calculate_events()
         self.astro_events.display_events()
 
         self.wema_pid = os.getpid()
@@ -474,7 +475,7 @@ class WxEncAgent:
                 plog("Appraising quality of evening from Open Weather Map.")
                 owm = OWM('d5c3eae1b48bf7df3f240b8474af3ed0')
                 mgr = owm.weather_manager()            
-                one_call = mgr.one_call(lat=self.config["latitude"], lon=self.config["longitude"])
+                one_call = mgr.one_call(lat=self.config["site_latitude"], lon=self.config["site_longitude"])
                 self.nightly_weather_report_complete=True
                 
                 # Collect relevant info for fitzgerald weather number calculation
@@ -876,5 +877,5 @@ class WxEncAgent:
         
         
 if __name__ == "__main__":
-    wema = WxEncAgent(ptr_config.site_name, ptr_config.site_config)
+    wema = WxEncAgent(wema_config.site_name, wema_config.site_config)
     wema.run()

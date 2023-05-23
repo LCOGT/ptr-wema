@@ -27,13 +27,14 @@ for remover in path_removals:
 
 pathdone = 0
 
-# First try to get the hostname from a file in the directory above (..) ptr-observatory
+# First try to get the wemaname from a file in the directory above (..) ptr-observatory
 cwd = str(pathlib.Path().resolve())
-hwd = cwd.replace("ptr-observatory", "")
-hostname_file = glob.glob(hwd + "hostname*")
+hwd = cwd.replace("ptr-wema", "")
+wemaname_file = glob.glob(hwd + "wemaname*")
 
 try:
-    site_name = hostname_file[0].split("hostname")[1]
+    #breakpoint()
+    site_name = wemaname_file[0].split("wemaname")[1]
     # print(
     #     "Adding new config path: "
     #     + str(os.path.join(pathlib.Path().resolve(), "configs", site_name))
@@ -42,14 +43,14 @@ try:
     pathdone = 1
 except OSError:
     print(
-        "Could not find a hostname* file in the directory above ptr-observatory \
-        (e.g. hostnamesro).\n Trying another method..."
+        "Could not find a wemaname* file in the directory above ptr-observatory \
+        (e.g. wemanamesro).\n Trying another method..."
     )
 
 if pathdone == 0:
-    print("Attempting hostname approach to config file...")
+    print("Attempting wemaname approach to config file...")
 
-    # NB May be better to split on '-' and use first part of hostname.
+    # NB May be better to split on '-' and use first part of wemaname.
     host_site = socket.gethostname()[:3].lower()
 
     #if host_site == "saf":
@@ -61,12 +62,14 @@ if pathdone == 0:
     # )
     sys.path.append(os.path.join(pathlib.Path().resolve(), "configs", host_site))
 
+
+
 try:
     from site_config import *
 
 except ImportError:
     print(
-        "Failed the hostname approach to config file.\n"
+        "Failed the wemaname approach to config file.\n"
         + str(host_site)
         + " isn't a real place, or there isn't a config file \
                         that I can find!"

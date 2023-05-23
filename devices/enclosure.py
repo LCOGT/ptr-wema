@@ -14,7 +14,7 @@ import urllib
 #from site_config import get_enc_status
 
 #from pprint import pprint
-from ptr_utility import plog
+from wema_utility import plog
 
 '''
 Curently this module interfaces to a Dome (az control) or a pop-top roof style enclosure.
@@ -209,31 +209,33 @@ class Enclosure:
     def __init__(self, driver: str, name: str, config: dict, astro_events):
         self.name = name
         self.astro_events = astro_events
-        self.obsid = config['obs_id']
+        self.siteid = config['site_id']
         self.config = config
         g_dev['enc'] = self
         self.slew_latch = False
         self.dome_open = None  # Just initialising this variable
-        if self.config['obsid_in_automatic_default'] == "Automatic":
+        self.mode = self.config['site_enclosure_default_mode'] # Just initialising this variable
+        self.roof_open = None
+        #if self.config['site_in_automatic_default'] == "Automatic":
 
 
-            self.roof_open=None # Just initialising this variable  NB chnged to roof to be more generic
+             # Just initialising this variable  NB chnged to roof to be more generic
 
 
-        if self.config['site_in_automatic_default'] == "Automatic":
+        #if self.config['site_in_automatic_default'] == "Automatic":
 
 
-            self.site_in_automatic = False
-            self.site_mode = 'Shutdown'
-        self.directly_connected = self.config['enclosure']['enclosure1']['enclosure_is_directly_connected']
+        #    self.site_in_automatic = False
+        #    self.site_mode = 'Shutdown'
+        #self.directly_connected = self.config['enclosure']['enclosure1']['enclosure_is_directly_connected']
         self.is_dome = self.config['enclosure']['enclosure1']['enc_is_dome']  #NB Domes generall hve an azimuth property
 
         self.time_of_next_slew = time.time()
         self.hostname = socket.gethostname()
-        if self.hostname in self.config['wema_hostname']:
-            self.is_wema = True
-        else:
-            self.is_wema = False
+        #if self.hostname in self.config['wema_hostname']:
+        self.is_wema = True
+        #else:
+        #    self.is_wema = False
         if self.config['wema_is_active']:
 
             self.site_has_proxy = True  # NB Site is proxy needs a new name.
@@ -243,11 +245,13 @@ class Enclosure:
             self.dome_on_wema = True
         else:
             self.dome_on_wema = False
-        if self.obsid in ['simulate',  'dht']:  # DEH: added just for testing purposes with ASCOM simulators.
+
+        #breakpoint()
+        if self.siteid in ['simulate',  'dht']:  # DEH: added just for testing purposes with ASCOM simulators.
             self.observing_conditions_connected = True
             self.site_is_proxy = False
             plog("observing_conditions: Simulator drivers connected True")
-        elif self.config['obsid_is_specific']:
+        elif self.config['site_is_specific']:
 
             self.site_is_specific = True
             self.site_is_generic = False
@@ -285,7 +289,7 @@ class Enclosure:
 
         self.guarded_roof_open_timer = time.time()
 
-        if self.config['obsid_allowed_to_open_roof'] == True or self.config['obsid_allowed_to_open_roof'] in ['yes']:
+        if self.config['site_allowed_to_open_roof'] == True or self.config['site_allowed_to_open_roof'] in ['yes']:
             self.obsid_allowed_to_open_roof = True
         else:
             self.obsid_allowed_to_open_roof = False
@@ -318,8 +322,10 @@ class Enclosure:
 
     def get_status(self) -> dict:
 
-        if self.directly_connected and not self.is_dome:
+        if not self.is_dome:
             #plog("we got a direct connect status!")
+
+            #breakpoint()
             try:
                 shutter_status = self.enclosure.ShutterStatus
             except:

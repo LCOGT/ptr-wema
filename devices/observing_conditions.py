@@ -26,7 +26,7 @@ import win32com.client
 
 from global_yard import g_dev
 #from site_config import get_ocn_status
-from ptr_utility import plog
+from wema_utility import plog
 
 
 def linearize_unihedron(uni_value):  # Need to be coefficients in config.
@@ -54,7 +54,7 @@ class ObservingConditions:
 
         self.name = name
         self.astro_events = astro_events
-        self.obsid = config["obs_id"]
+        self.siteid = config["site_id"]
         g_dev["ocn"] = self
         self.config = config
         g_dev["ocn"] = self
@@ -99,9 +99,9 @@ class ObservingConditions:
             self.site_has_proxy = True  # NB Site is proxy needs a new name.
         else:
             self.site_has_proxy = False
-        if self.config["obsid_is_specific"]:
+        if self.config["site_is_specific"]:
 
-            self.obsid_is_specific = True
+            self.site_is_specific = True
 
             #  Note OCN has no associated commands.
             #  Here we monkey patch
@@ -110,7 +110,7 @@ class ObservingConditions:
             # Get current ocn status just as a test.
             self.status = self.get_status(g_dev)
         
-        elif self.is_wema or self.config["obsid_is_specific"]:
+        elif self.is_wema or self.config["site_is_specific"]:
             #  This is meant to be a generic Observing_condition code
             #  instance that can be accessed by a simple site or by the WEMA,
             #  assuming the transducers are connected to the WEMA.
@@ -151,7 +151,7 @@ class ObservingConditions:
                     )
                     self.unihedron_connected = False
                     # NB NB if no unihedron is installed the status code needs to not report it.
-        elif not self.config["obsid_is_specific"]:
+        elif not self.config["site_is_specific"]:
             self.obsid_is_generic = False
             self.obsid_is_specific = True
         
@@ -170,6 +170,8 @@ class ObservingConditions:
             DESCRIPTION.
 
         """
+        # Just need to initialise this.
+        status=None
         # This is purely generic code for a generic site.
         # It may be overwritten with a monkey patch found in the appropriate config.py.
         if not self.is_wema and self.site_has_proxy:  #  EG., this was written first for SRO. Thier                                         #  system is a proxoy for having a WEMA

@@ -31,7 +31,7 @@ import time
 from math import degrees
 from global_yard import *
 from astropy.time import Time
-from ptr_utility import plog
+from wema_utility import plog
 EVESCREENFLATDURATION = 60/1440  # 1.5 hours
 BIASDARKDURATION = 120/1440  # 2.0 hours
 EVESKYFLATDURATION = 105/1440
@@ -59,7 +59,7 @@ class Events:
 
         self.siteRefTemp = round(float(self.config['reference_ambient']), 2)  # These should be a monthly average data.
         self.siteRefPress = round(float(self.config['reference_pressure']), 2)
-        self.flat_offset = self.config['eve_sky_flat_sunset_offset']    # -35 min for SRO
+        #self.flat_offset = self.config['eve_sky_flat_sunset_offset']    # -35 min for SRO
 
     ###############################
     ###    Internal Methods    ####
@@ -500,11 +500,11 @@ class Events:
         self.endNightTime = ephem.Date(self.sunrise + 120/1440.)
         #endNightTime = ephem.Date(nautDawn_minus_half + 10/1440.)
         self.cool_down_open = self.sunset + self.config['eve_cool_down_open']/1440
-        self.eve_skyFlatBegin = self.sunset + self.config['eve_sky_flat_sunset_offset']/1440
+        #self.eve_skyFlatBegin = self.sunset + self.config['eve_sky_flat_sunset_offset']/1440
 
         if endofnightoverride == 'no':
-            if ephem.Date(self.eve_skyFlatBegin) > self.endNightTime:
-                self.eve_skyFlatBegin = self.eve_skyFlatBegin - 24*ephem.hour
+            #if ephem.Date(self.eve_skyFlatBegin) > self.endNightTime:
+            #    self.eve_skyFlatBegin = self.eve_skyFlatBegin - 24*ephem.hour
             if ephem.Date(self.sunset) > self.endNightTime:
                 self.sunset = self.sunset - 24*ephem.hour
             if ephem.Date(self.civilDusk) > self.endNightTime:
@@ -530,11 +530,11 @@ class Events:
             if ephem.Date(self.cool_down_open) > self.endNightTime:
                 self.cool_down_open = self.cool_down_open - 24*ephem.hour
 
-        self.evnt = [('Eve Bias Dark      ', ephem.Date(self.eve_skyFlatBegin - 125/1440)),
-                     ('End Eve Bias Dark  ', ephem.Date(self.eve_skyFlatBegin - 5/1440)),
-                     ('Ops Window Start   ', ephem.Date(self.eve_skyFlatBegin)),  # Enclosure may open.
+        self.evnt = [#('Eve Bias Dark      ', ephem.Date(self.eve_skyFlatBegin - 125/1440)),
+                     #('End Eve Bias Dark  ', ephem.Date(self.eve_skyFlatBegin - 5/1440)),
+                     #('Ops Window Start   ', ephem.Date(self.eve_skyFlatBegin)),  # Enclosure may open.
                      ('Cool Down, Open    ', ephem.Date(self.cool_down_open)),
-                     ('Eve Sky Flats      ', ephem.Date(self.eve_skyFlatBegin)),  # Nominally -35 for SRO
+                     #('Eve Sky Flats      ', ephem.Date(self.eve_skyFlatBegin)),  # Nominally -35 for SRO
                      ('Sun Set            ', ephem.Date(self.sunset)),
                      ('Civil Dusk         ', ephem.Date(self.civilDusk)),
                      ('Naut Dusk          ', ephem.Date(self.nauticalDusk)),
@@ -550,15 +550,15 @@ class Events:
                      #('Observing Ends     ', ephem.Date(self.nautDawn_minus_half)),
                      ('Observing Ends     ', ephem.Date(self.civilDawn - 18/1440)),
                      ('Naut Dawn          ', ephem.Date(self.nauticalDawn)),
-                     ('Morn Sky Flats     ', ephem.Date(self.nauticalDawn + 30/1440.)),
+                     #('Morn Sky Flats     ', ephem.Date(self.nauticalDawn + 30/1440.)),
                      ('Civil Dawn         ', ephem.Date(self.civilDawn)),
-                     ('End Morn Sky Flats ', ephem.Date(self.sunrise + 30/1440.)),  # SRO drving this
+                     #('End Morn Sky Flats ', ephem.Date(self.sunrise + 30/1440.)),  # SRO drving this
                      # Enclosure must close 5 min after sunrise
                      ('Ops Window Closes  ', ephem.Date(self.sunrise + 31/1440.)),
                      ('Close and Park     ', ephem.Date(self.sunrise + 32/1440.)),
                      ('Sun Rise           ', ephem.Date(self.sunrise)),
-                     ('Morn Bias Dark     ', ephem.Date(self.sunrise + 34/1440.)),
-                     ('End Morn Bias Dark ', ephem.Date(self.sunrise + 140/1440.)),
+                     #('Morn Bias Dark     ', ephem.Date(self.sunrise + 34/1440.)),
+                     #('End Morn Bias Dark ', ephem.Date(self.sunrise + 140/1440.)),
                      ('Nightly Reset      ', ephem.Date(self.sunrise + 180/1440.)),
                      ('End Nightly Reset  ', ephem.Date(self.sunrise + 200/1440.)),
                      ('Prior Moon Rise    ', ephem.Date(self.last_moonrise)),
@@ -589,6 +589,8 @@ class Events:
         #plog("MJD            :    ")
         #plog('Day_Directory  :    ', DAY_Directory)
         #plog('Next day       :    ', Day_tomorrow)
+        #breakpoint()
+
         plog('Night Duration :    ', str(round(self.duration, 2)) + ' hr')
         plog('Moon Ra; Dec   :    ', round(self.mid_moon_ra, 2), ";  ", round(self.mid_moon_dec, 1))
         plog('Moon phase %   :    ', round(self.mid_moon_phase, 1), '%\n')
