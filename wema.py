@@ -138,7 +138,7 @@ class WxEncAgent:
         self.last_request = None
         self.stopped = False
         self.site_message = "-"
-        self.site_mode = config["site_in_automatic_default"]
+        self.site_mode = config['site_enclosure_default_mode']
         self.device_types = config["wema_types"]
         self.astro_events = wema_events.Events(self.config)
         self.astro_events.compute_day_directory()
