@@ -289,13 +289,13 @@ class Enclosure:
 
         self.guarded_roof_open_timer = time.time()
 
-        if self.config['site_allowed_to_open_roof'] == True or self.config['site_allowed_to_open_roof'] in ['yes']:
-            self.obsid_allowed_to_open_roof = True
-        else:
-            self.obsid_allowed_to_open_roof = False
+        # if self.config['site_allowed_to_open_roof'] == True or self.config['site_allowed_to_open_roof'] in ['yes']:
+        #     self.obsid_allowed_to_open_roof = True
+        # else:
+        #     self.obsid_allowed_to_open_roof = False
 
 
-            self.wema_allowed_to_open_roof = False
+        #     self.wema_allowed_to_open_roof = False
 
 
 

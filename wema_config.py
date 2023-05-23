@@ -32,6 +32,7 @@ cwd = str(pathlib.Path().resolve())
 hwd = cwd.replace("ptr-wema", "")
 wemaname_file = glob.glob(hwd + "wemaname*")
 
+
 try:
     #breakpoint()
     site_name = wemaname_file[0].split("wemaname")[1]

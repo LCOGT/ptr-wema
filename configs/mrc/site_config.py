@@ -31,6 +31,7 @@ obs_id = None  # NB These must be unique across all of PTR. Pre-pend with airpor
 
 obs_id = None    #NB These must be unique across all of PTR. Pre-pend with airport code if needed: 'sba_wmdo'
 
+site_config = {
 
     'site': 'mrc',
     'site_id': 'mrc',
@@ -112,9 +113,9 @@ obs_id = None    #NB These must be unique across all of PTR. Pre-pend with airpo
     'mpc_code':  'ZZ23',  # This is made up for now.
     'time_offset': -8,     # NB these two should be derived from Python libs so change is automatic
     'timezone': 'PST',
-    'site_latitude': 34.459375,  # Decimal degrees, North is Positive
-    'site_longitude': -119.681172,  # Decimal degrees, West is negative
-    'site_elevation': 317.75,    # meters above sea level
+    'latitude': 34.459375,  # Decimal degrees, North is Positive
+    'longitude': -119.681172,  # Decimal degrees, West is negative
+    'elevation': 317.75,    # meters above sea level
     'reference_ambient':  10.0,  # Degrees Celsius.  Alternately 12 entries, one for every - mid month.
     'reference_pressure':  977.83,  # mbar Alternately 12 entries, one for every - mid month.
 
@@ -129,7 +130,7 @@ obs_id = None    #NB These must be unique across all of PTR. Pre-pend with airpo
     'roof_open_safety_base_time': 15,
 
 
-    'site_in_automatic_default': "Automatic",  # "Manual", "Shutdown", "Automatic"
+    'site_enclosure_default_mode': "Automatic",  # "Manual", "Shutdown", "Automatic"
     'automatic_detail_default': "Enclosure is set to Automatic mode.",
 
     # =============================================================================

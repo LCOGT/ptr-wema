@@ -28,6 +28,8 @@ from pathlib import Path
 import math
 import requests
 import redis
+import datetime
+import traceback
 
 import wema_config
 from api_calls import API_calls
@@ -488,7 +490,7 @@ class WxEncAgent:
 
                 if not g_dev[
                     'obs'].open_and_enabled_to_observe and self.weather_report_is_acceptable_to_observe == True:
-                    if (g_dev['events']['Cool Down, Open'] < ephem.now() < g_dev['events']['Observing Ends']):
+                    if (g_dev['events']['Cool Down, Open'] < ephem_now < g_dev['events']['Observing Ends']):
                         if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config[
                             'maximum_roof_opens_per_evening']:
                             # self.enclosure_next_open_time = time.time() + 300 # Only try to open the roof every five minutes
@@ -505,7 +507,7 @@ class WxEncAgent:
                                 # g_dev['events']['Observing Begins'] = ephem_now + 0.1/24
                                 self.weather_report_wait_until_open = False
                                 self.weather_report_is_acceptable_to_observe = True
-                                if (g_dev['events']['Observing Begins'] < ephem.now() < g_dev['events'][
+                                if (g_dev['events']['Observing Begins'] < ephem_now < g_dev['events'][
                                     'Observing Ends']):
                                     # Move to reasonable spot
                                     if g_dev['mnt'].mount.Tracking == False:
@@ -530,7 +532,7 @@ class WxEncAgent:
         # If the observatory is meant to shut during the evening
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
         if self.weather_report_close_during_evening == True:
-            if ephem_now > self.weather_report_close_during_evening_time and ephem_now < events[
+            if ephem_now > self.weather_report_close_during_evening_time and ephem_now < g_dev['events'][
                 'Morn Bias Dark']:  # Don't want scope to cancel all activity during bias/darks etc.
                 if self.config['obsid_roof_control'] and g_dev['enc'].mode == 'Automatic':
                     self.weather_report_is_acceptable_to_observe = False
@@ -632,8 +634,8 @@ class WxEncAgent:
         if g_dev['seq'].weather_report_is_acceptable_to_observe:
 
             if not g_dev['debug'] and not g_dev['enc'].mode in ['Manual'] and (
-                    ephem.now() < g_dev['events']['Cool Down, Open']) or \
-                    (g_dev['events']['End Morn Bias Dark'] < ephem.now() < g_dev['events']['Nightly Reset']):
+                    ephem_now < g_dev['events']['Cool Down, Open']) or \
+                    (g_dev['events']['End Morn Bias Dark'] < ephem_now < g_dev['events']['Nightly Reset']):
                 plog("NOT OPENING THE OBSERVATORY -- IT IS THE DAYTIME!!")
                 self.send_to_user("An open observatory request was rejected as it is during the daytime.")
                 return
