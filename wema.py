@@ -549,7 +549,7 @@ class WxEncAgent:
             self.cool_down_latch = False
 
         # If in post-close and park era of the night, check those two things have happened!
-        if (g_dev['events']['Close and Park'] <= ephem_now < g_dev['events']['End Morn Bias Dark']) \
+        if (g_dev['events']['Close and Park'] <= ephem_now < g_dev['events']['Nightly Reset']) \
                 and g_dev['enc'].mode == 'Automatic':
 
             if not g_dev['enc'].status['shutter_status'] in ['Closed', 'closed']:
@@ -666,7 +666,7 @@ class WxEncAgent:
 
             if not g_dev['debug'] and not g_dev['enc'].mode in ['Manual'] and (
                     ephem_now < g_dev['events']['Cool Down, Open']) or \
-                    (g_dev['events']['End Morn Bias Dark'] < ephem_now < g_dev['events']['Nightly Reset']):
+                    (g_dev['events']['Close and Park'] < ephem_now < g_dev['events']['Nightly Reset']):
                 plog("NOT OPENING THE OBSERVATORY -- IT IS THE DAYTIME!!")
                 self.send_to_user("An open observatory request was rejected as it is during the daytime.")
                 return
