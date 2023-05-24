@@ -234,24 +234,17 @@ class Enclosure:
         self.hostname = socket.gethostname()
         #if self.hostname in self.config['wema_hostname']:
         self.is_wema = True
-        #else:
-        #    self.is_wema = False
-        if self.config['wema_is_active']:
 
-            self.site_has_proxy = True  # NB Site is proxy needs a new name.
-        else:
-            self.site_has_proxy = False
-        if self.config['dome_on_wema']:
-            self.dome_on_wema = True
-        else:
-            self.dome_on_wema = False
+        
+        self.dome_on_wema = True
+
 
         #breakpoint()
         if self.siteid in ['simulate',  'dht']:  # DEH: added just for testing purposes with ASCOM simulators.
             self.observing_conditions_connected = True
             self.site_is_proxy = False
             plog("observing_conditions: Simulator drivers connected True")
-        elif self.config['site_is_specific']:
+        elif self.config['site_is_custom']:
 
             self.site_is_specific = True
             self.site_is_generic = False

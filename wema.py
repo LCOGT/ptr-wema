@@ -88,19 +88,11 @@ class WxEncAgent:
     def __init__(self, name, config):
 
         self.api = API_calls()
-
-        # Not relevent for SAF... No commands to Wx are sent by AWS.
-        self.command_interval = 20
-
-        self.status_interval = 45
-        self.name = name
-
-        self.site_name = name
+        self.command_interval = 30
+        self.status_interval = 30
         self.config = config
         g_dev["obs"] = self
-        # TODO: Work through site vs mnt/tel and sub-site distinction.
-
-        self.site = config["site"]
+       
         self.debug_flag = self.config['debug_mode']
         self.admin_only_flag = self.config['admin_owner_commands_only']
         if self.debug_flag:
@@ -112,27 +104,22 @@ class WxEncAgent:
             g_dev['debug'] = False
             #g_dev['obs'].open_and_enabled_to_observe = False
 
-        if self.config["wema_is_active"]:
-            self.hostname = self.hostname = socket.gethostname()
-            if self.hostname in self.config["wema_hostname"]:
-                self.is_wema = True
-                g_dev["wema_write_share_path"] = config["wema_write_share_path"]
-                self.wema_path = g_dev["wema_write_share_path"]
-                self.site_path = self.wema_path
-            else:
-                # This host is a client
-                self.is_wema = False  # This is a client.
-                self.site_path = config["client_write_share_path"]
-                g_dev["site_path"] = self.site_path
-                g_dev["wema_write_share_path"] = self.site_path  # Just to be safe.
-                self.wema_path = g_dev["wema_write_share_path"]
+
+        self.hostname = self.hostname = socket.gethostname()
+        if self.hostname in self.config["wema_hostname"]:
+            self.is_wema = True
+           
+          
+            
         else:
+            # This host is a client
             self.is_wema = False  # This is a client.
-            self.site_path = config["client_write_share_path"]
-            g_dev["site_path"] = self.site_path
-            g_dev["wema_write_share_path"] = self.site_path  # Just to be safe.
-            self.wema_path = g_dev["wema_write_share_path"]
-        if self.config["site_is_specific"]:
+            
+  
+            
+            
+    
+        if self.config["site_is_custom"]:
             self.site_is_specific = True
         else:
             self.site_is_specific = False
@@ -150,19 +137,19 @@ class WxEncAgent:
         self.wema_pid = os.getpid()
         print("WEMA_PID:  ", self.wema_pid)
 
-        if config["redis_ip"] is not None:
-            self.redis_server = redis.StrictRedis(
-                host=config["redis_ip"], port=6379, db=0, decode_responses=True
-            )
-            self.redis_wx_enabled = True
-            # Enable wide easy access to this object with redis.
-            g_dev["redis"] = self.redis_server
-            for key in self.redis_server.keys():
-                self.redis_server.delete(key)  # Flush old state.
-            self.redis_server.set("wema_pid", self.wema_pid)
-        else:
-            self.redis_wx_enabled = False
-            g_dev["redis"] = None
+        # if config["redis_ip"] is not None:
+        #     self.redis_server = redis.StrictRedis(
+        #         host=config["redis_ip"], port=6379, db=0, decode_responses=True
+        #     )
+        #     self.redis_wx_enabled = True
+        #     # Enable wide easy access to this object with redis.
+        #     g_dev["redis"] = self.redis_server
+        #     for key in self.redis_server.keys():
+        #         self.redis_server.delete(key)  # Flush old state.
+        #     self.redis_server.set("wema_pid", self.wema_pid)
+        # else:
+        self.redis_wx_enabled = False
+        g_dev["redis"] = None
         #  g_dev['redis_server']['wema_loaded'] = True
 
         # Here we clean up any older processes
@@ -189,10 +176,8 @@ class WxEncAgent:
         # self.redis_server.set('wema_pid', self.wema_pid)
 
         # Redundant store of wema_pid
-        camShelf = shelve.open(self.site_path + "ptr_night_shelf/" + "pid_wema")
-        camShelf["pid_wema"] = self.wema_pid
-        camShelf["pid_time"] = time.time()
-        camShelf.close()
+
+
         self.update_config()
         self.create_devices(config)
         self.time_last_status = time.time() - 60  #forces early status on startup.
@@ -267,6 +252,11 @@ class WxEncAgent:
         self.weather_report_close_during_evening=False
         self.weather_report_close_during_evening_time=ephem_now
         self.nightly_weather_report_done=False
+        
+        
+        self.nightly_reset_complete = False
+        
+        
         # Run a weather report on bootup so observatory can run if need be. 
         if not g_dev['debug']:
             #self.global_wx()
@@ -313,6 +303,7 @@ class WxEncAgent:
 
         uri = f"{self.config['site']}/config/"
         self.config["events"] = g_dev["events"]
+
         response = self.api.authenticated_request("PUT", uri, self.config)
         if response:
             print("\n\nConfig uploaded successfully.")
@@ -339,7 +330,7 @@ class WxEncAgent:
         loud = False
         while time.time() < self.time_last_status + self.status_interval:
             return
-        t1 = time.time()
+        #t1 = time.time()
         status = {}
 
         for dev_type in self.device_types:
@@ -352,11 +343,12 @@ class WxEncAgent:
                 status[dev_type][device_name] = device.get_status()
 
         # Include the time that the status was assembled and sent.
-        status["timestamp"] = round((time.time() + t1) / 2.0, 3)
-        status["send_heartbeat"] = False
+        status["timestamp"] = round(time.time(), 1)
+        #status["send_heartbeat"] = False   #This has never been implemented.
         enc_status = None
         ocn_status = None
         device_status = None
+        obsy = self.config['site']   #  This is meant to be for the site, not an OBSP.
 
         try:
             ocn_status = {"observing_conditions": status.pop("observing_conditions")}
@@ -365,7 +357,7 @@ class WxEncAgent:
         except:
             pass
 
-        obsy = self.name
+
         if ocn_status is not None:
             lane = "weather"
             #send_status(obsy, lane, ocn_status)  # Do not remove this send for SAF!
@@ -494,7 +486,7 @@ class WxEncAgent:
                         if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config[
                             'maximum_roof_opens_per_evening']:
                             # self.enclosure_next_open_time = time.time() + 300 # Only try to open the roof every five minutes
-
+                            self.nightly_reset_complete = False
                             # self.weather_report_is_acceptable_to_observe=True
                             self.open_observatory(enc_status, ocn_status)
 
@@ -534,7 +526,8 @@ class WxEncAgent:
         if self.weather_report_close_during_evening == True:
             if ephem_now > self.weather_report_close_during_evening_time and ephem_now < g_dev['events'][
                 'Morn Bias Dark']:  # Don't want scope to cancel all activity during bias/darks etc.
-                if self.config['obsid_roof_control'] and g_dev['enc'].mode == 'Automatic':
+                if g_dev['enc'].mode == 'Automatic':
+                    self.nightly_reset_complete = False
                     self.weather_report_is_acceptable_to_observe = False
                     plog("End of Observing Period due to weather. Closing up observatory early.")
                     g_dev['obs'].cancel_all_activity()
@@ -554,10 +547,10 @@ class WxEncAgent:
             # Reopening config and resetting all the things.
             # This is necessary just in case a previous weather report was done today
             # That can sometimes change the timing.
-            self.astro_events.compute_day_directory()
-            self.astro_events.calculate_events()
+            #self.astro_events.compute_day_directory()
+            #self.astro_events.calculate_events()
             # self.astro_events.display_events()
-            g_dev['obs'].astro_events = self.astro_events
+            #g_dev['obs'].astro_events = self.astro_events
             # Run nightly weather report
             self.run_nightly_weather_report()
             self.nightly_weather_report_complete = True
@@ -578,7 +571,7 @@ class WxEncAgent:
             if not self.open_and_enabled_to_observe and self.weather_report_is_acceptable_to_observe == True and self.weather_report_wait_until_open == False:
 
                 if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config['maximum_roof_opens_per_evening']:
-
+                    self.nightly_reset_complete = False
                     # self.enclosure_next_open_time = time.time() + 300 # Only try to open the roof every five minutes maximum
                     self.open_observatory(enc_status, ocn_status)
 
@@ -591,6 +584,65 @@ class WxEncAgent:
                 if not g_dev['enc'].status['shutter_status'] in ['Closed', 'closed']:
                     plog("Found shutter open after Close and Park, shutting up the shutter")
                     self.park_and_close(enc_status)
+        
+        
+        if (g_dev['events']['Nightly Reset'] <= ephem_now < g_dev['events']['End Nightly Reset']): # and g_dev['enc'].mode == 'Automatic' ):
+            
+            if self.nightly_reset_complete == False:
+                self.nightly_reset_script()
+
+    def nightly_reset_script(self):
+        # UNDERTAKING END OF NIGHT ROUTINES
+
+        # Never hurts to make sure the telescope is parked for the night
+        #g_dev['mnt'].park_command({}, {})
+        self.park_and_close(enc_status = g_dev['enc'].status)
+
+        self.nightly_weather_report_complete=False
+        # Set weather report to false because it is daytime anyways.
+        self.weather_report_is_acceptable_to_observe=False
+        
+        
+        
+        # Trying to figure out why sequencer isn't restarting.
+        events = g_dev['events']
+        obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
+
+        # Reopening config and resetting all the things.
+        self.astro_events.compute_day_directory()
+        self.astro_events.calculate_events()
+        self.astro_events.display_events()
+        g_dev['obs'].astro_events = self.astro_events
+        
+        
+        # sending this up to AWS
+        '''
+        Send the config to aws.
+        '''
+        uri = f"{self.config['site']}/config/"
+        self.config['events'] = g_dev['events']
+        response = g_dev['obs'].api.authenticated_request("PUT", uri, self.config)
+        if response:
+            plog("Config uploaded successfully.")
+
+        self.cool_down_latch = False
+        
+        
+        self.nightly_reset_complete = True
+        
+        self.opens_this_evening=0
+        
+        # Set weather report back to False until ready to check the weather again. 
+        self.nightly_weather_report_complete=False
+        self.weather_report_is_acceptable_to_observe=False
+        self.weather_report_wait_until_open=False
+        self.weather_report_wait_until_open_time=ephem_now
+        self.weather_report_close_during_evening=False
+        self.weather_report_close_during_evening_time=ephem_now + 86400
+        self.nightly_weather_report_complete=False
+        
+        return
+
 
 
     def run(self):  # run is a poor name for this function.
