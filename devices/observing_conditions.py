@@ -95,11 +95,8 @@ class ObservingConditions:
             self.is_wema = True
         else:
             self.is_wema = False
-        if self.config["wema_is_active"]:
-            self.site_has_proxy = True  # NB Site is proxy needs a new name.
-        else:
-            self.site_has_proxy = False
-        if self.config["site_is_specific"]:
+
+        if self.config["site_is_custom"]:
 
             self.site_is_specific = True
 
@@ -110,7 +107,7 @@ class ObservingConditions:
             # Get current ocn status just as a test.
             self.status = self.get_status(g_dev)
         
-        elif self.is_wema or self.config["site_is_specific"]:
+        elif self.is_wema or self.config["site_is_custom"]:
             #  This is meant to be a generic Observing_condition code
             #  instance that can be accessed by a simple site or by the WEMA,
             #  assuming the transducers are connected to the WEMA.
@@ -400,35 +397,26 @@ class ObservingConditions:
             g_dev["wx_ok"] = self.wx_is_ok
 
 
-            if self.config["site_IPC_mechanism"] == "shares":
-                weather_txt = self.config["wema_write_share_path"] + "weather.txt"
-                try:
-                    with open(weather_txt, "w", encoding="utf-8") as f:
-                        f.write(json.dumps(status))
-                except IOError:
-                    tries = 1
-                    while tries < 5:
-                        # Wait 3 seconds and try writing to file again, up to 3 more times.
-                        plog(
-                            f"Attempt {tries} to write weather status failed. Trying again."
-                        )
-                        time.sleep(3)
-                        with open(weather_txt, "w", encoding="utf-8") as f:
-                            f.write(json.dumps(status))
-                            if not weather_txt.closed:
-                                break
-                        tries += 1
+            # if self.config["site_IPC_mechanism"] == "shares":
+            #     weather_txt = self.config["wema_write_share_path"] + "weather.txt"
+            #     try:
+            #         with open(weather_txt, "w", encoding="utf-8") as f:
+            #             f.write(json.dumps(status))
+            #     except IOError:
+            #         tries = 1
+            #         while tries < 5:
+            #             # Wait 3 seconds and try writing to file again, up to 3 more times.
+            #             plog(
+            #                 f"Attempt {tries} to write weather status failed. Trying again."
+            #             )
+            #             time.sleep(3)
+            #             with open(weather_txt, "w", encoding="utf-8") as f:
+            #                 f.write(json.dumps(status))
+            #                 if not weather_txt.closed:
+            #                     break
+            #             tries += 1
 
-            elif self.config["site_IPC_mechanism"] == "redis":
-                try:   #for MRC look to see if Unihedron sky mag/sq-asec value exists in redis
-                    uni_string = g_dev['redis'].get('unihedron1')
-                    if uni_string is not None:
-                        status['meas_sky_mpsas'] = eval(g_dev['redis'].get('unihedron1'))[0]
-                except:
-                    pass
-                g_dev["redis"].set(
-                    "wx_state", status
-                )  # This needs to become generalized IP
+
 
             # Only write when around dark, put in CSV format, used to calibrate Unihedron.
             sunZ88Op, sunZ88Cl, sunrise, ephemNow = g_dev[
