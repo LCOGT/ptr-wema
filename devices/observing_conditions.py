@@ -96,6 +96,8 @@ class ObservingConditions:
         else:
             self.is_wema = False
 
+        self.site_has_proxy = False # initializing variable
+
         if self.config["site_is_custom"]:
 
             self.site_is_specific = True

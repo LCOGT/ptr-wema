@@ -65,6 +65,10 @@ site_config = {
     'wema_is_active':  True,          # True if the split computers used at a site.  NB CHANGE THE DAMN NAME!
     'wema_hostname': 'ECO-WMS-ENC',   # Prefer the shorter version
     'wema_path':  'C:/ptr/',  # '/wema_transfer/',
+
+    'site_is_custom': False,  # Indicates some special code for this site, found at end of config. Set True if SRO
+
+
     'dome_on_wema':   True,
     #'site_IPC_mechanism':  'redis',   # ['None', shares', 'shelves', 'redis']  Pick One
     'site_IPC_mechanism':  'aws',   # ['None', 'aws', shares', 'shelves', 'redis']  Pick One
