@@ -92,37 +92,33 @@ class WxEncAgent:
         self.status_interval = 30
         self.config = config
         g_dev["obs"] = self
+        g_dev['debug'] = False
        
-        self.debug_flag = self.config['debug_mode']
-        self.admin_only_flag = self.config['admin_owner_commands_only']
-        if self.debug_flag:
-            self.debug_lapse_time = time.time() + self.config['debug_duration_sec']
-            g_dev['debug'] = True
-            #g_dev['obs'].open_and_enabled_to_observe = True
-        else:
-            self.debug_lapse_time = 0.0
-            g_dev['debug'] = False
-            #g_dev['obs'].open_and_enabled_to_observe = False
+        # self.debug_flag = self.config['debug_mode']
+        # self.admin_only_flag = self.config['admin_owner_commands_only']
+        # if self.debug_flag:
+        #     self.debug_lapse_time = time.time() + self.config['debug_duration_sec']
+        #     g_dev['debug'] = True
+        #     #g_dev['obs'].open_and_enabled_to_observe = True
+        # else:
+        #     self.debug_lapse_time = 0.0
+        #     g_dev['debug'] = False
+        #     #g_dev['obs'].open_and_enabled_to_observe = False
 
 
         self.hostname = self.hostname = socket.gethostname()
         if self.hostname in self.config["wema_hostname"]:
             self.is_wema = True
-           
-          
-            
+            self.is_process = False
         else:
             # This host is a client
             self.is_wema = False  # This is a client.
-            
-  
-            
-            
-    
+            self.is_process = True
+
         if self.config["site_is_custom"]:
-            self.site_is_specific = True
+            self.site_is_custom = True
         else:
-            self.site_is_specific = False
+            self.site_is_custom = False
 
         self.last_request = None
         self.stopped = False
@@ -148,8 +144,8 @@ class WxEncAgent:
         #         self.redis_server.delete(key)  # Flush old state.
         #     self.redis_server.set("wema_pid", self.wema_pid)
         # else:
-        self.redis_wx_enabled = False
-        g_dev["redis"] = None
+        #self.redis_wx_enabled = False
+        #g_dev["redis"] = None
         #  g_dev['redis_server']['wema_loaded'] = True
 
         # Here we clean up any older processes
@@ -173,11 +169,6 @@ class WxEncAgent:
 
         self.wema_pid = os.getpid()
         print("Fresh WEMA_PID:  ", self.wema_pid)
-        # self.redis_server.set('wema_pid', self.wema_pid)
-
-        # Redundant store of wema_pid
-
-
         self.update_config()
         self.create_devices(config)
         self.time_last_status = time.time() - 60  #forces early status on startup.
@@ -188,7 +179,6 @@ class WxEncAgent:
         immed_time = time.time()
         self.obs_time = immed_time
         self.wema_start_time = immed_time
-
         self.cool_down_latch = False
         # This variable prevents the roof being called to open every loop...
         self.enclosure_next_open_time = time.time()
@@ -258,14 +248,15 @@ class WxEncAgent:
         
         
         # Run a weather report on bootup so observatory can run if need be. 
-        if not g_dev['debug']:
-            #self.global_wx()
+        self.run_nightly_weather_report()
+        # if not g_dev['debug']:
+        #     #self.global_wx()
 
-            self.run_nightly_weather_report()
-        else:
-            self.nightly_weather_report_complete = True
-            self.weather_report_is_acceptable_to_observe = True
-            self.weather_report_wait_until_open=True
+        #     self.run_nightly_weather_report()
+        # else:
+        #     self.nightly_weather_report_complete = True
+        #     self.weather_report_is_acceptable_to_observe = True
+        #     self.weather_report_wait_until_open=True
             
         #NB End of inheritance
             #g_dev['obs'].open_and_enabled_to_observe = True
@@ -310,6 +301,12 @@ class WxEncAgent:
 
     def scan_requests(self, mount):
         """
+        
+        This can pick up owner/admin Shutdown and Automatic request but it 
+        would need to be a custom api endpoint.
+        
+        Not too many useful commands: Shutdown, Automatic, Immediate close,
+        BadWxSimulate event (ie a 15 min shutdown)
 
         For a wema this can be used to capture commands to the wema once the
         AWS side knows how to redirect from any mount/telescope to the common
@@ -449,7 +446,7 @@ class WxEncAgent:
         else:
             print(">")
 
-    def update(self):
+    def update(self):     ## NB NB NB This is essentially the sequencer for the WEMA.
         self.update_status()
         time.sleep(15)
 
@@ -476,12 +473,11 @@ class WxEncAgent:
                 self.astro_events.compute_day_directory()
                 self.astro_events.calculate_events()
                 # self.astro_events.display_events()
-                g_dev['obs'].astro_events = self.astro_events
+                #g_dev['obs'].astro_events = self.astro_events
                 # Run nightly weather report
                 self.run_nightly_weather_report()
 
-                if not g_dev[
-                    'obs'].open_and_enabled_to_observe and self.weather_report_is_acceptable_to_observe == True:
+                if not self.open_and_enabled_to_observe and self.weather_report_is_acceptable_to_observe == True:
                     if (g_dev['events']['Cool Down, Open'] < ephem_now < g_dev['events']['Observing Ends']):
                         if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config[
                             'maximum_roof_opens_per_evening']:
@@ -491,54 +487,29 @@ class WxEncAgent:
                             self.open_observatory(enc_status, ocn_status)
 
                             # If the observatory opens, set clock and auto focus and observing to now
-                            if g_dev['obs'].open_and_enabled_to_observe:
+                            if self.open_and_enabled_to_observe:
                                 self.weather_report_is_acceptable_to_observe = False
-                                self.night_focus_ready = True
-                                obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
+                                #obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
                                 # g_dev['events']['Clock & Auto Focus'] = ephem_now - 0.1/24
                                 # g_dev['events']['Observing Begins'] = ephem_now + 0.1/24
                                 self.weather_report_wait_until_open = False
                                 self.weather_report_is_acceptable_to_observe = True
-                                if (g_dev['events']['Observing Begins'] < ephem_now < g_dev['events'][
-                                    'Observing Ends']):
-                                    # Move to reasonable spot
-                                    if g_dev['mnt'].mount.Tracking == False:
-                                        if g_dev['mnt'].mount.CanSetTracking:
-                                            g_dev['mnt'].mount.Tracking = True
-                                        else:
-                                            plog(
-                                                "mount is not tracking but this mount doesn't support ASCOM changing tracking")
-
-                                    g_dev['mnt'].move_to_azalt(70, 70)
-                                    g_dev['foc'].time_of_last_focus = datetime.datetime.now() - datetime.timedelta(
-                                        days=1
-                                    )  # Initialise last focus as yesterday
-
-                                    # Autofocus
-                                    req2 = {'target': 'near_tycho_star', 'area': 150}
-                                    opt = {}
-                                    plog("Running initial autofocus upon opening observatory")
-                                    self.extensive_focus_script(req2, opt)
+                                
                 self.cool_down_latch = False
 
         # If the observatory is meant to shut during the evening
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
         if self.weather_report_close_during_evening == True:
             if ephem_now > self.weather_report_close_during_evening_time and ephem_now < g_dev['events'][
-                'Morn Bias Dark']:  # Don't want scope to cancel all activity during bias/darks etc.
+                'Close and Park']:  
                 if g_dev['enc'].mode == 'Automatic':
                     self.nightly_reset_complete = False
                     self.weather_report_is_acceptable_to_observe = False
                     plog("End of Observing Period due to weather. Closing up observatory early.")
-                    g_dev['obs'].cancel_all_activity()
-                    g_dev['obs'].open_and_enabled_to_observe = False
-                    g_dev['enc'].enclosure.CloseShutter()
-                    # while g_dev['enc'].enclosure.ShutterStatus == 3:
-                    # plog ("closing")
-                    plog("Also Parking the Scope")
-                    if not g_dev['mnt'].mount.AtPark:
-                        g_dev['mnt'].home_command()
-                        g_dev['mnt'].park_command()
+                    
+                    self.open_and_enabled_to_observe = False
+                    self.park_enclosure_and_close()
+
                     self.weather_report_close_during_evening = False
 
                     # Do nightly weather report at cool down open
@@ -577,13 +548,13 @@ class WxEncAgent:
 
             self.cool_down_latch = False
 
-            # If in post-close and park era of the night, check those two things have happened!
-            if (g_dev['events']['Close and Park'] <= ephem_now < g_dev['events']['End Morn Bias Dark']) \
-                    and g_dev['enc'].mode == 'Automatic':
+        # If in post-close and park era of the night, check those two things have happened!
+        if (g_dev['events']['Close and Park'] <= ephem_now < g_dev['events']['Nightly Reset']) \
+                and g_dev['enc'].mode == 'Automatic':
 
-                if not g_dev['enc'].status['shutter_status'] in ['Closed', 'closed']:
-                    plog("Found shutter open after Close and Park, shutting up the shutter")
-                    self.park_and_close(enc_status)
+            if not g_dev['enc'].status['shutter_status'] in ['Closed', 'closed']:
+                plog("Found shutter open after Close and Park, shutting up the shutter")
+                self.park_enclosure_and_close()
         
         
         if (g_dev['events']['Nightly Reset'] <= ephem_now < g_dev['events']['End Nightly Reset']): # and g_dev['enc'].mode == 'Automatic' ):
@@ -596,7 +567,9 @@ class WxEncAgent:
 
         # Never hurts to make sure the telescope is parked for the night
         #g_dev['mnt'].park_command({}, {})
-        self.park_and_close(enc_status = g_dev['enc'].status)
+        #self.park_and_close(enc_status = g_dev['enc'].status)   #WEMA does not control telescopes.
+
+        self.park_enclosure_and_close()
 
         self.nightly_weather_report_complete=False
         # Set weather report to false because it is daytime anyways.
@@ -612,7 +585,7 @@ class WxEncAgent:
         self.astro_events.compute_day_directory()
         self.astro_events.calculate_events()
         self.astro_events.display_events()
-        g_dev['obs'].astro_events = self.astro_events
+        #g_dev['obs'].astro_events = self.astro_events
         
         
         # sending this up to AWS
@@ -621,7 +594,7 @@ class WxEncAgent:
         '''
         uri = f"{self.config['site']}/config/"
         self.config['events'] = g_dev['events']
-        response = g_dev['obs'].api.authenticated_request("PUT", uri, self.config)
+        response = self.api.authenticated_request("PUT", uri, self.config)
         if response:
             plog("Config uploaded successfully.")
 
@@ -673,6 +646,12 @@ class WxEncAgent:
         except Exception:
             print("Log did not send, usually not fatal.")
 
+    def park_enclosure_and_close(self):
+        
+        g_dev['enc'].close_roof_directly({}, {})
+        
+        return
+
     def open_observatory(self, enc_status, ocn_status, no_sky=False):
 
         #if not self.config['obsid_roof_control']:
@@ -683,11 +662,11 @@ class WxEncAgent:
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
 
         # Only send an enclosure open command if the weather
-        if g_dev['seq'].weather_report_is_acceptable_to_observe:
+        if self.weather_report_is_acceptable_to_observe:
 
             if not g_dev['debug'] and not g_dev['enc'].mode in ['Manual'] and (
                     ephem_now < g_dev['events']['Cool Down, Open']) or \
-                    (g_dev['events']['End Morn Bias Dark'] < ephem_now < g_dev['events']['Nightly Reset']):
+                    (g_dev['events']['Close and Park'] < ephem_now < g_dev['events']['Nightly Reset']):
                 plog("NOT OPENING THE OBSERVATORY -- IT IS THE DAYTIME!!")
                 self.send_to_user("An open observatory request was rejected as it is during the daytime.")
                 return
@@ -721,10 +700,10 @@ class WxEncAgent:
                         time.sleep(self.config['period_of_time_to_wait_for_roof_to_open'])
 
                     self.enclosure_next_open_time = time.time() + (self.config['roof_open_safety_base_time'] * 60) * \
-                                                    g_dev['seq'].opens_this_evening
+                                                    self.opens_this_evening
 
                     if g_dev['enc'].enclosure.ShutterStatus == 0:
-                        g_dev['obs'].open_and_enabled_to_observe = True
+                        self.open_and_enabled_to_observe = True
 
                         try:
                             plog("Synchronising dome.")
@@ -739,9 +718,9 @@ class WxEncAgent:
                     else:
                         plog("Failed to open roof, parking telescope again and sending the close command to the roof.")
                         # g_dev['enc'].close_roof_directly()
-                        plog("opens this eve: " + str(g_dev['seq'].opens_this_evening))
+                        plog("opens this eve: " + str(self.opens_this_evening))
                         plog("minutes until next open attempt ALLOWED: " + str(
-                            (g_dev['seq'].enclosure_next_open_time - time.time()) / 60))
+                            (self.enclosure_next_open_time - time.time()) / 60))
                         g_dev['enc'].close_roof_directly({}, {})
 
                         return
