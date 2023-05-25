@@ -469,9 +469,10 @@ class WxEncAgent:
         if ocn_status == None:
             plog("This WEMA does not report observing conditions")
         else:
-            plog("Observing Conditions     : " +str(ocn_status))
-        plog("Time until Cool and Open  : " + str(round(( g_dev['events']['Cool Down, Open'] - ephem_now) * 24,2)) + " hours")
-        plog("Time until Close and Park: "+ str(round(( g_dev['events']['Close and Park'] - ephem_now) * 24,2)) + " hours")
+            plog("Observing Conditions      : " +str(ocn_status))
+        plog("Weather Report Good to Observe: " + str(self.weather_report_is_acceptable_to_observe))
+        plog("Time until Cool and Open      : " + str(round(( g_dev['events']['Cool Down, Open'] - ephem_now) * 24,2)) + " hours")
+        plog("Time until Close and Park     : "+ str(round(( g_dev['events']['Close and Park'] - ephem_now) * 24,2)) + " hours")
         plog("**************************************************************")
 
         #breakpoint()
@@ -1004,13 +1005,14 @@ class WxEncAgent:
         
 
         # However, if the observatory is under manual control, leave this switch on.
-
-        try:
-            if g_dev['enc'].site_mode == 'Manual':
+        enc_status = g_dev['enc'].status
+        #try:
+        if enc_status is not None:
+            if enc_status['mode'] == 'Manual':
                 self.weather_report_is_acceptable_to_observe=True
-        except:
+        #except:
 
-            self.weather_report_is_acceptable_to_observe=True
+            #self.weather_report_is_acceptable_to_observe=True
             
         return
             
