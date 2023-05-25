@@ -577,7 +577,7 @@ class WxEncAgent:
 
                             # If the observatory opens, set clock and auto focus and observing to now
                             if self.open_and_enabled_to_observe:
-                                self.weather_report_is_acceptable_to_observe = False
+                                #self.weather_report_is_acceptable_to_observe = False
                                 #obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
                                 # g_dev['events']['Clock & Auto Focus'] = ephem_now - 0.1/24
                                 # g_dev['events']['Observing Begins'] = ephem_now + 0.1/24
