@@ -425,9 +425,11 @@ class WxEncAgent:
                         except:
                             plog("Three Tries to send Enc status for MRC2 failed.")
 
-        loud = True
+        loud = False
         if loud:
             print("\n\n > Status Sent:  \n", status)
+
+
         #else:
 
         try:
@@ -459,6 +461,22 @@ class WxEncAgent:
         #breakpoint()
         ocn_status = g_dev['ocn'].get_status()
         enc_status = g_dev['enc'].get_status()
+
+        #breakpoint()
+        plog("***************************************************************")
+        plog("Current time             : " + str(time.asctime()))
+        plog("Shutter Status           : " + str(enc_status['shutter_status']))
+        if ocn_status == None:
+            plog("This WEMA does not report observing conditions")
+        else:
+            plog("Observing Conditions     : " +str(ocn_status))
+        plog("Time until Cool and Open  : " + str(round(( g_dev['events']['Cool Down, Open'] - ephem_now) * 24,2)) + " hours")
+        plog("Time until Close and Park: "+ str(round(( g_dev['events']['Close and Park'] - ephem_now) * 24,2)) + " hours")
+        plog("**************************************************************")
+
+        #breakpoint()
+
+        
 
         if self.weather_report_wait_until_open and not self.cool_down_latch:
             if ephem_now > self.weather_report_wait_until_open_time:
