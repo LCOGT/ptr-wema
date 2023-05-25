@@ -87,20 +87,22 @@ class ObservingConditions:
             True  # NB NB NB His needs improving, driving from config
         )
         self.hostname = socket.gethostname()
-        self.obsid_is_specific = False
+        self.obsid_is_custom = False
         # =============================================================================
         #         Note site_in_automatic found in the Enclosure object.
         # =============================================================================
         if self.hostname in self.config["wema_hostname"]:
             self.is_wema = True
+            self.is_process = False
         else:
             self.is_wema = False
+            self.is_process = True
 
         self.site_has_proxy = False # initializing variable
 
         if self.config["site_is_custom"]:
 
-            self.site_is_specific = True
+            self.site_is_custom = True
 
             #  Note OCN has no associated commands.
             #  Here we monkey patch
@@ -150,9 +152,9 @@ class ObservingConditions:
                     )
                     self.unihedron_connected = False
                     # NB NB if no unihedron is installed the status code needs to not report it.
-        elif not self.config["site_is_specific"]:
+        elif not self.config["site_is_custom"]:
             self.obsid_is_generic = False
-            self.obsid_is_specific = True
+            self.obsid_is_custom = True
         
         self.last_wx = None
 
