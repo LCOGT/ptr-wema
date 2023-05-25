@@ -476,7 +476,78 @@ class WxEncAgent:
 
         #breakpoint()
 
-        
+        # Safety checks here
+
+        if not g_dev['debug'] and self.open_and_enabled_to_observe:
+            if enc_status is not None:
+                if enc_status['shutter_status'] == 'Software Fault':
+                    plog("Software Fault Detected. Will alert the authorities!")
+                    #plog("Parking Scope in the meantime")
+                    # if self.config['obsid_roof_control'] and g_dev['enc'].mode == 'Automatic':
+                    self.open_and_enabled_to_observe = False
+                    self.park_enclosure_and_close()
+                    #self.cancel_all_activity()  # NB THis kills bias-dark
+                   # if not g_dev['mnt'].mount.AtPark:
+                    #    if g_dev['mnt'].home_before_park:
+                    #        g_dev['mnt'].home_command()
+                    #    g_dev['mnt'].park_command()
+                    # will send a Close call out into the blue just in case it catches
+                    # g_dev['enc'].enclosure.CloseShutter()
+                    # g_dev['seq'].enclosure_next_open_time = time.time(
+                    # ) + self.config['roof_open_safety_base_time'] * g_dev['seq'].opens_this_evening
+
+                if enc_status['shutter_status'] == 'Closing':
+                    # if self.config['obsid_roof_control'] and g_dev['enc'].mode == 'Automatic':
+                    plog("Detected Roof Closing.")
+                    self.open_and_enabled_to_observe = False
+                    self.park_enclosure_and_close()
+
+                    self.enclosure_next_open_time = time.time(
+                     ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
+
+                if enc_status['shutter_status'] == 'Error':
+                    if  enc_status['enclosure_mode'] == 'Automatic':
+                        plog("Detected an Error in the Roof Status. Packing up for safety.")
+                        self.open_and_enabled_to_observe = False
+                        self.park_enclosure_and_close()
+                        self.enclosure_next_open_time = time.time(
+                        ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
+
+                        # plog("This is usually because the weather system forced the roof to shut.")
+                        # plog("By closing it again, it resets the switch to closed.")
+                        #self.cancel_all_activity()  # NB Kills bias dark
+                        #self.open_and_enabled_to_observe = False
+                        # g_dev['enc'].enclosure.CloseShutter()
+                        # g_dev['seq'].enclosure_next_open_time = time.time(
+                        # ) + self.config['roof_open_safety_base_time'] * g_dev['seq'].opens_this_evening
+                        # while g_dev['enc'].enclosure.ShutterStatus == 3:
+                        # plog ("closing")
+                        #plog("Also Parking the Scope")
+                        #if not g_dev['mnt'].mount.AtPark:
+                        #    if g_dev['mnt'].home_before_park:
+                        #        g_dev['mnt'].home_command()
+                        #    g_dev['mnt'].park_command()
+
+                # roof_should_be_shut = False
+            else:
+                plog("Enclosure roof status probably not reporting correctly. WEMA down?")
+
+        roof_should_be_shut = False
+
+        if not (g_dev['events']['Cool Down, Open'] < ephem_now < g_dev['events']['Close and Park']):
+            roof_should_be_shut = True
+            self.open_and_enabled_to_observe = False
+
+        if enc_status['shutter_status'] == 'Open':
+            if roof_should_be_shut == True:
+                plog("Safety check notices that the roof was open outside of the normal observing period")
+                self.park_enclosure_and_close()
+
+        if (self.enclosure_next_open_time - time.time()) > 0:
+            plog("opens this eve: " + str(self.opens_this_evening))
+
+            plog("minutes until next open attempt ALLOWED: " +
+                 str((self.enclosure_next_open_time - time.time()) / 60))
 
         if self.weather_report_wait_until_open and not self.cool_down_latch:
             if ephem_now > self.weather_report_wait_until_open_time:
