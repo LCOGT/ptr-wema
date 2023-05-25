@@ -642,7 +642,7 @@ class WxEncAgent:
         if (g_dev['events']['Close and Park'] <= ephem_now < g_dev['events']['Nightly Reset']) \
                 and g_dev['enc'].mode == 'Automatic':
 
-            if not g_dev['enc'].status['shutter_status'] in ['Closed', 'closed']:
+            if not enc_status['shutter_status'] in ['Closed', 'closed']:
                 plog("Found shutter open after Close and Park, shutting up the shutter")
                 self.park_enclosure_and_close()
         
