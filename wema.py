@@ -470,7 +470,7 @@ class WxEncAgent:
             plog("This WEMA does not report observing conditions")
         else:
             plog("Observing Conditions      : " +str(ocn_status))
-        if enc_status['mode'] == 'Manual':
+        if enc_status['enclosure_mode'] == 'Manual':
             plog ("Weather Report overriden due to being in Manual or debug mode.")
         else:
             plog("Weather Report Good to Observe: " + str(self.weather_report_is_acceptable_to_observe))
@@ -595,7 +595,7 @@ class WxEncAgent:
         if self.weather_report_close_during_evening == True:
             if ephem_now > self.weather_report_close_during_evening_time and ephem_now < g_dev['events'][
                 'Close and Park']:  
-                if enc_status['mode'] == 'Automatic':
+                if enc_status['enclosure_mode'] == 'Automatic':
                     self.nightly_reset_complete = False
                     self.weather_report_is_acceptable_to_observe = False
                     plog("End of Observing Period due to weather. Closing up observatory early.")
@@ -627,7 +627,7 @@ class WxEncAgent:
 
 
         if ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends']) and \
-            enc_status['mode'] == 'Automatic') and not self.cool_down_latch and not g_dev['ocn'].wx_hold and not \
+            enc_status['enclosure_mode'] == 'Automatic') and not self.cool_down_latch and not g_dev['ocn'].wx_hold and not \
             enc_status['shutter_status'] in ['Software Fault', 'Closing', 'Error']:
 
             self.cool_down_latch = True
@@ -643,7 +643,7 @@ class WxEncAgent:
 
         # If in post-close and park era of the night, check those two things have happened!
         if (g_dev['events']['Close and Park'] <= ephem_now < g_dev['events']['Nightly Reset']) \
-                and enc_status['mode'] == 'Automatic':
+                and enc_status['enclosure_mode'] == 'Automatic':
 
             if not enc_status['shutter_status'] in ['Closed', 'closed']:
                 plog("Found shutter open after Close and Park, shutting up the shutter")
@@ -757,7 +757,7 @@ class WxEncAgent:
         # Only send an enclosure open command if the weather
         if self.weather_report_is_acceptable_to_observe:
 
-            if not g_dev['debug'] and not enc_status['mode'] in ['Manual'] and (
+            if not g_dev['debug'] and not enc_status['enclosure_mode'] in ['Manual'] and (
                     ephem_now < g_dev['events']['Cool Down, Open']) or \
                     (g_dev['events']['Close and Park'] < ephem_now < g_dev['events']['Nightly Reset']):
                 plog("NOT OPENING THE OBSERVATORY -- IT IS THE DAYTIME!!")
@@ -771,7 +771,7 @@ class WxEncAgent:
 
                     if ocn_status == None:
                         if not enc_status['shutter_status'] in ['Open', 'open','Opening','opening'] and \
-                                enc_status['mode'] == 'Automatic' \
+                                enc_status['enclosure_mode'] == 'Automatic' \
                                 and self.weather_report_is_acceptable_to_observe:
                             self.opens_this_evening = self.opens_this_evening + 1
 
@@ -780,7 +780,7 @@ class WxEncAgent:
 
 
                     elif  not enc_status['shutter_status'] in ['Open', 'open','Opening','opening'] and \
-                            enc_status['mode'] == 'Automatic' \
+                            enc_status['enclosure_mode'] == 'Automatic' \
                             and ocn_status['hold_duration'] <= 0.1  and self.weather_report_is_acceptable_to_observe:  # NB
 
                         self.opens_this_evening = self.opens_this_evening + 1
