@@ -142,12 +142,12 @@ class ObservingConditions:
                     self.unihedron = win32com.client.Dispatch(driver)
                     self.unihedron.Connected = True
                     plog(
-                        "observing_conditions: Unihedron connected = True, on COM"
+                        "observing_conditions: Unihedron is connected, on COM"
                         + str(port)
                     )
                 except:
                     plog(
-                        "Unihedron on Port 10 is disconnected. Observing will proceed."
+                        "Unihedron on Port COM" + str(port) + " is disconnected. Observing will proceed."
                     )
                     self.unihedron_connected = False
                     # NB NB if no unihedron is installed the status code needs to not report it.

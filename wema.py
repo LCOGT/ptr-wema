@@ -359,6 +359,7 @@ class WxEncAgent:
         device_status = None
 
         try:
+            breakpoint()
             ocn_status = {"observing_conditions": status.pop("observing_conditions")}
             enc_status = {"enclosure": status.pop("enclosure")}
             device_status = status
@@ -441,21 +442,21 @@ class WxEncAgent:
             print("\n\n > Status Sent:  \n", status)
         #else:
 
-        try:
-            obs_time = float(self.redis_server.get("obs_time"))
-            delta = time.time() - obs_time
-        except:
-            delta = 999.99  # NB Temporarily flags something really wrong.
+        # try:    #This needs some sort of rework, redis generally not deployed
+        #     obs_time = float(self.redis_server.get("obs_time"))
+        #     delta = time.time() - obs_time
+        # except:
+        #     delta = 999.99  # NB Temporarily flags something really wrong.
 
 
-        if delta > 1800:
-            print(">The observer's time is stale > 300 seconds:  ", round(delta, 2))
-        # Here is where we terminate the obs.exe and restart it.
-        if delta > 3600:
-            # terminate_restart_observer(g_dev['obs'}['site_path'], no_restart=True)
-            pass
-        else:
-            print(">")
+        # if delta > 1800:
+        #     print(">The observer's time is stale > 300 seconds:  ", round(delta, 2))
+        # # Here is where we terminate the obs.exe and restart it.
+        # if delta > 3600:
+        #     # terminate_restart_observer(g_dev['obs'}['site_path'], no_restart=True)
+        #     pass
+        # else:
+        #     print(">")
 
     def update(self):
         self.update_status()
@@ -669,7 +670,7 @@ class WxEncAgent:
                         time.sleep(self.config['period_of_time_to_wait_for_roof_to_open'])
 
                     self.enclosure_next_open_time = time.time() + (self.config['roof_open_safety_base_time'] * 60) * \
-                                                    g_dev['seq'].opens_this_evening
+                                                   self.opens_this_evening
 
                     if g_dev['enc'].enclosure.ShutterStatus == 0:
                         g_dev['obs'].open_and_enabled_to_observe = True

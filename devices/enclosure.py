@@ -763,7 +763,7 @@ class Enclosure:
             shares = True
             generic = False
         if action == "open":
-
+            breakpoint()
             if _redis:
                 g_dev['redis'].set('enc_cmd', 'open', ex=300)
             if shares:
