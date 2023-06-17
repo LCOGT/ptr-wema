@@ -99,9 +99,9 @@ class ObservingConditions:
             self.site_has_proxy = True  # NB Site is proxy needs a new name.
         else:
             self.site_has_proxy = False
-        if self.config["site_is_specific"]:
+        if self.config["site_is_custom"]:
 
-            self.site_is_specific = True
+            self.site_is_custom = True
 
             #  Note OCN has no associated commands.
             #  Here we monkey patch
@@ -142,12 +142,12 @@ class ObservingConditions:
                     self.unihedron = win32com.client.Dispatch(driver)
                     self.unihedron.Connected = True
                     plog(
-                        "observing_conditions: Unihedron connected = True, on COM"
+                        "observing_conditions: Unihedron is connected, on COM"
                         + str(port)
                     )
                 except:
                     plog(
-                        "Unihedron on Port 10 is disconnected. Observing will proceed."
+                        "Unihedron on Port COM" + str(port) + " is disconnected. Observing will proceed."
                     )
                     self.unihedron_connected = False
                     # NB NB if no unihedron is installed the status code needs to not report it.
@@ -270,6 +270,8 @@ class ObservingConditions:
                     )  #  Provenance of 20.01 is dubious 20200504 WER
                 except:
                     uni_measure = 0
+            else:
+                uni_measure = 0
             if uni_measure == 0:
                 uni_measure = round(
                     (mag - 20.01), 2

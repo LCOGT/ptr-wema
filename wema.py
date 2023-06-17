@@ -101,7 +101,7 @@ class WxEncAgent:
         # TODO: Work through site vs mnt/tel and sub-site distinction.
 
         self.site = config["site"]
-        self.debug_flag = self.config['debug_mode']
+        self.debug_flag = self.config['debug_site_mode']
         self.admin_only_flag = self.config['admin_owner_commands_only']
         if self.debug_flag:
             self.debug_lapse_time = time.time() + self.config['debug_duration_sec']
@@ -122,7 +122,7 @@ class WxEncAgent:
             else:
                 # This host is a client
                 self.is_wema = False  # This is a client.
-                self.site_path = config["client_write_share_path"]
+                self.site_path = config["wema_write_share_path"]
                 g_dev["site_path"] = self.site_path
                 g_dev["wema_write_share_path"] = self.site_path  # Just to be safe.
                 self.wema_path = g_dev["wema_write_share_path"]
@@ -132,10 +132,10 @@ class WxEncAgent:
             g_dev["site_path"] = self.site_path
             g_dev["wema_write_share_path"] = self.site_path  # Just to be safe.
             self.wema_path = g_dev["wema_write_share_path"]
-        if self.config["site_is_specific"]:
-            self.site_is_specific = True
+        if self.config["site_is_custom"]:
+            self.site_is_custom = True
         else:
-            self.site_is_specific = False
+            self.site_is_custom = False
 
         self.last_request = None
         self.stopped = False
@@ -359,11 +359,14 @@ class WxEncAgent:
         device_status = None
 
         try:
+
             ocn_status = {"observing_conditions": status.pop("observing_conditions")}
             enc_status = {"enclosure": status.pop("enclosure")}
             device_status = status
         except:
             pass
+        
+        ## NB We should consolidate this into one *site* status tranaction. WER 20230617
 
         obsy = self.name
         if ocn_status is not None:
@@ -436,26 +439,26 @@ class WxEncAgent:
                         except:
                             plog("Three Tries to send Enc status for MRC2 failed.")
 
-        loud = True
+        loud = False
         if loud:
             print("\n\n > Status Sent:  \n", status)
         #else:
 
-        try:
-            obs_time = float(self.redis_server.get("obs_time"))
-            delta = time.time() - obs_time
-        except:
-            delta = 999.99  # NB Temporarily flags something really wrong.
+        # try:    #This needs some sort of rework, redis generally not deployed
+        #     obs_time = float(self.redis_server.get("obs_time"))
+        #     delta = time.time() - obs_time
+        # except:
+        #     delta = 999.99  # NB Temporarily flags something really wrong.
 
 
-        if delta > 1800:
-            print(">The observer's time is stale > 300 seconds:  ", round(delta, 2))
-        # Here is where we terminate the obs.exe and restart it.
-        if delta > 3600:
-            # terminate_restart_observer(g_dev['obs'}['site_path'], no_restart=True)
-            pass
-        else:
-            print(">")
+        # if delta > 1800:
+        #     print(">The observer's time is stale > 300 seconds:  ", round(delta, 2))
+        # # Here is where we terminate the obs.exe and restart it.
+        # if delta > 3600:
+        #     # terminate_restart_observer(g_dev['obs'}['site_path'], no_restart=True)
+        #     pass
+        # else:
+        #     print(">")
 
     def update(self):
         self.update_status()
@@ -669,7 +672,7 @@ class WxEncAgent:
                         time.sleep(self.config['period_of_time_to_wait_for_roof_to_open'])
 
                     self.enclosure_next_open_time = time.time() + (self.config['roof_open_safety_base_time'] * 60) * \
-                                                    g_dev['seq'].opens_this_evening
+                                                   self.opens_this_evening
 
                     if g_dev['enc'].enclosure.ShutterStatus == 0:
                         g_dev['obs'].open_and_enabled_to_observe = True
