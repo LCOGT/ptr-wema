@@ -35,7 +35,7 @@ wemaname_file = glob.glob(hwd + "wemaname*")
 
 try:
     #breakpoint()
-    site_name = wemaname_file[0].split("wemaname")[1]
+    site_name = wemaname_file[0].split("wemaname")[1].split('.')[0]
     # print(
     #     "Adding new config path: "
     #     + str(os.path.join(pathlib.Path().resolve(), "configs", site_name))
