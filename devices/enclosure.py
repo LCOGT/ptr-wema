@@ -209,7 +209,7 @@ class Enclosure:
     def __init__(self, driver: str, name: str, config: dict, astro_events):
         self.name = name
         self.astro_events = astro_events
-        self.siteid = config['site_id']
+        self.siteid = config['wema_name']
         self.config = config
         g_dev['enc'] = self
         self.slew_latch = False
@@ -234,17 +234,10 @@ class Enclosure:
         self.hostname = socket.gethostname()
         #if self.hostname in self.config['wema_hostname']:
         self.is_wema = True
-        #else:
-        #    self.is_wema = False
-        if self.config['wema_is_active']:
 
-            self.site_has_proxy = True  # NB Site is proxy needs a new name.
-        else:
-            self.site_has_proxy = False
-        if self.config['dome_on_wema']:
-            self.dome_on_wema = True
-        else:
-            self.dome_on_wema = False
+        
+        self.dome_on_wema = True
+
 
         #breakpoint()
         if self.siteid in ['simulate',  'dht']:  # DEH: added just for testing purposes with ASCOM simulators.

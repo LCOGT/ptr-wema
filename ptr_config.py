@@ -18,7 +18,7 @@ import glob
 
 path_removals = []
 for q in range(len(sys.path)):
-    if "ptr-observatory" in sys.path[q] and "configs" in sys.path[q]:
+    if "ptr-wema" in sys.path[q] and "configs" in sys.path[q]:
         print("Removing old config path: " + str(sys.path[q]))
         path_removals.append(sys.path[q])
 
@@ -66,7 +66,7 @@ if pathdone == 0:
 
 
 try:
-    from site_config import *
+    from wema_config import *
 
 except ImportError:
     print(

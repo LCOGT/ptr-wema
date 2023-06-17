@@ -54,7 +54,7 @@ class ObservingConditions:
 
         self.name = name
         self.astro_events = astro_events
-        self.siteid = config["site_id"]
+        self.siteid = config["wema_name"]
         g_dev["ocn"] = self
         self.config = config
         g_dev["ocn"] = self
@@ -87,20 +87,24 @@ class ObservingConditions:
             True  # NB NB NB His needs improving, driving from config
         )
         self.hostname = socket.gethostname()
-        self.obsid_is_specific = False
+        self.obsid_is_custom = False
         # =============================================================================
         #         Note site_in_automatic found in the Enclosure object.
         # =============================================================================
         if self.hostname in self.config["wema_hostname"]:
             self.is_wema = True
+            self.is_process = False
         else:
             self.is_wema = False
+
+            self.is_process = True
+
+        #self.site_has_proxy = False # initializing variable
         if self.config["wema_is_active"]:
             self.site_has_proxy = True  # NB Site is proxy needs a new name.
         else:
             self.site_has_proxy = False
         if self.config["site_is_custom"]:
-
             self.site_is_custom = True
 
             #  Note OCN has no associated commands.
@@ -110,7 +114,7 @@ class ObservingConditions:
             # Get current ocn status just as a test.
             self.status = self.get_status(g_dev)
         
-        elif self.is_wema or self.config["site_is_specific"]:
+        elif self.is_wema or self.config["site_is_custom"]:
             #  This is meant to be a generic Observing_condition code
             #  instance that can be accessed by a simple site or by the WEMA,
             #  assuming the transducers are connected to the WEMA.
@@ -151,9 +155,9 @@ class ObservingConditions:
                     )
                     self.unihedron_connected = False
                     # NB NB if no unihedron is installed the status code needs to not report it.
-        elif not self.config["site_is_specific"]:
+        elif not self.config["site_is_custom"]:
             self.obsid_is_generic = False
-            self.obsid_is_specific = True
+            self.obsid_is_custom = True
         
         self.last_wx = None
 
@@ -402,35 +406,26 @@ class ObservingConditions:
             g_dev["wx_ok"] = self.wx_is_ok
 
 
-            if self.config["site_IPC_mechanism"] == "shares":
-                weather_txt = self.config["wema_write_share_path"] + "weather.txt"
-                try:
-                    with open(weather_txt, "w", encoding="utf-8") as f:
-                        f.write(json.dumps(status))
-                except IOError:
-                    tries = 1
-                    while tries < 5:
-                        # Wait 3 seconds and try writing to file again, up to 3 more times.
-                        plog(
-                            f"Attempt {tries} to write weather status failed. Trying again."
-                        )
-                        time.sleep(3)
-                        with open(weather_txt, "w", encoding="utf-8") as f:
-                            f.write(json.dumps(status))
-                            if not weather_txt.closed:
-                                break
-                        tries += 1
+            # if self.config["site_IPC_mechanism"] == "shares":
+            #     weather_txt = self.config["wema_write_share_path"] + "weather.txt"
+            #     try:
+            #         with open(weather_txt, "w", encoding="utf-8") as f:
+            #             f.write(json.dumps(status))
+            #     except IOError:
+            #         tries = 1
+            #         while tries < 5:
+            #             # Wait 3 seconds and try writing to file again, up to 3 more times.
+            #             plog(
+            #                 f"Attempt {tries} to write weather status failed. Trying again."
+            #             )
+            #             time.sleep(3)
+            #             with open(weather_txt, "w", encoding="utf-8") as f:
+            #                 f.write(json.dumps(status))
+            #                 if not weather_txt.closed:
+            #                     break
+            #             tries += 1
 
-            elif self.config["site_IPC_mechanism"] == "redis":
-                try:   #for MRC look to see if Unihedron sky mag/sq-asec value exists in redis
-                    uni_string = g_dev['redis'].get('unihedron1')
-                    if uni_string is not None:
-                        status['meas_sky_mpsas'] = eval(g_dev['redis'].get('unihedron1'))[0]
-                except:
-                    pass
-                g_dev["redis"].set(
-                    "wx_state", status
-                )  # This needs to become generalized IP
+
 
             # Only write when around dark, put in CSV format, used to calibrate Unihedron.
             sunZ88Op, sunZ88Cl, sunrise, ephemNow = g_dev[
