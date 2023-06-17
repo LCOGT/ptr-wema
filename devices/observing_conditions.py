@@ -54,7 +54,7 @@ class ObservingConditions:
 
         self.name = name
         self.astro_events = astro_events
-        self.siteid = config["site_id"]
+        self.siteid = config["wema_name"]
         g_dev["ocn"] = self
         self.config = config
         g_dev["ocn"] = self

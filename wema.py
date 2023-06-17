@@ -31,7 +31,7 @@ import redis
 import datetime
 import traceback
 
-import wema_config
+import ptr_config
 from api_calls import API_calls
 import wema_events
 from devices.observing_conditions import ObservingConditions
@@ -292,7 +292,7 @@ class WxEncAgent:
     def update_config(self):
         """Sends the config to AWS."""
 
-        uri = f"{self.config['site']}/config/"
+        uri = f"{self.config['wema_name']}/config/"
         self.config["events"] = g_dev["events"]
 
         response = self.api.authenticated_request("PUT", uri, self.config)
@@ -345,7 +345,7 @@ class WxEncAgent:
         enc_status = None
         ocn_status = None
         device_status = None
-        obsy = self.config['site']   #  This is meant to be for the site, not an OBSP.
+        obsy = self.config['wema_name']   #  This is meant to be for the site, not an OBSP.
 
         try:
             ocn_status = {"observing_conditions": status.pop("observing_conditions")}
@@ -685,7 +685,7 @@ class WxEncAgent:
         '''
         Send the config to aws.
         '''
-        uri = f"{self.config['site']}/config/"
+        uri = f"{self.config['wema_name']}/config/"
         self.config['events'] = g_dev['events']
         response = self.api.authenticated_request("PUT", uri, self.config)
         if response:
@@ -1247,5 +1247,5 @@ class WxEncAgent:
         
         
 if __name__ == "__main__":
-    wema = WxEncAgent(wema_config.site_name, wema_config.site_config)
+    wema = WxEncAgent(ptr_config.wema_name, ptr_config.wema_config)
     wema.run()

@@ -209,7 +209,7 @@ class Enclosure:
     def __init__(self, driver: str, name: str, config: dict, astro_events):
         self.name = name
         self.astro_events = astro_events
-        self.siteid = config['site_id']
+        self.siteid = config['wema_name']
         self.config = config
         g_dev['enc'] = self
         self.slew_latch = False

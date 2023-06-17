@@ -15,18 +15,20 @@ import json
 
 # NB NB NB json is not bi-directional with tuples (), instead, use lists [], nested if tuples are needed.
 degree_symbol = "°"
-site_name = 'eco'
-obs_id = None  # NB These must be unique across all of PTR. Pre-pend with airport code if needed: 'sba_wmdo'
+wema_name = 'eco'
+instance_type = 'wema'
 
-site_config = {
+wema_config = {
 
-    'site': 'eco',
-    'site_id': 'eco',
+    #'wema': 'eco',
+    'wema_name': 'eco',
+    'instance_type': 'wema',
+
     #'obs_id': None,  # a WEMA is not a telescope aka Observatory
-    'observatory_location': site_name.lower(),  # in LCO case, an airport code such as OGG
+    #'observatory_location': site_name.lower(),  # in LCO case, an airport code such as OGG
 
 
-    'debug_site_mode': False,
+    #'debug_site_mode': False,
 
     'debug_mode': False,
     'admin_owner_commands_only': False,
