@@ -108,12 +108,12 @@ class WxEncAgent:
 
 
         #self.hostname = self.hostname = socket.gethostname()
-        if self.hostname in self.config["wema_hostname"]:
-            self.is_wema = True
-            self.is_process = False
+        #if self.hostname in self.config["wema_hostname"]:
+        #    self.is_wema = True
+        #    self.is_process = False
 
-        self.site = config["site"]
-        self.debug_flag = self.config['debug_site_mode']
+        #self.site = config["site"]
+        self.debug_flag = self.config['debug_mode']
         self.admin_only_flag = self.config['admin_owner_commands_only']
         if self.debug_flag:
             self.debug_lapse_time = time.time() + self.config['debug_duration_sec']

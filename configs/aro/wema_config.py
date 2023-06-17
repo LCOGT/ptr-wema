@@ -27,14 +27,16 @@ g_dev = None    #???
 
 
 degree_symbol = "°"
-site_name = 'aro'
-site_config = {
+wema_name = 'aro'
+instance_type = 'wema'
 
-    'site': 'aro', #TIM this may no longer be needed.
-    'site_id': 'aro',
-    'obs_id': None,
+wema_config = {
+
+    'wema_name': 'aro',
+    'instance_type': 'wema',
+
     
-    'debug_site_mode': False,
+    'debug_mode': False,
     #'debug_obsy_mode': False,   #not needed for a WEMA instance 
     'admin_owner_commands_only': False,
     'debug_duration_sec': 80000,
