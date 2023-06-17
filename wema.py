@@ -661,7 +661,8 @@ class WxEncAgent:
             # As well as nightly focus routine.
             self.night_focus_ready = True
 
-
+        if ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends'])):
+            self.nightly_reset_complete = False
 
         if ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends']) and \
             enc_status['enclosure_mode'] == 'Automatic') and not self.cool_down_latch and not g_dev['ocn'].wx_hold and not \
