@@ -101,7 +101,7 @@ class WxEncAgent:
         # TODO: Work through site vs mnt/tel and sub-site distinction.
 
         self.site = config["site"]
-        self.debug_flag = self.config['debug_mode']
+        self.debug_flag = self.config['debug_site_mode']
         self.admin_only_flag = self.config['admin_owner_commands_only']
         if self.debug_flag:
             self.debug_lapse_time = time.time() + self.config['debug_duration_sec']
@@ -122,7 +122,7 @@ class WxEncAgent:
             else:
                 # This host is a client
                 self.is_wema = False  # This is a client.
-                self.site_path = config["client_write_share_path"]
+                self.site_path = config["wema_write_share_path"]
                 g_dev["site_path"] = self.site_path
                 g_dev["wema_write_share_path"] = self.site_path  # Just to be safe.
                 self.wema_path = g_dev["wema_write_share_path"]
@@ -132,10 +132,10 @@ class WxEncAgent:
             g_dev["site_path"] = self.site_path
             g_dev["wema_write_share_path"] = self.site_path  # Just to be safe.
             self.wema_path = g_dev["wema_write_share_path"]
-        if self.config["site_is_specific"]:
-            self.site_is_specific = True
+        if self.config["site_is_custom"]:
+            self.site_is_custom = True
         else:
-            self.site_is_specific = False
+            self.site_is_custom = False
 
         self.last_request = None
         self.stopped = False
@@ -359,12 +359,14 @@ class WxEncAgent:
         device_status = None
 
         try:
-            breakpoint()
+
             ocn_status = {"observing_conditions": status.pop("observing_conditions")}
             enc_status = {"enclosure": status.pop("enclosure")}
             device_status = status
         except:
             pass
+        
+        ## NB We should consolidate this into one *site* status tranaction. WER 20230617
 
         obsy = self.name
         if ocn_status is not None:
@@ -437,7 +439,7 @@ class WxEncAgent:
                         except:
                             plog("Three Tries to send Enc status for MRC2 failed.")
 
-        loud = True
+        loud = False
         if loud:
             print("\n\n > Status Sent:  \n", status)
         #else:

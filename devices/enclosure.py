@@ -251,7 +251,7 @@ class Enclosure:
             self.observing_conditions_connected = True
             self.site_is_proxy = False
             plog("observing_conditions: Simulator drivers connected True")
-        elif self.config['site_is_specific']:
+        elif self.config['site_is_custom']:
 
             self.site_is_specific = True
             self.site_is_generic = False
