@@ -8,8 +8,6 @@ etc.
 This would be a good place to log the weather data and any enclosure history,
 once this code is stable enough to run as a service.
 
-We need to resolve the 'redis' solution for each site. 20210826
-
 Note this is derived from OBS but is WEMA so we should not need to build
 things from a config file, but rather by implication just pick the correct
 data from the config file. All config files for a cluster of mounts/telescopes
@@ -92,7 +90,7 @@ class WxEncAgent:
         self.status_interval = 30
         self.config = config
         g_dev["obs"] = self
-        g_dev['debug'] = False
+        #g_dev['debug'] = False
        
         # self.debug_flag = self.config['debug_mode']
         # self.admin_only_flag = self.config['admin_owner_commands_only']
@@ -214,13 +212,7 @@ class WxEncAgent:
         self.obs_time = immed_time
         self.wema_start_time = immed_time
         self.cool_down_latch = False
-        # This variable prevents the roof being called to open every loop...
-        self.enclosure_next_open_time = time.time()
-        # This keeps a track of how many times the roof has been open this evening
-        # Which is really a measure of how many times the observatory has
-        # attempted to observe but been shut on....
-        # If it is too many, then it shuts down for the whole evening.
-        self.opens_this_evening = 0
+
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
         self.weather_report_wait_until_open = False
         self.weather_report_wait_until_open_time = ephem_now
@@ -230,14 +222,7 @@ class WxEncAgent:
 
         self.open_and_enabled_to_observe = False
 
-        if not g_dev['debug']:
-            #self.global_wx()
 
-            self.run_nightly_weather_report()
-        else:
-            self.nightly_weather_report_complete = True
-            self.weather_report_is_acceptable_to_observe = True
-            self.weather_report_wait_until_open=False
 
         # self.global_wx()
         # breakpoint()
@@ -282,7 +267,14 @@ class WxEncAgent:
         
         
         # Run a weather report on bootup so observatory can run if need be. 
-        self.run_nightly_weather_report()
+        if not g_dev['debug']:
+            # self.global_wx()
+
+            self.run_nightly_weather_report()
+        else:
+            self.nightly_weather_report_complete = True
+            self.weather_report_is_acceptable_to_observe = True
+            self.weather_report_wait_until_open = False
         # if not g_dev['debug']:
         #     #self.global_wx()
 
@@ -409,12 +401,12 @@ class WxEncAgent:
                         try:
                             send_status(obsy, lane, ocn_status)
                         except:
-                            plog("Three Tries to send Wx status for MRC failed.")
+                            plog("Three Tries to send Wx status.")
         if enc_status is not None:
             lane = "enclosure"
             #send_status(obsy, lane, enc_status)
             try:
-                time.sleep(2)
+                #time.sleep(2)
                 send_status(obsy, lane, enc_status)
             except:
                 time.sleep(10)
@@ -425,42 +417,42 @@ class WxEncAgent:
                     try:
                         send_status(obsy, lane, enc_status)
                     except:
-                        plog("Three Tries to send Enc status for MRC2 failed.")
+                        plog("Three Tries to send Enc status failed.")
             #if self.name == "mrc":   #NB  This does not scale, Wema config should has a list of sub-sites.
             #    obsy = 'mrc2'        #  or have AWS pick up status from the wema only.
-            if ocn_status is not None:
-                lane = "weather"
-                
-                try:
-                    time.sleep(2)
-                    send_status(obsy, lane, ocn_status)
-                except:
-                    time.sleep(10)
-                    try:
-                        send_status(obsy, lane, ocn_status)
-                    except:
-                        time.sleep(10)
-                        try:
-                            send_status(obsy, lane, ocn_status)
-                        except:
-                            plog("Three Tries to send Wx status for MRC2 failed.")
+            # if ocn_status is not None:
+            #     lane = "weather"
+            #
+            #     try:
+            #         time.sleep(2)
+            #         send_status(obsy, lane, ocn_status)
+            #     except:
+            #         time.sleep(10)
+            #         try:
+            #             send_status(obsy, lane, ocn_status)
+            #         except:
+            #             time.sleep(10)
+            #             try:
+            #                 send_status(obsy, lane, ocn_status)
+            #             except:
+            #                 plog("Three Tries to send Wx status for MRC2 failed.")
                     
 
-            if enc_status is not None:
-                lane = "enclosure"
-                try:
-                    time.sleep(2)
-                    send_status(obsy, lane, enc_status)
-                except:
-                    time.sleep(10)
-                    try:
-                        send_status(obsy, lane, enc_status)
-                    except:
-                        time.sleep(10)
-                        try:
-                            send_status(obsy, lane, enc_status)
-                        except:
-                            plog("Three Tries to send Enc status for MRC2 failed.")
+            # if enc_status is not None:
+            #     lane = "enclosure"
+            #     try:
+            #         time.sleep(2)
+            #         send_status(obsy, lane, enc_status)
+            #     except:
+            #         time.sleep(10)
+            #         try:
+            #             send_status(obsy, lane, enc_status)
+            #         except:
+            #             time.sleep(10)
+            #             try:
+            #                 send_status(obsy, lane, enc_status)
+            #             except:
+            #                 plog("Three Tries to send Enc status for MRC2 failed.")
 
         loud = False
         if loud:
@@ -487,7 +479,7 @@ class WxEncAgent:
 
     def update(self):     ## NB NB NB This is essentially the sequencer for the WEMA.
         self.update_status()
-        time.sleep(15)
+        time.sleep(30)
 
         # Here it runs through the various checks and decides whether to open or close the roof or not.
         # Check for delayed opening of the observatory and act accordingly.
@@ -580,7 +572,7 @@ class WxEncAgent:
             self.open_and_enabled_to_observe = False
 
         if enc_status['shutter_status'] == 'Open':
-            if roof_should_be_shut == True:
+            if roof_should_be_shut == True and enc_status['enclosure_mode'] == 'Automatic':
                 plog("Safety check notices that the roof was open outside of the normal observing period")
                 self.park_enclosure_and_close()
 
@@ -590,7 +582,7 @@ class WxEncAgent:
             plog("minutes until next open attempt ALLOWED: " +
                  str((self.enclosure_next_open_time - time.time()) / 60))
 
-        if self.weather_report_wait_until_open and not self.cool_down_latch:
+        if self.weather_report_wait_until_open and not self.cool_down_latch and enc_status['enclosure_mode'] == 'Automatic':
             if ephem_now > self.weather_report_wait_until_open_time:
 
                 self.cool_down_latch = True
@@ -629,7 +621,7 @@ class WxEncAgent:
 
         # If the observatory is meant to shut during the evening
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
-        if self.weather_report_close_during_evening == True:
+        if self.weather_report_close_during_evening == True and enc_status['enclosure_mode'] == 'Automatic':
             if ephem_now > self.weather_report_close_during_evening_time and ephem_now < g_dev['events'][
                 'Close and Park']:  
                 if enc_status['enclosure_mode'] == 'Automatic':
@@ -644,7 +636,7 @@ class WxEncAgent:
 
                     # Do nightly weather report at cool down open
         if (g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events'][
-            'Observing Ends']) and not self.nightly_weather_report_complete and not g_dev['debug']:
+            'Observing Ends']) and not self.nightly_weather_report_complete and not g_dev['debug'] and enc_status['enclosure_mode'] == 'Automatic':
             # Reopening config and resetting all the things.
             # This is necessary just in case a previous weather report was done today
             # That can sometimes change the timing.
@@ -699,8 +691,8 @@ class WxEncAgent:
         # Never hurts to make sure the telescope is parked for the night
         #g_dev['mnt'].park_command({}, {})
         #self.park_and_close(enc_status = g_dev['enc'].status)   #WEMA does not control telescopes.
-
-        self.park_enclosure_and_close()
+        if enc_status['enclosure_mode'] == 'Automatic':
+            self.park_enclosure_and_close()
 
         self.nightly_weather_report_complete=False
         # Set weather report to false because it is daytime anyways.
