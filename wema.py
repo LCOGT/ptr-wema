@@ -380,7 +380,41 @@ class WxEncAgent:
             device_status = status
         except:
             pass
-        
+
+        if ocn_status['observing_conditions']['observing_conditions1'] == None:
+            ocn_status['observing_conditions']['observing_conditions1']={'wx_ok': 'Unknown'}
+
+
+        #breakpoint()
+        if enc_status is not None and ocn_status is not None:
+            # New Tim Entries
+            if enc_status['enclosure']['enclosure1']['shutter_status'] == 'Open':
+                enc_status['enclosure']['enclosure1']['observatory_open'] = True
+                enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = False
+                enc_status['enclosure']['enclosure1']['shut_reason_daytime'] = False
+                enc_status['enclosure']['enclosure1']['shut_reason_manual_mode'] = False
+            else:
+                enc_status['enclosure']['enclosure1']['observatory_open'] = False
+                if not enc_status['enclosure']['enclosure1']['enclosure_mode'] == 'Automatic':
+                    enc_status['enclosure']['enclosure1']['shut_reason_manual_mode'] = True
+                else:
+                    enc_status['enclosure']['enclosure1']['shut_reason_manual_mode'] = False
+                if ocn_status['observing_conditions']['observing_conditions1']['wx_ok'] == 'Unknown':
+                    enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = False
+                elif ocn_status['observing_conditions']['observing_conditions1']['wx_ok'] == 'No' or not self.weather_report_is_acceptable_to_observe:
+                    enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = True
+                else:
+                    enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = False
+                    # NEED TO INCLUDE WEATHER REPORT AND FITZ NUMBER HERE
+                if g_dev['events']['Cool Down, Open'] < ephem.now() or ephem.now() < g_dev['events'][
+                    'Close and Park'] > ephem.now():
+                    enc_status['enclosure']['enclosure1']['shut_reason_daytime'] = True
+                else:
+                    enc_status['enclosure']['enclosure1']['shut_reason_daytime'] = False
+
+            ocn_status['observing_conditions']['observing_conditions1']['weather_report_good'] = self.weather_report_is_acceptable_to_observe
+            ocn_status['observing_conditions']['observing_conditions1']['fitzgerald_number'] = self.night_fitzgerald_number
+
         ## NB We should consolidate this into one *site* status tranaction. WER 20230617
 
 
@@ -931,7 +965,9 @@ class WxEncAgent:
                 plog (hourly_fitzgerald_number)
                 plog ("Night's total fitzgerald number")
                 plog (sum(hourly_fitzgerald_number))
-                
+
+                self.night_fitzgerald_number = sum(hourly_fitzgerald_number)
+
                 if sum(hourly_fitzgerald_number) < 10:
                     plog ("This is a good observing night!")
                     self.weather_report_is_acceptable_to_observe=True
