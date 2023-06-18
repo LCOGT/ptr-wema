@@ -69,7 +69,7 @@ def send_status(obsy, column, status_to_send):
     payload = {"statusType": str(column), "status": status_to_send}
     data = json.dumps(payload)
     try:
-        response = requests.post(uri_status, data=data)
+        response = requests.post(uri_status, data=data, timeout=20)
 
     #if response.ok:
        # pass
@@ -765,7 +765,7 @@ class WxEncAgent:
             }
         )
         try:
-            response = requests.post(url_log, body)
+            response = requests.post(url_log, body, timeout=20)
         except Exception:
             print("Log did not send, usually not fatal.")
 
