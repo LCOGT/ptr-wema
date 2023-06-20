@@ -30,6 +30,7 @@ site_name = 'mrc'
 site_config = {
     'site': 'mrc',
     'site_id': 'mrc',
+    #'obsp_list': ['mrc', 'mrc1', 'mrc2'],   #For now this must be populated with at least the wema site name
 
     'debug_flag': False,   #Need to resolve
     'debug_mode': False,
@@ -94,8 +95,8 @@ site_config = {
     #'auto_eve_bias_dark': True,
     #'auto_midnight_moonless_bias_dark': False,
     #'auto_eve_sky_flat': True,
-    'eve_sky_flat_sunset_offset': -60.,  # 40 before Minutes  neg means before, + after.
-    'eve_cool_down_open': -65.0,
+    'eve_sky_flat_sunset_offset': -40.,  # 40 before Minutes  neg means before, + after.
+    'eve_cool_down_open': -45.0,
     #'auto_morn_sky_flat': True,
     #'auto_morn_bias_dark': True,
 

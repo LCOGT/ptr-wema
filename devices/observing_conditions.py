@@ -83,9 +83,7 @@ class ObservingConditions:
         self.wmd_fail_counter = 0
         self.temperature = self.config["reference_ambient"]  # Index needs
         self.pressure = self.config["reference_pressure"]  # to be months.
-        self.unihedron_connected = (
-            True  # NB NB NB His needs improving, driving from config
-        )
+        self.unihedron_connected = True  # NB NB NB His needs improving, drive from config
         self.hostname = socket.gethostname()
         self.obsid_is_custom = False
         # =============================================================================
@@ -97,13 +95,10 @@ class ObservingConditions:
         else:
             self.is_wema = False
             self.is_process = True
-
-        self.site_has_proxy = False # initializing variable
-
+        ## self.site_has_proxy = False # The SRO site has a proxy Wx System  OBSOLETE
+        self.site_is_custom = False
         if self.config["site_is_custom"]:
-
             self.site_is_custom = True
-
             #  Note OCN has no associated commands.
             #  Here we monkey patch
             from site_config import get_ocn_status
@@ -175,7 +170,7 @@ class ObservingConditions:
         status=None
         # This is purely generic code for a generic site.
         # It may be overwritten with a monkey patch found in the appropriate config.py.
-        if not self.is_wema and self.site_has_proxy:  #  EG., this was written first for SRO. Thier                                         #  system is a proxoy for having a WEMA
+        if not self.is_wema and self.site_is_custom:  #  EG., this was written first for SRO.                                        #  system is a proxoy for having a WEMA
             if self.config["site_IPC_mechanism"] == "shares":
                 try:
                     weather = open(g_dev["wema_share_path"] + "weather.txt", "r")
@@ -211,52 +206,51 @@ class ObservingConditions:
                             plog("Using prior OCN status after 4 failures.")
                             g_dev["ocn"].status = self.prior_status
                             return self.prior_status
-            elif self.config["site_IPC_mechanism"] == "redis":
-                try:
-                    status = eval(g_dev["redis"].get("wx_state"))
-                except:
-                    status = g_dev["redis"].get("wx_state")
-                self.status = status
-                self.prior_status = status
-                g_dev["ocn"].status = status
+            # elif self.config["site_IPC_mechanism"] == "redis":
+            #     try:
+            #         status = eval(g_dev["redis"].get("wx_state"))
+            #     except:
+            #         status = g_dev["redis"].get("wx_state")
+            #     self.status = status
+            #     self.prior_status = status
+            #     g_dev["ocn"].status = status
                 
-                try:
+            #     try:
 
-                    if status['wx_ok'] in ['no', 'No', False]:
-                        self.wx_is_ok = False
-                    if status['wx_ok'] in ['yes', 'Yes', True]:
-                        self.wx_is_ok = True
-                    if status['open_ok'] in ['no', 'No', False]:
-                        self.ok_to_open = False
-                    if status['open_ok'] in ['yes', 'Yes', True]:
-                        self.ok_to_open = True
-                    if status['wx_hold'] in ['no', 'No', False]:
-                        self.wx_hold = False
-                    if status['wx_hold'] in ['yes', 'Yes', True]:
-                        self.wx_hold = True
-                except:
-                    plog ("There was a problem parsing the redis status.")
-                    plog ("MTF - if this is a rare problem, no problem.. if it seems frequent better catching must be done.")
-                try:
-                    self.current_ambient = self.status["temperature_C"]
-                except:
-                    pass
-                return status
-            else:
-                try:
-                    self.current_ambient = self.status["temperature_C"]
-                except:
-                    pass
-                self.status = status
-            try:
-                self.current_ambient = self.status["temperature_C"]
-            except:
-                pass
-            return status
+            #         if status['wx_ok'] in ['no', 'No', False]:
+            #             self.wx_is_ok = False
+            #         if status['wx_ok'] in ['yes', 'Yes', True]:
+            #             self.wx_is_ok = True
+            #         if status['open_ok'] in ['no', 'No', False]:
+            #             self.ok_to_open = False
+            #         if status['open_ok'] in ['yes', 'Yes', True]:
+            #             self.ok_to_open = True
+            #         if status['wx_hold'] in ['no', 'No', False]:
+            #             self.wx_hold = False
+            #         if status['wx_hold'] in ['yes', 'Yes', True]:
+            #             self.wx_hold = True
+            #     except:
+            #         plog ("There was a problem parsing the redis status.")
+            #         plog ("MTF - if this is a rare problem, no problem.. if it seems frequent better catching must be done.")
+            #     try:
+            #         self.current_ambient = self.status["temperature_C"]
+            #     except:
+            #         pass
+            #     return status
+            # else:
+            #     try:
+            #         self.current_ambient = self.status["temperature_C"]
+            #     except:
+            #         pass
+            #     self.status = status
+            # try:
+            #     self.current_ambient = self.status["temperature_C"]
+            # except:
+            #     pass
+            # return status
 
-        if (
-            self.obsid_is_generic or self.is_wema
-        ):  # These operations are common to a generic single computer or wema site.
+        elif self.obsid_is_generic or self.is_wema : # These operations are common to a generic single computer or wema site.
+            ## Here we get the status from local devices
             status = {}
             illum, mag = self.astro_events.illuminationNow()
             # illum = float(redis_monitor["illum lux"])
@@ -640,7 +634,7 @@ class ObservingConditions:
             pass
             # self.move_relative_command(req, opt)   ???
         else:
-            plog(f"Command <{action}> not recognized.")
+            plog(f"Command <{action}> not recognized in Ocn")
 
     # ###################################
     #   Observing Conditions Commands  #

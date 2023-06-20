@@ -68,7 +68,8 @@ def send_status(obsy, column, status_to_send):
     
     uri_status = f"https://status.photonranch.org/status/{obsy}/status/"
     # NB None of the strings can be empty. Otherwise this put faults.
-    payload = {"statusType": str(column), "status": status_to_send}
+    payload = {"statusType": str(column), "status": status_to_send}\
+
     data = json.dumps(payload)
     try:
         response = requests.post(uri_status, data=data)
@@ -353,7 +354,7 @@ class WxEncAgent:
             device_status = status
         except:
             pass
-
+        #for obsy in self.config['obsp_list']:
 
         if ocn_status is not None:
             lane = "weather"
@@ -443,7 +444,7 @@ class WxEncAgent:
             print(">The observer's time is stale > 300 seconds:  ", round(delta, 2))
         # Here is where we terminate the obs.exe and restart it.
         if delta > 3600:
-            # terminate_restart_observer(g_dev['obs'}['site_path'], no_restart=True)
+            # terminate_restart_observer(g_dev['obs']['site_path'], no_restart=True)
             pass
         else:
             print(">")
@@ -458,7 +459,6 @@ class WxEncAgent:
         # If the observatory is simply delayed until opening, then wait until then, then attempt to start up the observatory
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
 
-        #breakpoint()
         ocn_status = g_dev['ocn'].get_status()
         enc_status = g_dev['enc'].get_status()
 
