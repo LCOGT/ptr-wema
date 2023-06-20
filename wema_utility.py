@@ -24,22 +24,22 @@ from astroquery.simbad import Simbad
 import ephem
 #from ptr_events import compute_day_directory
 #breakpoint()
-from wema_config import site_config
+from wema_config import wema_config
 from global_yard import g_dev
 
 from datetime import datetime, timezone, timedelta
 from dateutil import tz
 
 siteCoordinates = EarthLocation(
-    lat=site_config["latitude"] * u.deg,
-    lon=site_config["longitude"] * u.deg,
-    height=site_config["elevation"] * u.m,
+    lat=wema_config["latitude"] * u.deg,
+    lon=wema_config["longitude"] * u.deg,
+    height=wema_config["elevation"] * u.m,
 )
 
 # siteCoordinates = EarthLocation(
-#     lat=site_config["site_latitude"] * u.deg,
-#     lon=site_config["site_longitude"] * u.deg,
-#     height=site_config["site_elevation"] * u.m,
+#     lat=wema_config["site_latitude"] * u.deg,
+#     lon=wema_config["site_longitude"] * u.deg,
+#     height=wema_config["site_elevation"] * u.m,
 # )
 
 Target = namedtuple(
@@ -66,9 +66,9 @@ MOUNTRATE = 15 * APPTOSID  # 15.0410717859
 KINGRATE = 15.029
 
 try:
-    RefrOn = site_config["mount"]["mount1"]["settings"]["refraction_on"]
-    ModelOn = site_config["mount"]["mount1"]["settings"]["model_on"]
-    RatesOn = site_config["mount"]["mount1"]["settings"]["rates_on"]
+    RefrOn = wema_config["mount"]["mount1"]["settings"]["refraction_on"]
+    ModelOn = wema_config["mount"]["mount1"]["settings"]["model_on"]
+    RatesOn = wema_config["mount"]["mount1"]["settings"]["rates_on"]
 except:
     RefrOn = False
     ModelOn = False
@@ -175,7 +175,7 @@ DAY_Directory= g_dev['day']
 
 
 now_utc = datetime.now(timezone.utc) # timezone aware UTC, shouldn't depend on clock time.
-to_zone = tz.gettz(site_config['TZ_database_name'])
+to_zone = tz.gettz(wema_config['TZ_database_name'])
 now_here = now_utc.astimezone(to_zone)
 int_sunrise_hour=ephem.Observer().next_rising(ephem.Sun()).datetime().hour + 1
 if int(now_here.hour) < int_sunrise_hour:
@@ -183,20 +183,20 @@ if int(now_here.hour) < int_sunrise_hour:
 DAY_Directory = str(now_here.year) + str(now_here.month) + str(now_here.day)
 
 try:
-    if not os.path.exists(site_config['plog_path']  + 'plog/'):
-        os.makedirs(site_config['plog_path']  + 'plog/')
-    plog_path = site_config['plog_path']  + 'plog/' + DAY_Directory + '/'
+    if not os.path.exists(wema_config['plog_path']  + 'plog/'):
+        os.makedirs(wema_config['plog_path']  + 'plog/')
+    plog_path = wema_config['plog_path']  + 'plog/' + DAY_Directory + '/'
 
 except KeyError:
     try:
-        #plog_path = site_config['archive_path'] + '/' + site_config['obs_id'] + '/' + DAY_Directory + '/'
+        #plog_path = wema_config['archive_path'] + '/' + wema_config['obs_id'] + '/' + DAY_Directory + '/'
         if not g_dev['obs'].obsid_path  + 'plog/':
             os.makedirs(g_dev['obs'].obsid_path + 'plog/')
         plog_path = g_dev['obs'].obsid_path + 'plog/' + DAY_Directory + '/'
     except:
-        if not site_config['archive_path'] + '/' + site_config['obs_id'] + '/'  + 'plog/':
-            os.makedirs(site_config['archive_path'] + '/' + site_config['obs_id'] + '/' + 'plog/')
-        plog_path = site_config['archive_path'] + '/' + site_config['obs_id'] + '/' + 'plog/' + DAY_Directory + '/'
+        if not wema_config['archive_path'] + '/' + wema_config['obs_id'] + '/'  + 'plog/':
+            os.makedirs(wema_config['archive_path'] + '/' + wema_config['obs_id'] + '/' + 'plog/')
+        plog_path = wema_config['archive_path'] + '/' + wema_config['obs_id'] + '/' + 'plog/' + DAY_Directory + '/'
 
 os.makedirs(plog_path, exist_ok=True)
 
@@ -1974,13 +1974,13 @@ def appToObsRaHa(appRa, appDec, pSidTime):
         pass
     appHa, appDec = transform_raDec_to_haDec_r(appRa, appDec, pSidTime)
     appAz, appAlt = transform_haDec_to_azAlt_r(
-        appHa, appDec, site_config["latitude"] * DTOR
+        appHa, appDec, wema_config["latitude"] * DTOR
     )
     obsAlt, refAsec = apply_refraction_inEl_r(
         appAlt, g_dev["ocn"].temperature, g_dev["ocn"].pressure
     )
     obsHa, obsDec = transform_azAlt_to_haDec_r(
-        appAz, obsAlt, site_config["latitude"] * DTOR
+        appAz, obsAlt, wema_config["latitude"] * DTOR
     )
     raRefr = reduce_ha_r(appHa - obsHa) * HTOS
     decRefr = -reduce_dec_r(appDec - obsDec) * DTOS
@@ -1994,7 +1994,7 @@ def obsToAppHaRa(obsHa, obsDec, pSidTime):
     except:
         pass
     obsAz, obsAlt = transform_haDec_to_azAlt_r(
-        obsHa, obsDec, site_config["latitude"] * DTOR
+        obsHa, obsDec, wema_config["latitude"] * DTOR
     )
     refr = 0.0
     try:
@@ -2005,7 +2005,7 @@ def obsToAppHaRa(obsHa, obsDec, pSidTime):
         appAlt = 0
         pass
     appHa, appDec = transform_azAlt_to_haDec_r(
-        obsAz, appAlt, site_config["latitude"] * DTOR
+        obsAz, appAlt, wema_config["latitude"] * DTOR
     )
     appRa, appDec = transform_haDec_to_raDec_r(appHa, appDec, pSidTime)
     raRefr = reduce_ha_r(-appHa + obsHa) * HTOS
@@ -2134,7 +2134,7 @@ def transform_observed_to_mount_r(pRoll, pPitch, pPierSide, loud=False, enable=F
         # Apply IJ and ID to incoming coordinates, and if needed GEM correction.
         rRoll = math.radians(pRoll * 15 - ih / 3600.0)
         rPitch = math.radians(pPitch - idec / 3600.0)
-        siteLatitude = site_config["latitude"]
+        siteLatitude = wema_config["latitude"]
 
         if not ALTAZ:
             if pPierSide == 0:

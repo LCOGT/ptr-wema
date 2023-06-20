@@ -25,12 +25,14 @@ import json
 
 # NB NB NB json is not bi-directional with tuples (), instead, use lists [], nested if tuples are needed.
 degree_symbol = "°"
-site_name = 'mrc'
+wema_name = 'mrc'
+instance_type = 'wema'
 
-site_config = {
-    'site': 'mrc',
-    'site_id': 'mrc',
-    #'obsp_list': ['mrc', 'mrc1', 'mrc2'],   #For now this must be populated with at least the wema site name
+
+wema_config = {
+    #'site': 'mrc',
+    'wema_name': 'mrc',
+    'instance_type': 'wema',
 
     'debug_flag': False,   #Need to resolve
     'debug_mode': False,

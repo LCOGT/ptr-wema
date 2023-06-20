@@ -209,7 +209,7 @@ class Enclosure:
     def __init__(self, driver: str, name: str, config: dict, astro_events):
         self.name = name
         self.astro_events = astro_events
-        self.siteid = config['site_id']
+        self.siteid = config['wema_name']
         self.config = config
         g_dev['enc'] = self
         self.slew_latch = False
@@ -753,7 +753,7 @@ class Enclosure:
             shares = True
             generic = False
         if action == "open":
-
+            breakpoint()
             if _redis:
                 g_dev['redis'].set('enc_cmd', 'open', ex=300)
             if shares:
