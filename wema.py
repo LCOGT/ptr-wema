@@ -382,7 +382,8 @@ class WxEncAgent:
             pass
 
         if ocn_status['observing_conditions']['observing_conditions1'] == None:
-            ocn_status['observing_conditions']['observing_conditions1']={'wx_ok': 'Unknown'}
+            ocn_status['observing_conditions']['observing_conditions1']= dict(wx_ok='Unknown', wx_hold='no',
+                                                                              hold_duration=0)
 
 
         #breakpoint()
