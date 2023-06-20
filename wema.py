@@ -42,7 +42,7 @@ from pyowm.utils import timestamps
 
 # FIXME: This needs attention once we figure out the restart_obs script.
 def terminate_restart_observer(site_path, no_restart=False):
-    """Terminates observatory code if running and restarts obs."""
+    """Terminates obs-platform code if running and restarts obs."""
     if no_restart is False:
         return
 
@@ -237,7 +237,7 @@ class WxEncAgent:
         # This variable prevents the roof being called to open every loop...        
         self.enclosure_next_open_time = time.time()
         # This keeps a track of how many times the roof has been open this evening
-        # Which is really a measure of how many times the observatory has
+        # Which is really a measure of how many times the enclosure has
         # attempted to observe but been shut on....
         # If it is too many, then it shuts down for the whole evening. 
         self.opens_this_evening = 0
@@ -248,13 +248,13 @@ class WxEncAgent:
         #self.eve_sky_flat_latch = False
         #self.morn_sky_flat_latch = False
         # The weather report has to be at least passable at some time of the night in order to 
-        # allow the observatory to become active and observe. This doesn't mean that it is 
+        # allow the enclosure to become active and observe. This doesn't mean that it is
         # necessarily a GOOD night at all, just that there are patches of feasible
         # observing during the night.
         self.nightly_weather_report_complete = False
         self.weather_report_is_acceptable_to_observe = False
         # If the night is patchy, the weather report can identify a later time to open
-        # or to close the observatory early during the night.
+        # or to close the enclosure early during the night.
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
         self.weather_report_wait_until_open=False
         self.weather_report_wait_until_open_time=ephem_now
@@ -266,7 +266,7 @@ class WxEncAgent:
         self.nightly_reset_complete = False
         
         
-        # Run a weather report on bootup so observatory can run if need be. 
+        # Run a weather report on bootup so enclosure can run if need be.
         if not g_dev['debug']:
             # self.global_wx()
 
@@ -389,12 +389,12 @@ class WxEncAgent:
         if enc_status is not None and ocn_status is not None:
             # New Tim Entries
             if enc_status['enclosure']['enclosure1']['shutter_status'] == 'Open':
-                enc_status['enclosure']['enclosure1']['observatory_open'] = True
+                enc_status['enclosure']['enclosure1']['enclosure_is_open'] = True
                 enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = False
                 enc_status['enclosure']['enclosure1']['shut_reason_daytime'] = False
                 enc_status['enclosure']['enclosure1']['shut_reason_manual_mode'] = False
             else:
-                enc_status['enclosure']['enclosure1']['observatory_open'] = False
+                enc_status['enclosure']['enclosure1']['enclosure_is_open'] = False
                 if not enc_status['enclosure']['enclosure1']['enclosure_mode'] == 'Automatic':
                     enc_status['enclosure']['enclosure1']['shut_reason_manual_mode'] = True
                 else:
@@ -516,9 +516,9 @@ class WxEncAgent:
         time.sleep(30)
 
         # Here it runs through the various checks and decides whether to open or close the roof or not.
-        # Check for delayed opening of the observatory and act accordingly.
+        # Check for delayed opening of the enclosure and act accordingly.
 
-        # If the observatory is simply delayed until opening, then wait until then, then attempt to start up the observatory
+        # If the enclosure is simply delayed until opening, then wait until then, then attempt to start up the enclosure
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
 
         #breakpoint()
@@ -640,9 +640,9 @@ class WxEncAgent:
                             # self.enclosure_next_open_time = time.time() + 300 # Only try to open the roof every five minutes
                             self.nightly_reset_complete = False
                             # self.weather_report_is_acceptable_to_observe=True
-                            self.open_observatory(enc_status, ocn_status)
+                            self.open_enclosure(enc_status, ocn_status)
 
-                            # If the observatory opens, set clock and auto focus and observing to now
+                            # If the enclosure opens, set clock and auto focus and observing to now
                             if self.open_and_enabled_to_observe:
                                 #self.weather_report_is_acceptable_to_observe = False
                                 #obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
@@ -653,7 +653,7 @@ class WxEncAgent:
                                 
                 self.cool_down_latch = False
 
-        # If the observatory is meant to shut during the evening
+        # If the enclosure is meant to shut during the evening
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
         if self.weather_report_close_during_evening == True and enc_status['enclosure_mode'] == 'Automatic':
             if ephem_now > self.weather_report_close_during_evening_time and ephem_now < g_dev['events'][
@@ -661,7 +661,7 @@ class WxEncAgent:
                 if enc_status['enclosure_mode'] == 'Automatic':
                     self.nightly_reset_complete = False
                     self.weather_report_is_acceptable_to_observe = False
-                    plog("End of Observing Period due to weather. Closing up observatory early.")
+                    plog("End of Observing Period due to weather. Closing up enclosure early.")
                     
                     self.open_and_enabled_to_observe = False
                     self.park_enclosure_and_close()
@@ -701,7 +701,7 @@ class WxEncAgent:
                 if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config['maximum_roof_opens_per_evening']:
                     self.nightly_reset_complete = False
                     # self.enclosure_next_open_time = time.time() + 300 # Only try to open the roof every five minutes maximum
-                    self.open_observatory(enc_status, ocn_status)
+                    self.open_enclosure(enc_status, ocn_status)
 
             self.cool_down_latch = False
 
@@ -809,10 +809,10 @@ class WxEncAgent:
         
         return
 
-    def open_observatory(self, enc_status, ocn_status, no_sky=False):
+    def open_enclosure(self, enc_status, ocn_status, no_sky=False):
 
         #if not self.config['obsid_roof_control']:
-            # plog("A request to open observatory was made even though this platform has no roof control. Returning.")
+            # plog("A request to open enclosure was made even though this platform has no roof control. Returning.")
         #    return
 
         flat_spot, flat_alt = g_dev['evnt'].flat_spot_now()
@@ -824,8 +824,8 @@ class WxEncAgent:
             if not g_dev['debug'] and not enc_status['enclosure_mode'] in ['Manual'] and (
                     ephem_now < g_dev['events']['Cool Down, Open']) or \
                     (g_dev['events']['Close and Park'] < ephem_now < g_dev['events']['Nightly Reset']):
-                plog("NOT OPENING THE OBSERVATORY -- IT IS THE DAYTIME!!")
-                self.send_to_user("An open observatory request was rejected as it is during the daytime.")
+                plog("NOT OPENING THE enclosure -- IT IS THE DAYTIME!!")
+                self.send_to_user("An open enclosure request was rejected as it is during the daytime.")
                 return
             else:
 
@@ -1033,21 +1033,21 @@ class WxEncAgent:
                     if clear_until_hour != 99:
                         if clear_until_hour > 2:                        
                             plog ("looks like it is clear until hour " + str(clear_until_hour) )
-                            plog ("Will observe until then then close down observatory")
+                            plog ("Will observe until then then close down enclosure")
                             self.weather_report_is_acceptable_to_observe=True
                             self.weather_report_close_during_evening=True
                             self.weather_report_close_during_evening_time=ephem_now + (clear_until_hour/24)
                             g_dev['events']['Observing Ends'] = ephem_now + (clear_until_hour/24)
                         else:
                             plog ("looks like it is clear until hour " + str(clear_until_hour) )
-                            plog ("But that isn't really long enough to rationalise opening the observatory")
+                            plog ("But that isn't really long enough to rationalise opening the enclosure")
                             self.weather_report_is_acceptable_to_observe=False
                             self.weather_report_close_during_evening=False
                     
                     if later_clearing_hour != 99:
                         if number_of_hours_left_after_later_clearing_hour > 2:
                             plog ("looks like clears up at hour " + str(later_clearing_hour) )
-                            plog ("Will attempt to open/re-open observatory then.")                    
+                            plog ("Will attempt to open/re-open enclosure then.")
                             self.weather_report_wait_until_open=True
                             self.weather_report_wait_until_open_time=ephem_now + (later_clearing_hour/24) 
                         else:
@@ -1073,7 +1073,7 @@ class WxEncAgent:
         
         
 
-        # However, if the observatory is under manual control, leave this switch on.
+        # However, if the enclosure is under manual control, leave this switch on.
         enc_status = g_dev['enc'].status
         #try:
         if enc_status is not None:
@@ -1273,21 +1273,21 @@ class WxEncAgent:
     #             if clear_until_hour != 99:
     #                 if clear_until_hour > 2:
     #                     plog ("looks like it is clear until hour " + str(clear_until_hour) )
-    #                     plog ("Will observe until then then close down observatory")
+    #                     plog ("Will observe until then then close down enclosure")
     #                     self.weather_report_is_acceptable_to_observe=True
     #                     self.weather_report_close_during_evening=True
     #                     self.weather_report_close_during_evening_time=ephem_now + (clear_until_hour/24)
     #                     g_dev['events']['Observing Ends'] = ephem_now + (clear_until_hour/24)
     #                 else:
     #                     plog ("looks like it is clear until hour " + str(clear_until_hour) )
-    #                     plog ("But that isn't really long enough to rationalise opening the observatory")
+    #                     plog ("But that isn't really long enough to rationalise opening the enclosure")
     #                     self.weather_report_is_acceptable_to_observe=False
     #                     self.weather_report_close_during_evening=False
     #
     #             if later_clearing_hour != 99:
     #                 if number_of_hours_left_after_later_clearing_hour > 2:
     #                     plog ("looks like clears up at hour " + str(later_clearing_hour) )
-    #                     plog ("Will attempt to open/re-open observatory then.")
+    #                     plog ("Will attempt to open/re-open enclosure then.")
     #                     self.weather_report_wait_until_open=True
     #                     self.weather_report_wait_until_open_time=ephem_now + (later_clearing_hour/24)
     #                 else:
