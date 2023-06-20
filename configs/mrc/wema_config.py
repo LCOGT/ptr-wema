@@ -36,6 +36,11 @@ wema_config = {
     'debug_flag': False,   #Need to resolve
     'debug_mode': False,
     'debug_duration_sec': 3600,
+
+    'enclosure_status_check_period': 30,
+    'weather_status_check_period': 30,
+    'safety_status_check_period': 30,
+
     'admin_owner_commands_only': False,   #This probably should be True once control is sorted out
     'owner':  ['google-oauth2|112401903840371673242'],  # Wayne  Can be a list
 

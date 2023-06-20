@@ -41,7 +41,11 @@ wema_config = {
     'admin_owner_commands_only': False,
     'debug_duration_sec': 80000,
 
-    'owner':  ['google-oauth2|102124071738955888216', 
+    'enclosure_status_check_period': 30,
+    'weather_status_check_period': 30,
+    'safety_status_check_period': 30,
+
+    'owner':  ['google-oauth2|102124071738955888216',
                'google-oauth2|112401903840371673242'],  #    WER and  Neyle,
     'owner_alias': ['ANS', 'WER', 'TELOPS'],
     'admin_aliases': ["ANS", "WER", 'KVH', "TELOPS", "TB", "DH", "KVH", 'KC' , 'MF'],

@@ -223,6 +223,15 @@ class WxEncAgent:
         self.open_and_enabled_to_observe = False
 
 
+        self.enclosure_status_check_period=config['enclosure_status_check_period']
+        self.weather_status_check_period = config['weather_status_check_period']
+        self.safety_status_check_period = config['safety_status_check_period']
+
+        # Timers rather than time.sleeps
+        self.enclosure_status_check_timer=time.time() - 2*self.enclosure_status_check_period
+        self.weather_status_check_timer = time.time() - 2*self.weather_status_check_period
+        self.safety_check_timer=time.time() - 2*self.safety_status_check_period
+
 
         # self.global_wx()
         # breakpoint()
@@ -354,105 +363,115 @@ class WxEncAgent:
         while time.time() < self.time_last_status + self.status_interval:
             return
         #t1 = time.time()
-        status = {}
+        #status = {}
 
-        for dev_type in self.device_types:
-            status[dev_type] = {}
-            devices_of_type = self.all_devices.get(dev_type, {})
-            device_names = devices_of_type.keys()
-            for device_name in device_names:
-                device = devices_of_type[device_name]
+        #for dev_type in self.device_types:
+        #    status[dev_type] = {}
+        #devices_of_type = self.all_devices.get(dev_type, {})
+        #    device_names = devices_of_type.keys()
+        #    for device_name in device_names:
+        #        device = devices_of_type[device_name]
 
-                status[dev_type][device_name] = device.get_status()
+        #        status[dev_type][device_name] = device.get_status()
+
+        #breakpoint()
 
         # Include the time that the status was assembled and sent.
-        status["timestamp"] = round(time.time(), 1)
+
         #status["send_heartbeat"] = False   #This has never been implemented.
         enc_status = None
         ocn_status = None
         device_status = None
-        obsy = self.config['wema_name']   #  This is meant to be for the site, not an OBSP.
+        obsy = self.config['wema_name']   #  This is meant to be for the wema, not an OBSP.
 
-        try:
-
-            ocn_status = {"observing_conditions": status.pop("observing_conditions")}
+        # Enclosure Status
+        if time.time() > self.enclosure_status_check_timer + self.enclosure_status_check_period:
+            self.enclosure_status_check_timer = time.time()
+            status = {}
+            status["timestamp"] = round(time.time(), 1)
+            status['enclosure']={}
+            device=self.all_devices.get('enclosure', {})['enclosure1']
+            status['enclosure']['enclosure1'] = device.get_status()
             enc_status = {"enclosure": status.pop("enclosure")}
-            device_status = status
-        except:
-            pass
-
-        if ocn_status['observing_conditions']['observing_conditions1'] == None:
-            ocn_status['observing_conditions']['observing_conditions1']= dict(wx_ok='Unknown', wx_hold='no',
-                                                                              hold_duration=0)
 
 
-        #breakpoint()
-        if enc_status is not None and ocn_status is not None:
-            # New Tim Entries
-            if enc_status['enclosure']['enclosure1']['shutter_status'] == 'Open':
-                enc_status['enclosure']['enclosure1']['enclosure_is_open'] = True
-                enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = False
-                enc_status['enclosure']['enclosure1']['shut_reason_daytime'] = False
-                enc_status['enclosure']['enclosure1']['shut_reason_manual_mode'] = False
-            else:
-                enc_status['enclosure']['enclosure1']['enclosure_is_open'] = False
-                if not enc_status['enclosure']['enclosure1']['enclosure_mode'] == 'Automatic':
-                    enc_status['enclosure']['enclosure1']['shut_reason_manual_mode'] = True
-                else:
-                    enc_status['enclosure']['enclosure1']['shut_reason_manual_mode'] = False
-                if ocn_status['observing_conditions']['observing_conditions1']['wx_ok'] == 'Unknown':
+            #breakpoint()
+            if enc_status is not None:
+                # New Tim Entries
+                if enc_status['enclosure']['enclosure1']['shutter_status'] == 'Open':
+                    enc_status['enclosure']['enclosure1']['enclosure_is_open'] = True
                     enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = False
-                elif ocn_status['observing_conditions']['observing_conditions1']['wx_ok'] == 'No' or not self.weather_report_is_acceptable_to_observe:
-                    enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = True
-                else:
-                    enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = False
-                    # NEED TO INCLUDE WEATHER REPORT AND FITZ NUMBER HERE
-                if g_dev['events']['Cool Down, Open'] < ephem.now() or ephem.now() < g_dev['events'][
-                    'Close and Park'] > ephem.now():
-                    enc_status['enclosure']['enclosure1']['shut_reason_daytime'] = True
-                else:
                     enc_status['enclosure']['enclosure1']['shut_reason_daytime'] = False
+                    enc_status['enclosure']['enclosure1']['shut_reason_manual_mode'] = False
+                else:
+                    enc_status['enclosure']['enclosure1']['enclosure_is_open'] = False
+                    if not enc_status['enclosure']['enclosure1']['enclosure_mode'] == 'Automatic':
+                        enc_status['enclosure']['enclosure1']['shut_reason_manual_mode'] = True
+                    else:
+                        enc_status['enclosure']['enclosure1']['shut_reason_manual_mode'] = False
+                    if ocn_status is not None:
+                        if ocn_status['observing_conditions']['observing_conditions1']['wx_ok'] == 'Unknown':
+                            enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = False
+                        elif ocn_status['observing_conditions']['observing_conditions1']['wx_ok'] == 'No' or not self.weather_report_is_acceptable_to_observe:
+                            enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = True
+                    elif not self.weather_report_is_acceptable_to_observe:
+                        enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = True
+                    else:
+                        enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = False
 
-            ocn_status['observing_conditions']['observing_conditions1']['weather_report_good'] = self.weather_report_is_acceptable_to_observe
-            ocn_status['observing_conditions']['observing_conditions1']['fitzgerald_number'] = self.night_fitzgerald_number
+                        # NEED TO INCLUDE WEATHER REPORT AND FITZ NUMBER HERE
+
+                    if g_dev['events']['Cool Down, Open'] < ephem.now() or ephem.now() < g_dev['events'][
+                        'Close and Park'] > ephem.now():
+                        enc_status['enclosure']['enclosure1']['shut_reason_daytime'] = True
+                    else:
+                        enc_status['enclosure']['enclosure1']['shut_reason_daytime'] = False
+
+                if enc_status is not None:
+                    lane = "enclosure"
+                    # send_status(obsy, lane, enc_status)
+                    try:
+                        # time.sleep(2)
+                        send_status(obsy, lane, enc_status)
+                    except:
+                        plog('could not send enclosure status')
+                    #breakpoint()
+
+        if time.time() > self.weather_status_check_timer + self.weather_status_check_period:
+            self.weather_status_check_timer=time.time()
+            status = {}
+            status["timestamp"] = round(time.time(), 1)
+            status['observing_conditions'] = {}
+            device = self.all_devices.get('observing_conditions', {})['observing_conditions1']
+            status['observing_conditions']['observing_conditions1'] = device.get_status()
+            ocn_status = {"observing_conditions": status.pop("observing_conditions")}
+
+            # breakpoint()
+            if ocn_status is not None:
+
+                if ocn_status['observing_conditions']['observing_conditions1'] == None:
+                    ocn_status['observing_conditions']['observing_conditions1'] = dict(wx_ok='Unknown',
+                                                                                       wx_hold='no',
+                                                                                       hold_duration=0)
+
+
+                ocn_status['observing_conditions']['observing_conditions1']['weather_report_good'] = self.weather_report_is_acceptable_to_observe
+                ocn_status['observing_conditions']['observing_conditions1']['fitzgerald_number'] = self.night_fitzgerald_number
+
+                if ocn_status is not None:
+                    lane = "weather"
+                    # send_status(obsy, lane, enc_status)
+                    try:
+                        # time.sleep(2)
+                        send_status(obsy, lane, ocn_status)
+                    except:
+                        plog('could not send enclosure status')
+                    #breakpoint()
 
         ## NB We should consolidate this into one *site* status tranaction. WER 20230617
 
 
-        if ocn_status is not None:
-            lane = "weather"
-            #send_status(obsy, lane, ocn_status)  # Do not remove this send for SAF!
-            if ocn_status is not None:
-                lane = "weather"
-                
-                try:
-                    send_status(obsy, lane, ocn_status)
-                except:
-                    time.sleep(10)
-                    try:
-                        send_status(obsy, lane, ocn_status)
-                    except:
-                        time.sleep(10)
-                        try:
-                            send_status(obsy, lane, ocn_status)
-                        except:
-                            plog("Three Tries to send Wx status.")
-        if enc_status is not None:
-            lane = "enclosure"
-            #send_status(obsy, lane, enc_status)
-            try:
-                #time.sleep(2)
-                send_status(obsy, lane, enc_status)
-            except:
-                time.sleep(10)
-                try:
-                    send_status(obsy, lane, enc_status)
-                except:
-                    time.sleep(10)
-                    try:
-                        send_status(obsy, lane, enc_status)
-                    except:
-                        plog("Three Tries to send Enc status failed.")
+
             #if self.name == "mrc":   #NB  This does not scale, Wema config should has a list of sub-sites.
             #    obsy = 'mrc2'        #  or have AWS pick up status from the wema only.
             # if ocn_status is not None:
@@ -514,211 +533,214 @@ class WxEncAgent:
 
     def update(self):     ## NB NB NB This is essentially the sequencer for the WEMA.
         self.update_status()
-        time.sleep(30)
+        #time.sleep(30)
 
-        # Here it runs through the various checks and decides whether to open or close the roof or not.
-        # Check for delayed opening of the enclosure and act accordingly.
+        if time.time() > self.safety_check_timer + self.safety_status_check_period:
+            self.safety_check_timer=time.time()
 
-        # If the enclosure is simply delayed until opening, then wait until then, then attempt to start up the enclosure
-        obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
+            # Here it runs through the various checks and decides whether to open or close the roof or not.
+            # Check for delayed opening of the enclosure and act accordingly.
 
-        #breakpoint()
-        ocn_status = g_dev['ocn'].get_status()
-        enc_status = g_dev['enc'].get_status()
+            # If the enclosure is simply delayed until opening, then wait until then, then attempt to start up the enclosure
+            obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
 
-        #breakpoint()
-        plog("***************************************************************")
-        plog("Current time             : " + str(time.asctime()))
-        plog("Shutter Status           : " + str(enc_status['shutter_status']))
-        if ocn_status == None:
-            plog("This WEMA does not report observing conditions")
-        else:
-            plog("Observing Conditions      : " +str(ocn_status))
-        if enc_status['enclosure_mode'] == 'Manual':
-            plog ("Weather Report overriden due to being in Manual or debug mode.")
-        else:
-            plog("Weather Report Good to Observe: " + str(self.weather_report_is_acceptable_to_observe))
-        plog("Time until Cool and Open      : " + str(round(( g_dev['events']['Cool Down, Open'] - ephem_now) * 24,2)) + " hours")
-        plog("Time until Close and Park     : "+ str(round(( g_dev['events']['Close and Park'] - ephem_now) * 24,2)) + " hours")
-        plog("**************************************************************")
+            #breakpoint()
+            ocn_status = g_dev['ocn'].get_status()
+            enc_status = g_dev['enc'].get_status()
 
-        #breakpoint()
+            #breakpoint()
+            plog("***************************************************************")
+            plog("Current time             : " + str(time.asctime()))
+            plog("Shutter Status           : " + str(enc_status['shutter_status']))
+            if ocn_status == None:
+                plog("This WEMA does not report observing conditions")
+            else:
+                plog("Observing Conditions      : " +str(ocn_status))
+            if enc_status['enclosure_mode'] == 'Manual':
+                plog ("Weather Report overriden due to being in Manual or debug mode.")
+            else:
+                plog("Weather Report Good to Observe: " + str(self.weather_report_is_acceptable_to_observe))
+            plog("Time until Cool and Open      : " + str(round(( g_dev['events']['Cool Down, Open'] - ephem_now) * 24,2)) + " hours")
+            plog("Time until Close and Park     : "+ str(round(( g_dev['events']['Close and Park'] - ephem_now) * 24,2)) + " hours")
+            plog("**************************************************************")
 
-        # Safety checks here
+            #breakpoint()
 
-        if not g_dev['debug'] and self.open_and_enabled_to_observe and g_dev['enc'].mode == 'Automatic':
-            if enc_status is not None:
-                if enc_status['shutter_status'] == 'Software Fault':
-                    plog("Software Fault Detected. Will alert the authorities!")
-                    #plog("Parking Scope in the meantime")
-                    # if self.config['obsid_roof_control'] and g_dev['enc'].mode == 'Automatic':
-                    self.open_and_enabled_to_observe = False
-                    self.park_enclosure_and_close()
-                    #self.cancel_all_activity()  # NB THis kills bias-dark
-                   # if not g_dev['mnt'].mount.AtPark:
-                    #    if g_dev['mnt'].home_before_park:
-                    #        g_dev['mnt'].home_command()
-                    #    g_dev['mnt'].park_command()
-                    # will send a Close call out into the blue just in case it catches
-                    # g_dev['enc'].enclosure.CloseShutter()
-                    # g_dev['seq'].enclosure_next_open_time = time.time(
-                    # ) + self.config['roof_open_safety_base_time'] * g_dev['seq'].opens_this_evening
+            # Safety checks here
 
-                if enc_status['shutter_status'] == 'Closing':
-                    # if self.config['obsid_roof_control'] and g_dev['enc'].mode == 'Automatic':
-                    plog("Detected Roof Closing.")
-                    self.open_and_enabled_to_observe = False
-                    self.park_enclosure_and_close()
-
-                    self.enclosure_next_open_time = time.time(
-                     ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
-
-                if enc_status['shutter_status'] == 'Error':
-                    if  enc_status['enclosure_mode'] == 'Automatic':
-                        plog("Detected an Error in the Roof Status. Packing up for safety.")
+            if not g_dev['debug'] and self.open_and_enabled_to_observe and g_dev['enc'].mode == 'Automatic':
+                if enc_status is not None:
+                    if enc_status['shutter_status'] == 'Software Fault':
+                        plog("Software Fault Detected. Will alert the authorities!")
+                        #plog("Parking Scope in the meantime")
+                        # if self.config['obsid_roof_control'] and g_dev['enc'].mode == 'Automatic':
                         self.open_and_enabled_to_observe = False
                         self.park_enclosure_and_close()
-                        self.enclosure_next_open_time = time.time(
-                        ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
-
-                        # plog("This is usually because the weather system forced the roof to shut.")
-                        # plog("By closing it again, it resets the switch to closed.")
-                        #self.cancel_all_activity()  # NB Kills bias dark
-                        #self.open_and_enabled_to_observe = False
-                        # g_dev['enc'].enclosure.CloseShutter()
-                        # g_dev['seq'].enclosure_next_open_time = time.time(
-                        # ) + self.config['roof_open_safety_base_time'] * g_dev['seq'].opens_this_evening
-                        # while g_dev['enc'].enclosure.ShutterStatus == 3:
-                        # plog ("closing")
-                        #plog("Also Parking the Scope")
-                        #if not g_dev['mnt'].mount.AtPark:
+                        #self.cancel_all_activity()  # NB THis kills bias-dark
+                       # if not g_dev['mnt'].mount.AtPark:
                         #    if g_dev['mnt'].home_before_park:
                         #        g_dev['mnt'].home_command()
                         #    g_dev['mnt'].park_command()
+                        # will send a Close call out into the blue just in case it catches
+                        # g_dev['enc'].enclosure.CloseShutter()
+                        # g_dev['seq'].enclosure_next_open_time = time.time(
+                        # ) + self.config['roof_open_safety_base_time'] * g_dev['seq'].opens_this_evening
 
-                # roof_should_be_shut = False
-            else:
-                plog("Enclosure roof status probably not reporting correctly. WEMA down?")
+                    if enc_status['shutter_status'] == 'Closing':
+                        # if self.config['obsid_roof_control'] and g_dev['enc'].mode == 'Automatic':
+                        plog("Detected Roof Closing.")
+                        self.open_and_enabled_to_observe = False
+                        self.park_enclosure_and_close()
 
-        roof_should_be_shut = False
+                        self.enclosure_next_open_time = time.time(
+                         ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
 
-        if not (g_dev['events']['Cool Down, Open'] < ephem_now < g_dev['events']['Close and Park']):
-            roof_should_be_shut = True
-            self.open_and_enabled_to_observe = False
+                    if enc_status['shutter_status'] == 'Error':
+                        if  enc_status['enclosure_mode'] == 'Automatic':
+                            plog("Detected an Error in the Roof Status. Packing up for safety.")
+                            self.open_and_enabled_to_observe = False
+                            self.park_enclosure_and_close()
+                            self.enclosure_next_open_time = time.time(
+                            ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
 
-        if enc_status['shutter_status'] == 'Open':
-            if roof_should_be_shut == True and enc_status['enclosure_mode'] == 'Automatic':
-                plog("Safety check notices that the roof was open outside of the normal observing period")
-                self.park_enclosure_and_close()
+                            # plog("This is usually because the weather system forced the roof to shut.")
+                            # plog("By closing it again, it resets the switch to closed.")
+                            #self.cancel_all_activity()  # NB Kills bias dark
+                            #self.open_and_enabled_to_observe = False
+                            # g_dev['enc'].enclosure.CloseShutter()
+                            # g_dev['seq'].enclosure_next_open_time = time.time(
+                            # ) + self.config['roof_open_safety_base_time'] * g_dev['seq'].opens_this_evening
+                            # while g_dev['enc'].enclosure.ShutterStatus == 3:
+                            # plog ("closing")
+                            #plog("Also Parking the Scope")
+                            #if not g_dev['mnt'].mount.AtPark:
+                            #    if g_dev['mnt'].home_before_park:
+                            #        g_dev['mnt'].home_command()
+                            #    g_dev['mnt'].park_command()
 
-        if (self.enclosure_next_open_time - time.time()) > 0:
-            plog("opens this eve: " + str(self.opens_this_evening))
+                    # roof_should_be_shut = False
+                else:
+                    plog("Enclosure roof status probably not reporting correctly. WEMA down?")
 
-            plog("minutes until next open attempt ALLOWED: " +
-                 str((self.enclosure_next_open_time - time.time()) / 60))
+            roof_should_be_shut = False
 
-        if self.weather_report_wait_until_open and not self.cool_down_latch and enc_status['enclosure_mode'] == 'Automatic':
-            if ephem_now > self.weather_report_wait_until_open_time:
+            if not (g_dev['events']['Cool Down, Open'] < ephem_now < g_dev['events']['Close and Park']):
+                roof_should_be_shut = True
+                self.open_and_enabled_to_observe = False
 
-                self.cool_down_latch = True
-                self.weather_report_wait_until_open == False
-                # Things may have changed! So re-checking the weather and such
+            if enc_status['shutter_status'] == 'Open':
+                if roof_should_be_shut == True and enc_status['enclosure_mode'] == 'Automatic':
+                    plog("Safety check notices that the roof was open outside of the normal observing period")
+                    self.park_enclosure_and_close()
 
+            if (self.enclosure_next_open_time - time.time()) > 0:
+                plog("opens this eve: " + str(self.opens_this_evening))
+
+                plog("minutes until next open attempt ALLOWED: " +
+                     str((self.enclosure_next_open_time - time.time()) / 60))
+
+            if self.weather_report_wait_until_open and not self.cool_down_latch and enc_status['enclosure_mode'] == 'Automatic':
+                if ephem_now > self.weather_report_wait_until_open_time:
+
+                    self.cool_down_latch = True
+                    self.weather_report_wait_until_open == False
+                    # Things may have changed! So re-checking the weather and such
+
+                    # Reopening config and resetting all the things.
+                    # This is necessary just in case a previous weather report was done today
+                    # That can sometimes change the timing.
+                    self.astro_events.compute_day_directory()
+                    self.astro_events.calculate_events()
+                    # self.astro_events.display_events()
+                    #g_dev['obs'].astro_events = self.astro_events
+                    # Run nightly weather report
+                    self.run_nightly_weather_report()
+
+                    if not self.open_and_enabled_to_observe and self.weather_report_is_acceptable_to_observe == True:
+                        if (g_dev['events']['Cool Down, Open'] < ephem_now < g_dev['events']['Observing Ends']):
+                            if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config[
+                                'maximum_roof_opens_per_evening']:
+                                # self.enclosure_next_open_time = time.time() + 300 # Only try to open the roof every five minutes
+                                self.nightly_reset_complete = False
+                                # self.weather_report_is_acceptable_to_observe=True
+                                self.open_enclosure(enc_status, ocn_status)
+
+                                # If the enclosure opens, set clock and auto focus and observing to now
+                                if self.open_and_enabled_to_observe:
+                                    #self.weather_report_is_acceptable_to_observe = False
+                                    #obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
+                                    # g_dev['events']['Clock & Auto Focus'] = ephem_now - 0.1/24
+                                    # g_dev['events']['Observing Begins'] = ephem_now + 0.1/24
+                                    self.weather_report_wait_until_open = False
+                                    self.weather_report_is_acceptable_to_observe = True
+
+                    self.cool_down_latch = False
+
+            # If the enclosure is meant to shut during the evening
+            obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
+            if self.weather_report_close_during_evening == True and enc_status['enclosure_mode'] == 'Automatic':
+                if ephem_now > self.weather_report_close_during_evening_time and ephem_now < g_dev['events'][
+                    'Close and Park']:
+                    if enc_status['enclosure_mode'] == 'Automatic':
+                        self.nightly_reset_complete = False
+                        self.weather_report_is_acceptable_to_observe = False
+                        plog("End of Observing Period due to weather. Closing up enclosure early.")
+
+                        self.open_and_enabled_to_observe = False
+                        self.park_enclosure_and_close()
+
+                        self.weather_report_close_during_evening = False
+
+                        # Do nightly weather report at cool down open
+            if (g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events'][
+                'Observing Ends']) and not self.nightly_weather_report_complete and not g_dev['debug'] and enc_status['enclosure_mode'] == 'Automatic':
                 # Reopening config and resetting all the things.
                 # This is necessary just in case a previous weather report was done today
                 # That can sometimes change the timing.
-                self.astro_events.compute_day_directory()
-                self.astro_events.calculate_events()
+                #self.astro_events.compute_day_directory()
+                #self.astro_events.calculate_events()
                 # self.astro_events.display_events()
                 #g_dev['obs'].astro_events = self.astro_events
                 # Run nightly weather report
                 self.run_nightly_weather_report()
+                self.nightly_weather_report_complete = True
 
-                if not self.open_and_enabled_to_observe and self.weather_report_is_acceptable_to_observe == True:
-                    if (g_dev['events']['Cool Down, Open'] < ephem_now < g_dev['events']['Observing Ends']):
-                        if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config[
-                            'maximum_roof_opens_per_evening']:
-                            # self.enclosure_next_open_time = time.time() + 300 # Only try to open the roof every five minutes
-                            self.nightly_reset_complete = False
-                            # self.weather_report_is_acceptable_to_observe=True
-                            self.open_enclosure(enc_status, ocn_status)
+                # Also make sure nightly reset is switched to go off
+                self.nightly_reset_complete = False
+                # As well as nightly focus routine.
+                self.night_focus_ready = True
 
-                            # If the enclosure opens, set clock and auto focus and observing to now
-                            if self.open_and_enabled_to_observe:
-                                #self.weather_report_is_acceptable_to_observe = False
-                                #obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
-                                # g_dev['events']['Clock & Auto Focus'] = ephem_now - 0.1/24
-                                # g_dev['events']['Observing Begins'] = ephem_now + 0.1/24
-                                self.weather_report_wait_until_open = False
-                                self.weather_report_is_acceptable_to_observe = True
-                                
+            if ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends'])):
+                self.nightly_reset_complete = False
+
+            if ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends']) and \
+                enc_status['enclosure_mode'] == 'Automatic') and not self.cool_down_latch and not g_dev['ocn'].wx_hold and not \
+                enc_status['shutter_status'] in ['Software Fault', 'Closing', 'Error']:
+
+                self.cool_down_latch = True
+
+                if not self.open_and_enabled_to_observe and self.weather_report_is_acceptable_to_observe == True and self.weather_report_wait_until_open == False:
+
+                    if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config['maximum_roof_opens_per_evening']:
+                        self.nightly_reset_complete = False
+                        # self.enclosure_next_open_time = time.time() + 300 # Only try to open the roof every five minutes maximum
+                        self.open_enclosure(enc_status, ocn_status)
+
                 self.cool_down_latch = False
 
-        # If the enclosure is meant to shut during the evening
-        obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
-        if self.weather_report_close_during_evening == True and enc_status['enclosure_mode'] == 'Automatic':
-            if ephem_now > self.weather_report_close_during_evening_time and ephem_now < g_dev['events'][
-                'Close and Park']:  
-                if enc_status['enclosure_mode'] == 'Automatic':
-                    self.nightly_reset_complete = False
-                    self.weather_report_is_acceptable_to_observe = False
-                    plog("End of Observing Period due to weather. Closing up enclosure early.")
-                    
-                    self.open_and_enabled_to_observe = False
+            # If in post-close and park era of the night, check those two things have happened!
+            if (g_dev['events']['Close and Park'] <= ephem_now < g_dev['events']['Nightly Reset']) \
+                    and enc_status['enclosure_mode'] == 'Automatic':
+
+                if not enc_status['shutter_status'] in ['Closed', 'closed']:
+                    plog("Found shutter open after Close and Park, shutting up the shutter")
                     self.park_enclosure_and_close()
 
-                    self.weather_report_close_during_evening = False
 
-                    # Do nightly weather report at cool down open
-        if (g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events'][
-            'Observing Ends']) and not self.nightly_weather_report_complete and not g_dev['debug'] and enc_status['enclosure_mode'] == 'Automatic':
-            # Reopening config and resetting all the things.
-            # This is necessary just in case a previous weather report was done today
-            # That can sometimes change the timing.
-            #self.astro_events.compute_day_directory()
-            #self.astro_events.calculate_events()
-            # self.astro_events.display_events()
-            #g_dev['obs'].astro_events = self.astro_events
-            # Run nightly weather report
-            self.run_nightly_weather_report()
-            self.nightly_weather_report_complete = True
+            if (g_dev['events']['Nightly Reset'] <= ephem_now < g_dev['events']['End Nightly Reset']): # and g_dev['enc'].mode == 'Automatic' ):
 
-            # Also make sure nightly reset is switched to go off
-            self.nightly_reset_complete = False
-            # As well as nightly focus routine.
-            self.night_focus_ready = True
-
-        if ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends'])):
-            self.nightly_reset_complete = False
-
-        if ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends']) and \
-            enc_status['enclosure_mode'] == 'Automatic') and not self.cool_down_latch and not g_dev['ocn'].wx_hold and not \
-            enc_status['shutter_status'] in ['Software Fault', 'Closing', 'Error']:
-
-            self.cool_down_latch = True
-
-            if not self.open_and_enabled_to_observe and self.weather_report_is_acceptable_to_observe == True and self.weather_report_wait_until_open == False:
-
-                if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config['maximum_roof_opens_per_evening']:
-                    self.nightly_reset_complete = False
-                    # self.enclosure_next_open_time = time.time() + 300 # Only try to open the roof every five minutes maximum
-                    self.open_enclosure(enc_status, ocn_status)
-
-            self.cool_down_latch = False
-
-        # If in post-close and park era of the night, check those two things have happened!
-        if (g_dev['events']['Close and Park'] <= ephem_now < g_dev['events']['Nightly Reset']) \
-                and enc_status['enclosure_mode'] == 'Automatic':
-
-            if not enc_status['shutter_status'] in ['Closed', 'closed']:
-                plog("Found shutter open after Close and Park, shutting up the shutter")
-                self.park_enclosure_and_close()
-        
-        
-        if (g_dev['events']['Nightly Reset'] <= ephem_now < g_dev['events']['End Nightly Reset']): # and g_dev['enc'].mode == 'Automatic' ):
-            
-            if self.nightly_reset_complete == False:
-                self.nightly_reset_script(enc_status)
+                if self.nightly_reset_complete == False:
+                    self.nightly_reset_script(enc_status)
 
     def nightly_reset_script(self, enc_status):
         # UNDERTAKING END OF NIGHT ROUTINES
