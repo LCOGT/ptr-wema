@@ -66,7 +66,8 @@ def send_status(obsy, column, status_to_send):
     
     uri_status = f"https://status.photonranch.org/status/{obsy}/status/"
     # NB None of the strings can be empty. Otherwise this put faults.
-    payload = {"statusType": str(column), "status": status_to_send}
+    payload = {"statusType": str(column), "status": status_to_send}\
+
     data = json.dumps(payload)
     try:
         response = requests.post(uri_status, data=data, timeout=20)
@@ -394,7 +395,6 @@ class WxEncAgent:
             status['enclosure']['enclosure1'] = device.get_status()
             enc_status = {"enclosure": status.pop("enclosure")}
 
-
             #breakpoint()
             if enc_status is not None:
                 # New Tim Entries
@@ -541,8 +541,10 @@ class WxEncAgent:
             # Here it runs through the various checks and decides whether to open or close the roof or not.
             # Check for delayed opening of the enclosure and act accordingly.
 
+
             # If the enclosure is simply delayed until opening, then wait until then, then attempt to start up the enclosure
             obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
+
 
             #breakpoint()
             ocn_status = g_dev['ocn'].get_status()

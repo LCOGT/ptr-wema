@@ -312,9 +312,6 @@ class Enclosure:
         
         now return accurate status. '''
 
-
-    def get_status(self) -> dict:
-
         if not self.is_dome:
             #plog("we got a direct connect status!")
 
@@ -1134,9 +1131,4 @@ class Enclosure:
         return
 
 
-# if __name__ =='__main__':
-#     plog('Enclosure class started locally')
-#     enc = Enclosure('ASCOM.SkyRoof.Dome', 'enclosure1')
-# if __name__ =='__main__':
-#     plog('Enclosure class started locally')
-#     enc = Enclosure('ASCOM.SkyRoof.Dome', 'enclosure1')
+
