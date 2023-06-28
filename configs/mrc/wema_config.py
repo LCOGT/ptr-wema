@@ -33,6 +33,8 @@ wema_config = {
     #'site': 'mrc',
     'wema_name': 'mrc',
     'instance_type': 'wema',
+    
+    'obsp_ids': ['mrc1', 'mrc2'],  # a list of the obsp's in an enclosure.  
 
     'debug_flag': False,   #Need to resolve
     'debug_mode': False,
@@ -102,8 +104,9 @@ wema_config = {
     #'auto_eve_bias_dark': True,
     #'auto_midnight_moonless_bias_dark': False,
     #'auto_eve_sky_flat': True,
-    'eve_sky_flat_sunset_offset': -40.,  # 40 before Minutes  neg means before, + after.
-    'eve_cool_down_open': -45.0,
+    #'eve_sky_flat_sunset_offset': -40.,  # 40 before Minutes  neg means before, + after.
+    'eve_cool_down_open': -45.0, # How many minutes after sunrise to open. Default -65 = an hour-ish before sunset. Gives time to cool and get narrowband flats
+    'morn_close_and_park': 32.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowband flats
     #'auto_morn_sky_flat': True,
     #'auto_morn_bias_dark': True,
 
@@ -147,7 +150,6 @@ wema_config = {
             'clamshell_axis': 'ENE',
             'enc_is_none': False,   #An open-air telescope, on a patio, deck, etc. Presumably uncovered.
             'enc_is_uncovered':  False,  #Presumably a swicth or sensor controls this signal.
-            'obsp_ids': ['mrc1', 'mrc2'],  # a list of the obsp's in an enclosure.  
 
         },
     },

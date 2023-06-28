@@ -34,7 +34,8 @@ wema_config = {
 
     'wema_name': 'aro',
     'instance_type': 'wema',
-
+    'obsp_ids': ['aro1'], #, 'aro2','aro3'],    #Possible hint to site about who are its children.
+    
     
     'debug_mode': False,
     #'debug_obsy_mode': False,   #not needed for a WEMA instance 
@@ -53,7 +54,6 @@ wema_config = {
     #'observatory_location': site_name.lower(),  # Not sure what this has to do with a *site!*.
     'site_desc': "Apache Ridge Observatory, Santa Fe, NM, USA. 2194m",  #Chg name to site_location?
     'airport_codes':  ['SAF', 'ABQ', 'LSN'],   #  Meant to bracket the site so we can probe Obsy Wx reports
-    'obsy_id': ['aro1', 'aro2','aro3'],    #Possible hint to site about who are its children.
     
     #'obs_desc': "Apache Ridge Observatory", #>>not neededby wema??
 
@@ -141,11 +141,12 @@ wema_config = {
     'auto_eve_bias_dark': True,
     'auto_midnight_moonless_bias_dark': False,
     'auto_eve_sky_flat': True,
-    'eve_cool_down_open' : -65.0,
-    'eve_sky_flat_sunset_offset': -60.0,  # Minutes  neg means before, + after.
-    'eve_cool_down_open' : -65.0,
-    'auto_morn_sky_flat': True,
-    'auto_morn_bias_dark': True,
+    'eve_cool_down_open': -65.0, # How many minutes after sunrise to open. Default -65 = an hour-ish before sunset. Gives time to cool and get narrowband flats
+    'morn_close_and_park': 32.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowband flats
+    #'eve_sky_flat_sunset_offset': -60.0,  # Minutes  neg means before, + after.
+    
+    #'auto_morn_sky_flat': True,
+    #'auto_morn_bias_dark': True,
     #'re-calibrate_on_solve': False,
     #'pointing_calibration_on_startup': False,
     #'periodic_focus_time' : 0.5, # This is a time, in hours, over which to bypass automated focussing (e.g. at the start of a project it will not refocus if a new project starts X hours after the last focus)
@@ -207,7 +208,7 @@ wema_config = {
        'sequencer',
        ],
 
-    'wema_status_span':  ['aro1', 'aro2', 'aro3'],
+    #'wema_status_span':  ['aro1', 'aro2', 'aro3'],
 
     'observing_conditions' : {     #for SAF
         'observing_conditions1': {
@@ -234,7 +235,7 @@ wema_config = {
             "encl_IP": '10.0.0.103',    #New
             'has_lights':  False,
             'controlled_by': 'mount1',
-            "serving_obsp's": ['aro1', 'aro2', 'aro3'],
+            #"serving_obsp's": ['aro1', 'aro2', 'aro3'],
 			'enc_is_dome': False,   #otherwise a Rool off or Clamshel
             'enc_radius':  None,  #  inches Ok for now.
             'enc_is_roll-off':  True,
