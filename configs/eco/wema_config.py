@@ -24,6 +24,8 @@ wema_config = {
     'wema_name': 'eco',
     'instance_type': 'wema',
 
+    'obsp_ids': ['eco1', 'eco2'],  # a list of the obsp's in an enclosure.  
+
     #'obs_id': None,  # a WEMA is not a telescope aka Observatory
     #'observatory_location': site_name.lower(),  # in LCO case, an airport code such as OGG
 
@@ -147,7 +149,8 @@ wema_config = {
 
     #'eve_sky_flat_sunset_offset': -60.,  # 40 before Minutes  neg means before, + after.
 
-    'eve_cool_down_open': -65.0,
+    'eve_cool_down_open': -65.0, # How many minutes after sunrise to open. Default -65 = an hour-ish before sunset. Gives time to cool and get narrowband flats
+    'morn_close_and_park': 32.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowband flats
     #'auto_morn_sky_flat': False,
     #'auto_morn_bias_dark': False,
     #'re-calibrate_on_solve': True,

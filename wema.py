@@ -564,7 +564,16 @@ class WxEncAgent:
                 plog("Weather Report Good to Observe: " + str(self.weather_report_is_acceptable_to_observe))
             plog("Time until Cool and Open      : " + str(round(( g_dev['events']['Cool Down, Open'] - ephem_now) * 24,2)) + " hours")
             plog("Time until Close and Park     : "+ str(round(( g_dev['events']['Close and Park'] - ephem_now) * 24,2)) + " hours")
+            plog("Time until Nightly Reset      : " + str(round((g_dev['events']['Nightly Reset'] - ephem_now) * 24, 2)) + " hours")
+            plog("Nightly Reset Complete        : " + str(self.nightly_reset_complete))
             plog("**************************************************************")
+
+
+
+            if (g_dev['events']['Nightly Reset'] <= ephem.now() < g_dev['events']['End Nightly Reset']): # and g_dev['enc'].mode == 'Automatic' ):
+                if self.nightly_reset_complete == False:
+                    self.nightly_reset_complete = True
+                    self.nightly_reset_script(enc_status)
 
             #breakpoint()
 
@@ -739,10 +748,7 @@ class WxEncAgent:
                     self.park_enclosure_and_close()
 
 
-            if (g_dev['events']['Nightly Reset'] <= ephem_now < g_dev['events']['End Nightly Reset']): # and g_dev['enc'].mode == 'Automatic' ):
 
-                if self.nightly_reset_complete == False:
-                    self.nightly_reset_script(enc_status)
 
     def nightly_reset_script(self, enc_status):
         # UNDERTAKING END OF NIGHT ROUTINES
