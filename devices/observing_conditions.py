@@ -101,7 +101,7 @@ class ObservingConditions:
         self.site_is_custom = False
 
         #self.site_has_proxy = False # initializing variable
-        if self.config["wema_is_active"]:
+        if True:
             self.site_has_proxy = True  # NB Site is proxy needs a new name.
         else:
             self.site_has_proxy = False

@@ -99,13 +99,13 @@ wema_config = {
 
     'observing_check_period': 5,    # How many minutes between weather checks
     'enclosure_check_period': 5,    # How many minutes between enclosure checks
-    #'auto_eve_bias_dark': True,
+    'auto_eve_bias_dark': True,
     #'auto_midnight_moonless_bias_dark': False,
-    #'auto_eve_sky_flat': True,
+    'auto_eve_sky_flat': True,
     'eve_sky_flat_sunset_offset': -40.,  # 40 before Minutes  neg means before, + after.
     'eve_cool_down_open': -45.0,
-    #'auto_morn_sky_flat': True,
-    #'auto_morn_bias_dark': True,
+    'auto_morn_sky_flat': True,
+    #auto_morn_bias_dark': True,
 
     'defaults': {
         'observing_conditions': 'observing_conditions1',
@@ -159,9 +159,9 @@ if __name__ == '__main__':
     This is a simple test to send and receive via json.
     '''
 
-    j_dump = json.dumps(site_config)
+    j_dump = json.dumps(wema_config)
     site_unjasoned = json.loads(j_dump)
-    if str(site_config) == str(site_unjasoned):
+    if str(wema_config) == str(site_unjasoned):
         print('Strings matched.')
-    if site_config == site_unjasoned:
+    if wema_config == site_unjasoned:
         print('Dictionaries matched.')

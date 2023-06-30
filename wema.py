@@ -123,17 +123,17 @@ class WxEncAgent:
             g_dev['debug'] = False
             #g_dev['obs'].open_and_enabled_to_observe = False
 
-        if self.config["wema_is_active"]:
+        if True:  #self.config["wema_is_active"]:
             self.hostname = self.hostname = socket.gethostname()
             if self.hostname in self.config["wema_hostname"]:
                 self.is_wema = True
-                g_dev["wema_write_share_path"] = config["wema_write_share_path"]
+                g_dev["wema_write_share_path"] = config["wema_path"]
                 self.wema_path = g_dev["wema_write_share_path"]
                 self.site_path = self.wema_path
             else:
                 # This host is a client
                 self.is_wema = False  # This is a client.
-                self.site_path = config["wema_write_share_path"]
+                self.site_path = config["wema_path"]
                 g_dev["site_path"] = self.site_path
                 g_dev["wema_write_share_path"] = self.site_path  # Just to be safe.
                 self.wema_path = g_dev["wema_write_share_path"]
