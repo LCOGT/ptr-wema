@@ -144,6 +144,18 @@ wema_config = {
     'eve_cool_down_open': -65.0, # How many minutes after sunrise to open. Default -65 = an hour-ish before sunset. Gives time to cool and get narrowband flats
     'morn_close_and_park': 32.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowband flats
     #'eve_sky_flat_sunset_offset': -60.0,  # Minutes  neg means before, + after.
+
+
+    # Local weather limits
+    'rain_limit': 0,
+    'humidity_limit': 85,
+    'windspeed_limit': 25,
+    'temperature_minus_dewpoint_limit': 2,
+    'sky_temperature_limit': -17,
+    'cloud_cover_limit': 25,
+    'lowest_ambient_temperature': 1,
+    'highest_ambient_temperature': 40,
+
     
     #'auto_morn_sky_flat': True,
     #'auto_morn_bias_dark': True,

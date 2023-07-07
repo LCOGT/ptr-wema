@@ -111,6 +111,17 @@ wema_config = {
     'auto_morn_sky_flat': True,
     #auto_morn_bias_dark': True,
 
+    # Local weather limits
+    'rain_limit': 0,
+    'humidity_limit': 85,
+    'windspeed_limit': 25,
+    'temperature_minus_dewpoint_limit': 2,
+    'sky_temperature_limit': -17,
+    'cloud_cover_limit': 25,
+    'lowest_ambient_temperature': 1,
+    'highest_ambient_temperature': 40,
+    
+
 
     'defaults': {
         'observing_conditions': 'observing_conditions1',

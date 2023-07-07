@@ -239,7 +239,7 @@ class WxEncAgent:
         # attempted to observe but been shut on....
         # If it is too many, then it shuts down for the whole evening. 
         self.opens_this_evening = 0
-        
+        self.local_weather_ok = None
 
         # The weather report has to be at least passable at some time of the night in order to 
         # allow the enclosure to become active and observe. This doesn't mean that it is
@@ -407,10 +407,16 @@ class WxEncAgent:
 
                 ocn_status['observing_conditions']['observing_conditions1']['weather_report_good'] = self.weather_report_is_acceptable_to_observe
                 ocn_status['observing_conditions']['observing_conditions1']['fitzgerald_number'] = self.night_fitzgerald_number
-
+                
+                if self.enclosure_next_open_time - time.time() > 0:
+                    ocn_status['observing_conditions']['observing_conditions1']['hold_duration'] = self.enclosure_next_open_time - time.time()
+                else:
+                    ocn_status['observing_conditions']['observing_conditions1']['hold_duration'] = 0
+                
+                
+                ocn_status['observing_conditions']['observing_conditions1']["wx_hold"] = self.local_weather_ok
                 if ocn_status is not None:
                     lane = "weather"
-                    # send_status(obsy, lane, enc_status)
                     try:
                         # time.sleep(2)
                         send_status(obsy, lane, ocn_status)
@@ -439,6 +445,18 @@ class WxEncAgent:
             ocn_status = g_dev['ocn'].get_status()
             enc_status = g_dev['enc'].get_status()
 
+            #breakpoint()
+
+
+            if 'wx_ok' in ocn_status:
+                if ocn_status['wx_ok'] == 'Yes':
+                    self.local_weather_ok = True
+                elif ocn_status['wx_ok'] == 'No':
+                    self.local_weather_ok = False
+                else:
+                    self.local_weather_ok = None
+            else:
+                self.local_weather_ok = None
 
             plog("***************************************************************")
             plog("Current time             : " + str(time.asctime()))
@@ -447,6 +465,12 @@ class WxEncAgent:
                 plog("This WEMA does not report observing conditions")
             else:
                 plog("Observing Conditions      : " +str(ocn_status))
+                
+            if self.local_weather_ok == None:
+                plog("No information on local weather available.")
+            else:
+                plog("Local Weather Ok to Observe  : " +str(self.local_weather_ok))
+            
             if enc_status['enclosure_mode'] == 'Manual':
                 plog ("Weather Report overriden due to being in Manual or debug mode.")
             else:
@@ -463,6 +487,12 @@ class WxEncAgent:
                     self.nightly_reset_script(enc_status)
 
 
+            #try:
+            #    multiplier = min(len(wx_reasons),3)
+            #except:
+            #    multiplier = 1
+            #wx_delay_time *= multiplier/2   #Stretch out the Wx hold if there are multiple reasons
+
             # Safety checks here
             if not g_dev['debug'] and self.open_and_enabled_to_observe and g_dev['enc'].mode == 'Automatic':
                 if enc_status is not None:
@@ -475,7 +505,6 @@ class WxEncAgent:
                         # if self.config['obsid_roof_control'] and g_dev['enc'].mode == 'Automatic':
                         plog("Detected Roof Closing.")
                         self.open_and_enabled_to_observe = False
-                        self.park_enclosure_and_close()
                         self.enclosure_next_open_time = time.time(
                          ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
 
@@ -500,6 +529,12 @@ class WxEncAgent:
                 if roof_should_be_shut == True and enc_status['enclosure_mode'] == 'Automatic':
                     plog("Safety check notices that the roof was open outside of the normal observing period")
                     self.park_enclosure_and_close()
+                
+                if not self.local_weather_ok == None:
+                    if not self.local_weather_ok:
+                        plog("Safety check notices that the local weather is not ok. Shutting the roof.")
+                        self.park_enclosure_and_close()
+                
 
             if (self.enclosure_next_open_time - time.time()) > 0:
                 plog("opens this eve: " + str(self.opens_this_evening))

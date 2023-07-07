@@ -20,7 +20,7 @@ can be modified for debugging or simulation purposes.
 import json
 import socket
 import time
-
+import os
 import win32com.client
 #import redis
 
@@ -62,20 +62,20 @@ class ObservingConditions:
         self.ok_to_open = "No"
         self.observing_condtions_message = "-"
         self.wx_is_ok = False
-        self.wx_hold = False
-        self.wx_to_go = 0.0
-        self.wx_hold_last_updated = (
-            time.time()
-        )  # This is meant for a stale check on the Wx hold report
-        self.wx_hold_tally = 0
-        self.wx_clamp = False
+        #self.wx_hold = False
+        #self.wx_to_go = 0.0
+        #self.wx_hold_last_updated = (
+        #    time.time()
+        #)  # This is meant for a stale check on the Wx hold report
+        #self.wx_hold_tally = 0
+        #self.wx_clamp = False
         self.clamp_latch = False
         self.wait_time = 0  # A countdown to re-open
-        self.wx_close = False  # If made true by Wx code, a 15 minute timeout will begin when Wx turns OK
-        self.wx_hold_until_time = None
-        self.wx_hold_count = 0  # if >=5 inhibits reopening for Wx
+        #self.wx_close = False  # If made true by Wx code, a 15 minute timeout will begin when Wx turns OK
+        #self.wx_hold_until_time = None
+        #self.wx_hold_count = 0  # if >=5 inhibits reopening for Wx
         self.wait_time = 0  # A countdown to re-open
-        self.wx_close = False  # If made true by Wx code, a 15 minute timeout will begin when Wx turns OK
+        #self.wx_close = False  # If made true by Wx code, a 15 minute timeout will begin when Wx turns OK
         self.wx_system_enable = True  # Purely a debugging aid.
         self.wx_test_cycle = 0
         self.prior_status = None
@@ -136,6 +136,12 @@ class ObservingConditions:
                 self.sky_monitor_oktoimage.Connected = True
                 plog("observing_conditions: sky_monitors connected = True")
             if config["observing_conditions"]["observing_conditions1"]["has_unihedron"]:
+                
+                unihedron_path=self.config['wema_path'] + self.config['wema_name'] + "/unihedron"
+                if not os.path.exists(unihedron_path):
+                    os.makedirs(unihedron_path)
+                
+                
                 self.unihedron_connected = True
                 try:
                     driver = config["observing_conditions"]["observing_conditions1"][
@@ -319,7 +325,7 @@ class ObservingConditions:
                     ),  # Provenance of 20.01 is dubious 20200504 WER
                     "open_ok": self.ok_to_open,
                     "wx_hold": self.wx_hold,
-                    "hold_duration": self.wx_to_go,
+                    "hold_duration": 0,
                 }
             except:
                 status = {
@@ -341,44 +347,54 @@ class ObservingConditions:
                     ),  #  Provenance of 20.01 is dubious 20200504 WER
                     "open_ok": self.ok_to_open,
                     "wx_hold": self.wx_hold,
-                    "hold_duration": self.wx_to_go,
+                    "hold_duration": 0,
                 }
+
+            rain_limit_setting=self.config['rain_limit']
+            humidity_limit_setting=self.config['humidity_limit']
+            windspeed_limit_setting=self.config['windspeed_limit']
+            temp_minus_dew_setting=self.config['temperature_minus_dewpoint_limit']
+            sky_temp_limit_setting=self.config['sky_temperature_limit']
+            cloud_cover_limit_setting=self.config['cloud_cover_limit']
+            lowest_temperature_setting=self.config['lowest_ambient_temperature']
+            highest_temperature_setting=self.config['highest_ambient_temperature']
+
             wx_reasons =[]
 
-            rain_limit = self.sky_monitor.RainRate > 0
+            rain_limit = self.sky_monitor.RainRate > rain_limit_setting
             if  rain_limit:
-                wx_reasons.append('Rain > 0')
-            humidity_limit = self.sky_monitor.Humidity < 85
+                wx_reasons.append('Rain > ' + str(rain_limit_setting))
+            humidity_limit = self.sky_monitor.Humidity < humidity_limit_setting
             if not humidity_limit:
-                wx_reasons.append('Humidity >= 85%')
+                wx_reasons.append('Humidity >= '+ str(humidity_limit_setting) +'%')
             wind_limit = (
-                self.sky_monitor.WindSpeed < 25
+                self.sky_monitor.WindSpeed < windspeed_limit_setting
             )  # sky_monitor reports km/h, Clarity may report in MPH
             if not wind_limit:
-                wx_reasons.append('Wind > 25 km/h')
+                wx_reasons.append('Wind > '+str(windspeed_limit_setting) +' km/h')
             dewpoint_gap = (
-                not (self.sky_monitor.Temperature - self.sky_monitor.DewPoint) < 2
+                not (self.sky_monitor.Temperature - self.sky_monitor.DewPoint) < temp_minus_dew_setting
             )
             if not dewpoint_gap:
-                wx_reasons.append('Ambient - Dewpoint < 2C')
+                wx_reasons.append('Ambient - Dewpoint < ' + str(temp_minus_dew_setting) + 'C')
             sky_amb_limit = (
                 self.sky_monitor.SkyTemperature - self.sky_monitor.Temperature 
-            ) < -17  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
+            ) < sky_temp_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
             if not sky_amb_limit:
-                wx_reasons.append('(sky - amb) > -17C')
+                wx_reasons.append('(sky - amb) > '+str(sky_temp_limit_setting) +'C')
             try:
                 cloud_cover = float(self.sky_monitor.CloudCover)
                 status['cloud_cover_%'] = round(cloud_cover, 0)
-                if cloud_cover <= 25:
+                if cloud_cover <= cloud_cover_limit_setting:
                     cloud_cover = False
                 else:
                     cloud_cover = True
-                    wx_reasons.append('>25% Cloudy')
+                    wx_reasons.append('>'+str(cloud_cover_limit_setting)+'% Cloudy')
             except:
                 status['cloud_cover_%'] = "no report"
                 cloud_cover = True    #  We cannot use this signal to force a wX hold or close
             self.current_ambient = round(self.temperature, 2)
-            temp_bounds = 1 < self.sky_monitor.Temperature < 40
+            temp_bounds = lowest_temperature_setting < self.sky_monitor.Temperature < highest_temperature_setting
 
             if not temp_bounds:
                 wx_reasons.append('amb temp out of range')
@@ -439,7 +455,7 @@ class ObservingConditions:
             ):  #  Once a minute.
 
                 try:
-                    wl = open("Q:/ptr/mrc/unihedron/wx_log.txt", "a")
+                    wl = open(self.config['wema_path'] + self.config['wema_name'] + "/unihedron/wx_log.txt", "a")
                     wl.write(
                         str(time.time())
                         + ", "
@@ -466,81 +482,81 @@ class ObservingConditions:
             # __init__().
             # When we get to this point of the code first time we expect self.wx_is_ok to be true
 
-            obs_win_begin, sunset, sunrise, ephemNow = self.astro_events.getSunEvents()
-            wx_delay_time = 900
-            try:
-                multiplier = min(len(wx_reasons),3)
-            except:
-                multiplier = 1
-            wx_delay_time *= multiplier/2   #Stretch out the Wx hold if there are multiple reasons
+            #obs_win_begin, sunset, sunrise, ephemNow = self.astro_events.getSunEvents()
+            #wx_delay_time = 900
+            #try:
+            #    multiplier = min(len(wx_reasons),3)
+            #except:
+            #    multiplier = 1
+            #wx_delay_time *= multiplier/2   #Stretch out the Wx hold if there are multiple reasons
 
-            if (
-                self.wx_is_ok and self.wx_system_enable
-            ) and not self.wx_hold:  # Normal condition, possibly nothing to do.
-                self.wx_hold_last_updated = time.time()
-            elif not self.wx_is_ok and not self.wx_hold:  # Wx bad and no hold yet.
+            #if (
+            #    self.wx_is_ok and self.wx_system_enable
+            #) and not self.wx_hold:  # Normal condition, possibly nothing to do.
+            #    self.wx_hold_last_updated = time.time()
+            #elif not self.wx_is_ok and not self.wx_hold:  # Wx bad and no hold yet.
                 # Bingo we need to start a cycle
-                self.wx_hold = True
-                self.wx_hold_until_time = (
-                    t := time.time() + wx_delay_time
-                )  # 15 minutes   Make configurable
-                self.wx_hold_tally += 1  #  This counts all day and night long.
-                self.wx_hold_last_updated = t
-                if (
-                    obs_win_begin <= ephemNow <= sunrise
-                ):  # Gate the real holds to be in the Observing window.
-                    self.wx_hold_count += 1
-                    # We choose to let the enclosure manager handle the close.
-                    plog(
-                        "Wx hold asserted, flap#:",
-                        self.wx_hold_count,
-                        self.wx_hold_tally,
-                    )
-                else:
-                    plog(
-                        "Wx Hold -- out of Observing window.",
-                        self.wx_hold_count,
-                        self.wx_hold_tally,
-                    )
-            elif not self.wx_is_ok and self.wx_hold:  # WX is bad and we are on hold.
-                self.wx_hold_last_updated = time.time()
-                # Stay here as long as we need to.
-                self.wx_hold_until_time = (t := time.time() + wx_delay_time)
-                if self.wx_system_enable:
-                    pass
-            elif self.wx_is_ok and self.wx_hold:  # Wx now good and still on hold.
-                if self.wx_hold_count < 3:
-                    if time.time() >= self.wx_hold_until_time and not self.wx_clamp:
-                        # Time to release the hold.
-                        self.wx_hold = False
-                        self.wx_hold_until_time = (
-                            time.time() + wx_delay_time
-                        )  # Keep pushing the recovery out
-                        self.wx_hold_last_updated = time.time()
-                        plog(
-                            "Wx hold released, flap#, tally#:",
-                            self.wx_hold_count,
-                            self.wx_hold_tally,
-                        )
-                        # We choose to let the enclosure manager diecide it needs to re-open.
-                else:
-                    # Never release the THIRD hold without some special high level intervention.
-                    if not self.clamp_latch:
-                        plog("Sorry, Tobor is clamping enclosure shut for the night.")
-                    self.clamp_latch = True
-                    self.wx_clamp = True
+                #self.wx_hold = True
+                # self.wx_hold_until_time = (
+                #     t := time.time() + wx_delay_time
+                # )  # 15 minutes   Make configurable
+                # self.wx_hold_tally += 1  #  This counts all day and night long.
+                # self.wx_hold_last_updated = t
+                # if (
+                #     obs_win_begin <= ephemNow <= sunrise
+                # ):  # Gate the real holds to be in the Observing window.
+                #     self.wx_hold_count += 1
+                #     # We choose to let the enclosure manager handle the close.
+                #     plog(
+                #         "Wx hold asserted, flap#:",
+                #         self.wx_hold_count,
+                #         self.wx_hold_tally,
+                #     )
+                # else:
+                #     plog(
+                #         "Wx Hold -- out of Observing window.",
+                #         self.wx_hold_count,
+                #         self.wx_hold_tally,
+                #     )
+            # elif not self.wx_is_ok and self.wx_hold:  # WX is bad and we are on hold.
+            #     self.wx_hold_last_updated = time.time()
+            #     # Stay here as long as we need to.
+            #     self.wx_hold_until_time = (t := time.time() + wx_delay_time)
+            #     if self.wx_system_enable:
+            #         pass
+            # elif self.wx_is_ok and self.wx_hold:  # Wx now good and still on hold.
+            #     if self.wx_hold_count < 3:
+            #         if time.time() >= self.wx_hold_until_time and not self.wx_clamp:
+            #             # Time to release the hold.
+            #             self.wx_hold = False
+            #             self.wx_hold_until_time = (
+            #                 time.time() + wx_delay_time
+            #             )  # Keep pushing the recovery out
+            #             self.wx_hold_last_updated = time.time()
+            #             plog(
+            #                 "Wx hold released, flap#, tally#:",
+            #                 self.wx_hold_count,
+            #                 self.wx_hold_tally,
+            #             )
+            #             # We choose to let the enclosure manager diecide it needs to re-open.
+            #     else:
+            #         # Never release the THIRD hold without some special high level intervention.
+            #         if not self.clamp_latch:
+            #             plog("Sorry, Tobor is clamping enclosure shut for the night.")
+            #         self.clamp_latch = True
+            #         self.wx_clamp = True
 
-                self.wx_hold_last_updated = time.time()
-            if self.wx_hold:
-                self.wx_to_go = round((self.wx_hold_until_time - time.time()), 0)
-                status["hold_duration"] = self.wx_to_go
+                #self.wx_hold_last_updated = time.time()
+            #if self.wx_hold:
+            #    self.wx_to_go = round((self.wx_hold_until_time - time.time()), 0)
+            #    status["hold_duration"] = self.wx_to_go
                 # MTF COMMENTED THIS OUT BECAUSE IT WAS SENDING A STATUS EVERY 20 SECONDS
                 #try:
                 #    g_dev['obs'].send_to_user(wx_reasons)
                 #except:
                 #    pass
-            else:
-                status["hold_duration"] = 0.0
+            #else:
+            #    status["hold_duration"] = 0.0
             self.status = status
             g_dev["ocn"].status = status
 
