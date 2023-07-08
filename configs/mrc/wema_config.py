@@ -92,7 +92,7 @@ wema_config = {
     
     'obsid_roof_control': False,  # MTF entered this in to remove sro specific code  NB 'site_is_specifc' also deals with this
     'wema_allowed_to_open_roof': True,
-    'period_of_time_to_wait_for_roof_to_open': 50,  # seconds - needed to check if the roof ACTUALLY opens.
+    'period_of_time_to_wait_for_roof_to_open': 180,  # seconds - needed to check if the roof ACTUALLY opens.
     'check_time': 300,  # MF's original setting.
     'maximum_roof_opens_per_evening': 4,
     'roof_open_safety_base_time': 15,

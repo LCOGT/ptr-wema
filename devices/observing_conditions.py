@@ -323,9 +323,9 @@ class ObservingConditions:
                     "calc_sky_mpsas": round(
                         uni_measure, 2
                     ),  # Provenance of 20.01 is dubious 20200504 WER
-                    "open_ok": self.ok_to_open,
-                    "wx_hold": self.wx_hold,
-                    "hold_duration": 0,
+                    "open_ok": self.ok_to_open#,
+                    #"wx_hold": None,
+                    #"hold_duration": 0,
                 }
             except:
                 status = {
@@ -345,9 +345,9 @@ class ObservingConditions:
                     "calc_sky_mpsas": round(
                         uni_measure, 2
                     ),  #  Provenance of 20.01 is dubious 20200504 WER
-                    "open_ok": self.ok_to_open,
-                    "wx_hold": self.wx_hold,
-                    "hold_duration": 0,
+                    "open_ok": self.ok_to_open#,
+                    #"wx_hold": None,
+                    #"hold_duration": 0,
                 }
 
             rain_limit_setting=self.config['rain_limit']

@@ -120,7 +120,7 @@ wema_config = {
     'wema_allowed_to_open_roof': True,  ##Why do we need this?
     
     #next few are enclosure parameteers
-    'period_of_time_to_wait_for_roof_to_open' : 50, # seconds - needed to check if the roof ACTUALLY opens. 
+    'period_of_time_to_wait_for_roof_to_open' : 180, # seconds - needed to check if the roof ACTUALLY opens. 
     #'only_scope_that_controls_the_roof': True, # If multiple scopes control the roof, set this to False
     'check_time': 300,
     'maximum_roof_opens_per_evening' : 4,
