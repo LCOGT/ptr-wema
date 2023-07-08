@@ -25,8 +25,8 @@ import socket
 from pathlib import Path
 import math
 import requests
-import redis
-import datetime
+#import redis
+#import datetime
 import traceback
 import ephem
 import ptr_config
