@@ -99,16 +99,16 @@ wema_config = {
     'site_enclosure_default_mode': "Automatic",  # "Manual", "Shutdown", "Automatic"
     'automatic_detail_default': "Enclosure is set to Automatic mode.",
 
-    'observing_check_period': 5,    # How many minutes between weather checks
-    'enclosure_check_period': 5,    # How many minutes between enclosure checks
-    'auto_eve_bias_dark': True,
+    'observing_check_period': 1,    # How many minutes between weather checks
+    'enclosure_check_period': 1,    # How many minutes between enclosure checks
+    #'auto_eve_bias_dark': True,
     #'auto_midnight_moonless_bias_dark': False,
 
-    'auto_eve_sky_flat': True,
-    'eve_sky_flat_sunset_offset': -40.,  # 40 before Minutes  neg means before, + after.
+   # 'auto_eve_sky_flat': True,
+    #'eve_sky_flat_sunset_offset': -40.,  # 40 before Minutes  neg means before, + after.
     'eve_cool_down_open': -45.0,
     'morn_close_and_park': 32.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowban
-    'auto_morn_sky_flat': True,
+    #'auto_morn_sky_flat': True,
     #auto_morn_bias_dark': True,
 
     # Local weather limits

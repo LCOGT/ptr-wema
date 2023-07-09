@@ -216,7 +216,7 @@ wema_config = {
     'observing_conditions' : {
         'observing_conditions1': {
             'parent': 'site',
-            'ocn_is_specific':  False,  # Indicates some special site code.
+            'ocn_is_custom':  True, 
             # Intention it is found in this file.
             'name': 'SRO File',
             'driver': None,  # Could be redis, ASCOM, ...
@@ -233,7 +233,7 @@ wema_config = {
     'enclosure': {
         'enclosure1': {
             'parent': 'site',
-            'enc_is_specific':  False,  # Indicates some special site code.
+            'enc_is_custom':  False,   #SRO needs sorting, presuambly with this flag.
             'directly_connected': True, # For ECO and EC2, they connect directly to the enclosure, whereas WEMA are different.
             'name': 'Dragonfly Roof',
             'hostIP':  None,
