@@ -40,6 +40,9 @@ from pyowm import OWM
 from pyowm.utils import config
 from pyowm.utils import timestamps
 
+from wema_config import get_enc_status_custom
+from wema_config import get_ocn_status_custom
+
 # FIXME: This needs attention once we figure out the restart_obs script.
 def terminate_restart_observer(site_path, no_restart=False):
     """Terminates obs-platform code if running and restarts obs."""
@@ -261,6 +264,12 @@ class WxEncAgent:
         #self.nightly_weather_report_done=False
         self.nightly_reset_complete = False
                 
+        
+        
+        self.wema_has_roof_control=config['wema_has_control_of_roof']
+        
+        
+        
         # Run a weather report on bootup so enclosure can run if need be.
         if not g_dev['debug']:
             # self.global_wx()
@@ -286,13 +295,29 @@ class WxEncAgent:
                 driver = devices_of_type[name]["driver"]
                 # settings = devices_of_type[name].get("settings", {})
 
-                if dev_type == "observing_conditions":
+                if dev_type == "observing_conditions" and not self.config['observing_conditions']['observing_conditions1']['ocn_is_custom']:
 
                     device = ObservingConditions(
                         driver, name, self.config, self.astro_events
                     )
-                elif dev_type == "enclosure":
+                    self.ocn_status_custom=False
+                elif dev_type == "observing_conditions" and self.config['observing_conditions']['observing_conditions1']['ocn_is_custom']:
+                    #plog("breakpoint")
+                    
+                    device=None
+                    self.ocn_status_custom=True
+                    #get_ocn_status()
+                    #breakpoint()
+                    
+                elif dev_type == "enclosure" and not self.config['enclosure']['enclosure1']['enc_is_custom']:
                     device = Enclosure(driver, name, self.config, self.astro_events)
+                    self.enc_status_custom=False
+                elif dev_type == "enclosure" and self.config['enclosure']['enclosure1']['enc_is_custom']:
+                    
+                    device=None
+                    self.enc_status_custom=True
+                    #get_enc_status()
+                    #breakpoint()
                 else:
                     print(f"Unknown device: {name}")
                 self.all_devices[dev_type][name] = device
@@ -357,10 +382,14 @@ class WxEncAgent:
             status = {}
             status["timestamp"] = round(time.time(), 1)
             status['enclosure']={}
-            device=self.all_devices.get('enclosure', {})['enclosure1']
-            status['enclosure']['enclosure1'] = device.get_status()
-            enc_status = {"enclosure": status.pop("enclosure")}
-
+            if self.enc_status_custom==False:
+                device=self.all_devices.get('enclosure', {})['enclosure1']
+                status['enclosure']['enclosure1'] = device.get_status()
+                enc_status = {"enclosure": status.pop("enclosure")}
+            else:
+                enc_status={}
+                enc_status['enclosure']={}
+                enc_status['enclosure']['enclosure1']= get_enc_status_custom()
             #breakpoint()
             if enc_status is not None:
                 # New Tim Entries
@@ -406,10 +435,14 @@ class WxEncAgent:
             status = {}
             status["timestamp"] = round(time.time(), 1)
             status['observing_conditions'] = {}
-            device = self.all_devices.get('observing_conditions', {})['observing_conditions1']
-            status['observing_conditions']['observing_conditions1'] = device.get_status()
-            ocn_status = {"observing_conditions": status.pop("observing_conditions")}
-
+            if self.enc_status_custom==False:
+                device = self.all_devices.get('observing_conditions', {})['observing_conditions1']
+                status['observing_conditions']['observing_conditions1'] = device.get_status()
+                ocn_status = {"observing_conditions": status.pop("observing_conditions")}
+            else:
+                ocn_status={}
+                ocn_status['observing_conditions']={}
+                ocn_status['observing_conditions']['observing_conditions1'] = get_ocn_status_custom()
             if ocn_status is not None:
 
                 if ocn_status['observing_conditions']['observing_conditions1'] == None:
@@ -454,10 +487,14 @@ class WxEncAgent:
 
             # If the enclosure is simply delayed until opening, then wait until then, then attempt to start up the enclosure
             obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
-
-            ocn_status = g_dev['ocn'].get_status()
-            enc_status = g_dev['enc'].get_status()
-
+            if self.ocn_status_custom==False:                            
+                ocn_status = g_dev['ocn'].get_status()
+            else:
+                ocn_status = get_ocn_status_custom()
+            if self.enc_status_custom==False:                
+                enc_status = g_dev['enc'].get_status()
+            else:
+                enc_status = get_enc_status_custom()
             #breakpoint()
 
 
@@ -993,10 +1030,14 @@ class WxEncAgent:
             plog ("OWN failed", e)
 
         # However, if the enclosure is under manual control, leave this switch on.
-        enc_status = g_dev['enc'].status
+        if self.enc_status_custom==False:
+            enc_status = g_dev['enc'].status
+        else:
+            enc_status = get_enc_status_custom()
+        
         #try:
         if enc_status is not None:
-            if enc_status['mode'] == 'Manual':
+            if enc_status['enclosure_mode'] == 'Manual':
                 self.weather_report_is_acceptable_to_observe=True
         #except:
 

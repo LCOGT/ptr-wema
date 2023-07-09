@@ -30,6 +30,22 @@ obs_id = 'sro1'
                     #SRO-Weather (\\192.168.1.57) w:
                     #Username: wayne_rosing  PW: 29yzpe
 
+
+# =============================================================================
+#   Pasted in by WER
+#                     #\\192.168.1.57\SRO10-Roof  r:
+#                     #SRO-Weather (\\192.168.1.57) w:
+#                     #Username: wayne_rosing  PW: 29yzpe
+
+# There also is a seeing share.  I have not used it but the RASC-Nuc does.  (They use different drive letters as well.  That share IP is
+# \\192.168.1.57\SRO-Seeing and the drive letter would be s: for consistency with the existing SRO code.  NOTE that SRO 1 is in building 10.
+# RASC-16 is in building 9 so the RAASC roof share is \SRO9-Roof.  FYI the ASA 0m5F3.6 will go in SRO12.   "Locally distributed observing."
+# 
+# =============================================================================
+                    
+site_name = 'sro'
+
+
 prior_status = None
 
 wema_config = {
@@ -100,7 +116,7 @@ wema_config = {
     'reference_pressure':  867.254,    #mbar   A rough guess 20200315
 
 
-
+    'wema_has_control_of_roof': False,
     'wema_allowed_to_open_roof': True,
     'period_of_time_to_wait_for_roof_to_open': 180,  # seconds - needed to check if the roof ACTUALLY opens.
     'check_time': 300,  # MF's original setting.
@@ -172,9 +188,12 @@ def f_to_c(f):
     return round(5*(f - 32)/9, 2)
 last_good_wx_fields = 'n.a'
 last_good_daily_lines = 'n.a'
-def get_ocn_status(g_dev=None):
+def get_ocn_status_custom(g_dev=None):
+    #print ("entered")
+    #breakpoint()
     global last_good_wx_fields, last_good_daily_lines   # NB NB NB Perhaps memo-ize these instead?
-    if wema_config['site'] == 'sro':   #  Belts and suspenders.
+    if True:
+       # breakpoint()
         try:
             wx = open('W:/sroweather.txt', 'r')
             wx_line = wx.readline()
@@ -308,26 +327,39 @@ def get_ocn_status(g_dev=None):
             pressure = float(pressure)
         except:
             pressure = wema_config['reference_pressure']
-
-        illum, mag = g_dev['evnt'].illuminationNow()
-
-        if illum > 100:
-            illum = int(illum)
+        #breakpoint()
         try:
-            calc_HSI_lux = illum
-            calc_HSI_lux = calc_HSI_lux
-            # NOte criterian below can now vary with the site config file.
-            dew_point_gap = not (temperature  - dewpoint) < 2
-            temp_bounds = not (temperature < -10) or (temperature > 40)
-            # NB NB NB Thiseeds to go into a config entry.
-            wind_limit = windspeed < 60/2.235   #sky_monitor reports m/s, Clarity may report in MPH
-            sky_amb_limit  = skyTemperature < -20
-            humidity_limit =humidity < 85
-            rain_limit = True # Rain Rate <= 0.001
-            wx_is_ok = dew_point_gap and temp_bounds and wind_limit and sky_amb_limit and \
-                            humidity_limit and rain_limit
+            illum, mag = g_dev['evnt'].illuminationNow()
+    
+            if illum > 100:
+                illum = int(illum)
+            try:
+                calc_HSI_lux = illum
+                calc_HSI_lux = calc_HSI_lux
+                # NOte criterian below can now vary with the site config file.
+                
+                #NOTE computing this and reporting it to the user may not match the
+                #decisions SRO WX makes.
+                dew_point_gap = not (temperature  - dewpoint) < 2
+                temp_bounds = not (temperature < -10) or (temperature > 40)
+                # NB NB NB Thiseeds to go into a config entry.
+                wind_limit = windspeed < 60/2.235   #sky_monitor reports m/s, Clarity may report in MPH
+                sky_amb_limit  = skyTemperature < -20
+                humidity_limit =humidity < 85
+                rain_limit = True # Rain Rate <= 0.001
+                wx_is_ok = dew_point_gap and temp_bounds and wind_limit and sky_amb_limit and \
+                                humidity_limit and rain_limit
+                calc_sky_mpsas=round((mag - 20.01),2)
+            except:
+                #print ("cannot set weather limits")
+                illum=None
+                mag=None
+                calc_sky_mpsas=None
         except:
-            print ("cannot set weather limits")
+            #print ("Could not get current illumination")
+            illum=None
+            mag=None
+            calc_sky_mpsas=None
         #  NB  wx_is_ok does not include ambient light or altitude of the Sun
         try:
             enc_stat =g_dev['enc'].stat_string
@@ -344,7 +376,8 @@ def get_ocn_status(g_dev=None):
                 else:
                     wx_str = "No"   #Ideally we add the dominant reason in priority order.
             except:
-                print ("wx_is_ok variable yet to be intiialised")
+                #print ("wx_is_ok variable yet to be intiialised")
+                wx_str ='Unknown'
         # Now assemble the status dictionary.
         try:
             status = {"temperature_C": round(temperature, 2),
@@ -358,7 +391,7 @@ def get_ocn_status(g_dev=None):
                       'solar_flux_w/m^2': None,
                       'cloud_cover_%': 0.0, #str(cloudCover),
                       "calc_HSI_lux": illum,
-                      "calc_sky_mpsas": round((mag - 20.01),2),    #  Provenance of 20.01 is dubious 20200504 WER
+                      "calc_sky_mpsas": calc_sky_mpsas,    #  Provenance of 20.01 is dubious 20200504 WER
                       "wx_ok": wx_str,  #str(self.sky_monitor_oktoimage.IsSafe),
                       "open_ok": wx_str,  #T his is the special bit in the
                                            # Boltwood for a roof close relay
@@ -373,8 +406,8 @@ def get_ocn_status(g_dev=None):
     else:
         pass#breakpoint()       #  Debug bad place.
 
-def get_enc_status(g_dev=None):
-    if wema_config['site'] == 'sro':   #  Belts and suspenders.
+def get_enc_status_custom(g_dev=None):
+    if True:   #  Belts and suspenders.
         try:
             enc = open('R:/Roof_Status.txt')
             enc_text = enc.readline()
