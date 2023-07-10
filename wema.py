@@ -443,6 +443,9 @@ class WxEncAgent:
             status['observing_conditions'] = {}
             if self.enc_status_custom==False:
                 device = self.all_devices.get('observing_conditions', {})['observing_conditions1']
+                
+                #breakpoint()
+                
                 if device == None:
                     status['observing_conditions']['observing_conditions1'] = None
                 else:
@@ -533,9 +536,9 @@ class WxEncAgent:
                 plog("Local Weather Ok to Observe  : " +str(self.local_weather_ok))
             
             if enc_status['enclosure_mode'] == 'Manual':
-                plog ("Weather Report overriden due to being in Manual or debug mode.")
-            else:
-                plog("Weather Report Good to Observe: " + str(self.weather_report_is_acceptable_to_observe))
+                plog ("Weather Report overriden due to being in Manual or debug mode: ")
+            
+            plog("Weather Report Good to Observe: " + str(self.weather_report_is_acceptable_to_observe))
             plog("Time until Cool and Open      : " + str(round(( g_dev['events']['Cool Down, Open'] - ephem_now) * 24,2)) + " hours")
             plog("Time until Close and Park     : "+ str(round(( g_dev['events']['Close and Park'] - ephem_now) * 24,2)) + " hours")
             plog("Time until Nightly Reset      : " + str(round((g_dev['events']['Nightly Reset'] - ephem_now) * 24, 2)) + " hours")

@@ -225,7 +225,7 @@ wema_config = {
 
     'observing_conditions' : {     #for SAF
         'observing_conditions1': {
-            'ocn_is_custom':  True,  
+            'ocn_is_custom':  False,  
             'name': 'Boltwood',
             'driver': 'ASCOM.Boltwood.ObservingConditions',
             'driver_2':  'ASCOM.Boltwood.OkToOpen.SafetyMonitor',
