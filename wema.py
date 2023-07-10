@@ -28,6 +28,7 @@ import requests
 import redis
 import datetime
 import traceback
+import ephem
 
 import ptr_config
 from api_calls import API_calls
@@ -683,9 +684,9 @@ class WxEncAgent:
         if (g_dev['events']['Nightly Reset'] <= ephem_now < g_dev['events']['End Nightly Reset']): # and g_dev['enc'].mode == 'Automatic' ):
             
             if self.nightly_reset_complete == False:
-                self.nightly_reset_script()
+                self.nightly_reset_script(enc_status)
 
-    def nightly_reset_script(self):
+    def nightly_reset_script(self, enc_status):
         # UNDERTAKING END OF NIGHT ROUTINES
 
         # Never hurts to make sure the telescope is parked for the night

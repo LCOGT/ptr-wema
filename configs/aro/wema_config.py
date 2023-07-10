@@ -136,10 +136,10 @@ wema_config = {
     #Sequencing keys and value, sets up Events
     'auto_eve_bias_dark': True,
     'auto_midnight_moonless_bias_dark': False,
-    'auto_eve_sky_flat': True,
-    'eve_cool_down_open' : -65.0,
-    'eve_sky_flat_sunset_offset': -60.0,  # Minutes  neg means before, + after.
-    'eve_cool_down_open' : -65.0,
+    'auto_eve_sky_flat': False,
+    'eve_sky_flat_sunset_offset': -45.0,  # Minutes  neg means before, + after.
+    'eve_cool_down_open' : -50.0,
+    
     'auto_morn_sky_flat': True,
     'auto_morn_bias_dark': True,
     #'re-calibrate_on_solve': False,
