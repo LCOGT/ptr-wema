@@ -116,8 +116,9 @@ wema_config = {
     'reference_ambient':  10.0,  # Degrees Celsius.  Alternately 12 entries, one for every - mid month.
     'reference_pressure':  794.0,    #mbar   A rough guess 20200315
 
-    'obsid_roof_control':False, #MTF entered this in to remove sro specific code.... Basically do we have control of the roof or not see line 338 sequencer.py
-    'wema_allowed_to_open_roof': True,  ##Why do we need this?
+    'wema_has_control_of_roof': True,
+    'wema_allowed_to_open_roof': True,
+
     
     #next few are enclosure parameteers
     'period_of_time_to_wait_for_roof_to_open' : 180, # seconds - needed to check if the roof ACTUALLY opens. 

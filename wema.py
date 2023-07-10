@@ -443,8 +443,11 @@ class WxEncAgent:
             status['observing_conditions'] = {}
             if self.enc_status_custom==False:
                 device = self.all_devices.get('observing_conditions', {})['observing_conditions1']
-                status['observing_conditions']['observing_conditions1'] = device.get_status()
-                ocn_status = {"observing_conditions": status.pop("observing_conditions")}
+                if device == None:
+                    status['observing_conditions']['observing_conditions1'] = None
+                else:
+                    status['observing_conditions']['observing_conditions1'] = device.get_status()
+                    ocn_status = {"observing_conditions": status.pop("observing_conditions")}
             else:
                 ocn_status={}
                 ocn_status['observing_conditions']={}
@@ -473,7 +476,7 @@ class WxEncAgent:
                         # time.sleep(2)
                         send_status(obsy, lane, ocn_status)
                     except:
-                        plog('could not send enclosure status')                    
+                        plog('could not send weather status')
 
         loud = False
         if loud:
@@ -503,16 +506,18 @@ class WxEncAgent:
                 enc_status = get_enc_status_custom()
             #breakpoint()
 
-
-            if 'wx_ok' in ocn_status:
-                if ocn_status['wx_ok'] == 'Yes':
-                    self.local_weather_ok = True
-                elif ocn_status['wx_ok'] == 'No':
-                    self.local_weather_ok = False
+            if ocn_status==None:
+                self.local_weather_ok = None
+            else:
+                if 'wx_ok' in ocn_status:
+                    if ocn_status['wx_ok'] == 'Yes':
+                        self.local_weather_ok = True
+                    elif ocn_status['wx_ok'] == 'No':
+                        self.local_weather_ok = False
+                    else:
+                        self.local_weather_ok = None
                 else:
                     self.local_weather_ok = None
-            else:
-                self.local_weather_ok = None
 
             plog("***************************************************************")
             plog("Current time             : " + str(time.asctime()))
