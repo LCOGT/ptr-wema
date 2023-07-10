@@ -277,6 +277,10 @@ wema_config = {
 
 }
 
+def get_enc_status_custom():
+    pass
+def get_ocn_status_custom():
+    pass
 
 if __name__ == '__main__':
     j_dump = json.dumps(site_config)

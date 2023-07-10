@@ -169,6 +169,13 @@ wema_config = {
 
 }
 
+def get_enc_status_custom():
+    pass
+def get_ocn_status_custom():
+    pass
+
+
+
 if __name__ == '__main__':
     '''
     This is a simple test to send and receive via json.
