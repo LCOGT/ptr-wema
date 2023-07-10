@@ -150,9 +150,9 @@ class ObservingConditions:
                     )
                     self.unihedron_connected = False
                     # NB NB if no unihedron is installed the status code needs to not report it.
-        elif not self.config["site_is_custom"]:
-            self.obsid_is_generic = False
-            self.obsid_is_custom = True
+        #elif not self.config["site_is_custom"]:
+        #    self.obsid_is_generic = False
+        #    self.obsid_is_custom = True
         
         self.last_wx = None
 
@@ -253,7 +253,7 @@ class ObservingConditions:
             #     pass
             # return status
 
-        elif self.obsid_is_generic or self.is_wema : # These operations are common to a generic single computer or wema site.
+        elif self.is_wema : # These operations are common to a generic single computer or wema site.
             ## Here we get the status from local devices
             status = {}
             illum, mag = self.astro_events.illuminationNow()

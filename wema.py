@@ -451,19 +451,20 @@ class WxEncAgent:
                 ocn_status['observing_conditions']={}
                 ocn_status['observing_conditions']['observing_conditions1'] = get_ocn_status_custom()
 
-            if ocn_status is None:   #20230709 Changed from not None
-
+            if ocn_status is None or ocn_status['observing_conditions']['observing_conditions1']  == None:   #20230709 Changed from not None
+                ocn_status = {}
+                ocn_status['observing_conditions'] = {}
                 #if ocn_status['observing_conditions']['observing_conditions1'] == None:
                 ocn_status['observing_conditions']['observing_conditions1'] = dict(wx_ok='Unknown',
                                                                                        wx_hold='no',
                                                                                        hold_duration=0)
 
 
-                ocn_status['observing_conditions']['observing_conditions1']['weather_report_good'] = self.weather_report_is_acceptable_to_observe
-                ocn_status['observing_conditions']['observing_conditions1']['fitzgerald_number'] = self.night_fitzgerald_number
+            ocn_status['observing_conditions']['observing_conditions1']['weather_report_good'] = self.weather_report_is_acceptable_to_observe
+            ocn_status['observing_conditions']['observing_conditions1']['fitzgerald_number'] = self.night_fitzgerald_number
 
 
-                     
+            #breakpoint()
             if self.enclosure_next_open_time - time.time() > 0:
                 ocn_status['observing_conditions']['observing_conditions1']['hold_duration'] = self.enclosure_next_open_time - time.time()
             else:
