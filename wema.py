@@ -151,10 +151,10 @@ class WxEncAgent:
             g_dev["wema_write_share_path"] = self.site_path  # Just to be safe.
             self.wema_path = g_dev["wema_write_share_path"]
 
-        if self.config["site_is_custom"]:
-            self.site_is_custom = True
-        else:
-            self.site_is_custom = False
+        # if self.config["site_is_custom"]:
+        #     self.site_is_custom = True
+        # else:
+        #     self.site_is_custom = False
 
         self.last_request = None
         self.stopped = False
@@ -294,7 +294,7 @@ class WxEncAgent:
             for name in device_names:
                 driver = devices_of_type[name]["driver"]
                 # settings = devices_of_type[name].get("settings", {})
-
+ 
                 if dev_type == "observing_conditions" and not self.config['observing_conditions']['observing_conditions1']['ocn_is_custom']:
 
                     device = ObservingConditions(
@@ -328,7 +328,6 @@ class WxEncAgent:
 
         uri = f"{self.config['wema_name']}/config/"
         self.config["events"] = g_dev["events"]
-
         response = self.api.authenticated_request("PUT", uri, self.config)
         if response:
             print("\n\nConfig uploaded successfully.")
@@ -389,8 +388,9 @@ class WxEncAgent:
             else:
                 enc_status={}
                 enc_status['enclosure']={}
+
                 enc_status['enclosure']['enclosure1']= get_enc_status_custom()
-            #breakpoint()
+
             if enc_status is not None:
                 # New Tim Entries
                 if enc_status['enclosure']['enclosure1']['shutter_status'] == 'Open':
@@ -404,7 +404,7 @@ class WxEncAgent:
                         enc_status['enclosure']['enclosure1']['shut_reason_manual_mode'] = True
                     else:
                         enc_status['enclosure']['enclosure1']['shut_reason_manual_mode'] = False
-                    if ocn_status is not None:
+                    if ocn_status is not None:  #NB NB ocn status has never been established first time this is envoked after startup -WER
                         if ocn_status['observing_conditions']['observing_conditions1']['wx_ok'] == 'Unknown':
                             enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = False
                         elif ocn_status['observing_conditions']['observing_conditions1']['wx_ok'] == 'No' or not self.weather_report_is_acceptable_to_observe:
@@ -435,7 +435,7 @@ class WxEncAgent:
             status = {}
             status["timestamp"] = round(time.time(), 1)
             status['observing_conditions'] = {}
-            if self.enc_status_custom==False:
+            if self.ocn_status_custom==False:
                 device = self.all_devices.get('observing_conditions', {})['observing_conditions1']
                 status['observing_conditions']['observing_conditions1'] = device.get_status()
                 ocn_status = {"observing_conditions": status.pop("observing_conditions")}
@@ -443,35 +443,38 @@ class WxEncAgent:
                 ocn_status={}
                 ocn_status['observing_conditions']={}
                 ocn_status['observing_conditions']['observing_conditions1'] = get_ocn_status_custom()
-            if ocn_status is not None:
 
-                if ocn_status['observing_conditions']['observing_conditions1'] == None:
-                    ocn_status['observing_conditions']['observing_conditions1'] = dict(wx_ok='Unknown',
+            if ocn_status is None:   #20230709 Changed from not None
+
+                #if ocn_status['observing_conditions']['observing_conditions1'] == None:
+                ocn_status['observing_conditions']['observing_conditions1'] = dict(wx_ok='Unknown',
                                                                                        wx_hold='no',
                                                                                        hold_duration=0)
 
-
+            try:
                 ocn_status['observing_conditions']['observing_conditions1']['weather_report_good'] = self.weather_report_is_acceptable_to_observe
                 ocn_status['observing_conditions']['observing_conditions1']['fitzgerald_number'] = self.night_fitzgerald_number
-                
-                if self.enclosure_next_open_time - time.time() > 0:
-                    ocn_status['observing_conditions']['observing_conditions1']['hold_duration'] = self.enclosure_next_open_time - time.time()
-                else:
-                    ocn_status['observing_conditions']['observing_conditions1']['hold_duration'] = 0
-                
-                
-                ocn_status['observing_conditions']['observing_conditions1']["wx_hold"] = not self.local_weather_ok
-                if ocn_status is not None:
-                    lane = "weather"
-                    try:
-                        # time.sleep(2)
-                        send_status(obsy, lane, ocn_status)
-                    except:
-                        plog('could not send enclosure status')                    
+            except:
+                plog("wema line 455 faulted.... Moving on.")
+                     
+            if self.enclosure_next_open_time - time.time() > 0:
+                ocn_status['observing_conditions']['observing_conditions1']['hold_duration'] = self.enclosure_next_open_time - time.time()
+            else:
+                ocn_status['observing_conditions']['observing_conditions1']['hold_duration'] = 0
+            
+            
+            ocn_status['observing_conditions']['observing_conditions1']["wx_hold"] = not self.local_weather_ok
 
-        loud = False
-        if loud:
-            print("\n\n > Status Sent:  \n", status)
+            lane = "weather"
+            try:
+                # time.sleep(2)
+                send_status(obsy, lane, ocn_status)
+            except:
+                plog('could not send enclosure status')                    
+
+            loud = False
+            if loud:
+                print("\n\n > Status Sent:  \n", ocn_status)
 
 
     def update(self):     ## NB NB NB This is essentially the sequencer for the WEMA.

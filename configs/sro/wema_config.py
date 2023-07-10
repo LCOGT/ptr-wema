@@ -25,7 +25,7 @@ from global_yard import g_dev
  
 instance_type = 'wema' # This is the type of site this is.
 wema_name = 'sro'
-obs_id = 'sro1'
+#obs_id = 'sro1'
                     #\\192.168.1.57\SRO10-Roof  r:
                     #SRO-Weather (\\192.168.1.57) w:
                     #Username: wayne_rosing  PW: 29yzpe
@@ -42,9 +42,8 @@ obs_id = 'sro1'
 # RASC-16 is in building 9 so the RAASC roof share is \SRO9-Roof.  FYI the ASA 0m5F3.6 will go in SRO12.   "Locally distributed observing."
 # 
 # =============================================================================
-                    
-site_name = 'sro'
 
+degree_symbol = "°"
 
 prior_status = None
 
@@ -53,25 +52,24 @@ wema_config = {
     # THEY EXIST SOLELY SO AS TO NOT BREAK THE UI UNTIL 
     #THINGS ARE MOVED TO OBS_ID
     #'site': 'sro1', #TIM this may no longer be needed.
-    'instance_type' : 'obs',
+    'instance_type' : 'wema',
     'wema_name': 'sro',
-    ####################################################
-    'obs_id': 'sro1',
-    #'observatory_location': site_name.lower(),
-    
-    'obsp_ids': ['sro2'],  # a list of the obsp's in an enclosure.  
 
+
+    
+    'obsp_ids': ['sro2'],  #, 'sro1', 'sro3'],  # a list of thefunctional  obsp's in an enclosure.  
+    'obsp_tel' :['0m40f8'],
     'debug_flag': False,   #Need to resolve
     'debug_mode': False,
     'debug_duration_sec': 3600,
 
-    'enclosure_status_check_period': 30,
+    'enclosure_status_check_period': 30,  #  NB NB Some of these names confilt with those lower. What is the real key? WER
     'weather_status_check_period': 30,
     'safety_status_check_period': 30,
     
    
     'admin_owner_commands_only': False,
-    'debug_duration_sec': 7200,
+    #'debug_duration_sec': 7200,
     'owner':  ['google-oauth2|112401903840371673242'],  # WER,  Or this can be
                                                         # some aws handle.
                                     
@@ -83,15 +81,16 @@ wema_config = {
     'archive_age': 99,  # Number of days to keep files in the local archive before deletion. Negative means never delete
     'aux_archive_path':  None,  # NB NB we might want to put Q: here for MRC
     'wema_is_a_process':  False,          # Note sure yet this is useful
-    'wema_hostname': 'SRO-WEMA',   # Prefer the shorter version
+    'wema_hostname': 'RASC2',  #'SRO-WEMA',   # Prefer the shorter version
     'wema_path':  'G:/ptr/',  # '/wema_transfer/',
     'owner_alias': ['WER', 'TELOPS'],
     'admin_aliases': ["ANS", "WER", "KVH", "TELOPS", "TB", "DH", 'KC'],
 
-    'site_is_custom':  False,  # Indicates some special code for this site, found at end of config. Set True if SRO
+    #'site_is_custom':  False,  # Indicates some special code for this site, found at end of config. Set True if SRO
+                               # This key may be obsolete WER
 
 
-    'name': 'PTR Sierra Remote Observatory 0m3f38',
+    'name': 'PTR Sierra Remote Observatory',
     'airport_code':  'FAT  :  Fresno Air Terminal',
     'location': 'Near Shaver Lake CA,  USA',
     'telescope_description': 'Astro-Physics, 300mmF3.8 Ricardi Honders Astrograph.',
@@ -117,7 +116,7 @@ wema_config = {
 
 
     'wema_has_control_of_roof': False,
-    'wema_allowed_to_open_roof': True,
+    'wema_allowed_to_open_roof': False,   #20230709 Changed WER
     'period_of_time_to_wait_for_roof_to_open': 180,  # seconds - needed to check if the roof ACTUALLY opens.
     'check_time': 300,  # MF's original setting.
     'maximum_roof_opens_per_evening': 4,
@@ -125,13 +124,13 @@ wema_config = {
     'site_enclosure_default_mode': "Automatic",  # "Manual", "Shutdown", "Automatic"
     'automatic_detail_default': "Enclosure is set to Automatic mode.",
 
-    'observing_check_period': 1,    # How many minutes between weather checks
-    'enclosure_check_period': 1,    # How many minutes between enclosure checks
+    'observing_check_period': 25,    # How many minutes between weather checks  Changed 20230709 WER
+    'enclosure_check_period' :5,    # How many minutes between enclosure checks
 
 
 
-     'eve_cool_down_open': -45.0,
-    'morn_close_and_park': 32.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowban
+    'eve_cool_down_open': -80.0,  #  Values supplied By SRO 20230708 WER
+    'morn_close_and_park': 15.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowban
     
     
     
@@ -163,7 +162,7 @@ wema_config = {
     'enclosure': {
         'enclosure1': {
             'enc_is_custom':  True,
-            'name': 'Megawan',
+            'name': 'SRO Roof Manager',
             'driver': None
         },
     },
@@ -186,11 +185,12 @@ wema_config = {
 
 def f_to_c(f):
     return round(5*(f - 32)/9, 2)
+
 last_good_wx_fields = 'n.a'
 last_good_daily_lines = 'n.a'
-def get_ocn_status_custom(g_dev=None):
+
+def get_ocn_status_custom(g_dev=None):   # NB Since this is the SRO configg file we do not need a lot of qualifiers.
     #print ("entered")
-    #breakpoint()
     global last_good_wx_fields, last_good_daily_lines   # NB NB NB Perhaps memo-ize these instead?
     if True:
        # breakpoint()
@@ -389,11 +389,11 @@ def get_ocn_status_custom(g_dev=None):
                       "wind_m/s": abs(round(windspeed, 2)),
                       'rain_rate': 0.0, # rainRate,
                       'solar_flux_w/m^2': None,
-                      'cloud_cover_%': 0.0, #str(cloudCover),
+                      'cloud_cover_%': "unknown", #str(cloudCover),
                       "calc_HSI_lux": illum,
                       "calc_sky_mpsas": calc_sky_mpsas,    #  Provenance of 20.01 is dubious 20200504 WER
-                      "wx_ok": wx_str,  #str(self.sky_monitor_oktoimage.IsSafe),
-                      "open_ok": wx_str,  #T his is the special bit in the
+                      "wx_ok": True,  #str(self.sky_monitor_oktoimage.IsSafe),
+                      "open_ok": True,  #T his is the special bit in the
                                            # Boltwood for a roof close relay
                       'wx_hold': False,  # THis is usually added by the OCN Manager
                       'hold_duration': 0.0,
@@ -402,9 +402,41 @@ def get_ocn_status_custom(g_dev=None):
                       }
         except:
             status = None
+
         return status
     else:
         pass#breakpoint()       #  Debug bad place.
+
+
+
+ # status = {
+ #                    "temperature_C": round(self.temperature, 2),
+ #                    "pressure_mbar": self.new_pressure,
+ #                    "humidity_%": self.sky_monitor.Humidity,
+ #                    "dewpoint_C": self.sky_monitor.DewPoint,
+ #                    "sky_temp_C": round(self.sky_monitor.SkyTemperature, 2),
+ #                    "last_sky_update_s": round(
+ #                        self.sky_monitor.TimeSinceLastUpdate("SkyTemperature"), 2
+ #                    ),
+ #                    "wind_m/s": abs(round(self.sky_monitor.WindSpeed, 2)),
+ #                    "rain_rate": self.sky_monitor.RainRate,
+ #                    "solar_flux_w/m^2": None,
+ #                    "cloud_cover_%": "unknown",  # str(self.sky_monitor.CloudCover), # Sometimes faults.
+ #                    "calc_HSI_lux": illum,
+ #                    "calc_sky_mpsas": round(
+ #                        uni_measure, 2
+ #                    ),  #  Provenance of 20.01 is dubious 20200504 WER
+ #                    "open_ok": self.ok_to_open#,
+ #                    #"wx_hold": None,
+ #                    #"hold_duration": 0,
+ #                }
+
+
+
+
+
+
+
 
 def get_enc_status_custom(g_dev=None):
     if True:   #  Belts and suspenders.
@@ -413,7 +445,7 @@ def get_enc_status_custom(g_dev=None):
             enc_text = enc.readline()
             enc.close
             enc_list = enc_text.split()
-            e_mode = 'Autonomous!'
+            e_mode = 'External Control'
             if len(enc_list) == 5:
                 if enc_list[4] in ['OPEN', 'Open', 'open', 'OPEN\n']:
                     shutter_status = 0  #Numbering is correct   CONVERTING to a # makes no sense, use 'Open' instead.
@@ -486,7 +518,7 @@ def get_enc_status_custom(g_dev=None):
                   'enclosure_synchronized': False,
                   'dome_azimuth': 'n.a',
                   'dome_slewing': False,
-                  'enclosure_mode': "Autonomous!",
+                  'enclosure_mode': "External Control",
                   'enclosure_message':  ''
                  }
         prior_status = status

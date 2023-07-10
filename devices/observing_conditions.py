@@ -49,33 +49,19 @@ def f_to_c(f):
 
 class ObservingConditions:
     def __init__(self, driver: str, name: str, config: dict, astro_events):
-        # We need a way to specify which computer in the wema in the
-        # the singular config file or we have two configurations.
-
         self.name = name
         self.astro_events = astro_events
         self.siteid = config["wema_name"]
-        g_dev["ocn"] = self
         self.config = config
         g_dev["ocn"] = self
+        g_dev['obs'].night_fitzgerald_number = 0,  # 20230709 initialse this varable to permissive state WER
         self.sample_time = 0
         self.ok_to_open = "No"
         self.observing_condtions_message = "-"
         self.wx_is_ok = False
-        #self.wx_hold = False
-        #self.wx_to_go = 0.0
-        #self.wx_hold_last_updated = (
-        #    time.time()
-        #)  # This is meant for a stale check on the Wx hold report
-        #self.wx_hold_tally = 0
-        #self.wx_clamp = False
         self.clamp_latch = False
         self.wait_time = 0  # A countdown to re-open
-        #self.wx_close = False  # If made true by Wx code, a 15 minute timeout will begin when Wx turns OK
-        #self.wx_hold_until_time = None
-        #self.wx_hold_count = 0  # if >=5 inhibits reopening for Wx
         self.wait_time = 0  # A countdown to re-open
-        #self.wx_close = False  # If made true by Wx code, a 15 minute timeout will begin when Wx turns OK
         self.wx_system_enable = True  # Purely a debugging aid.
         self.wx_test_cycle = 0
         self.prior_status = None
@@ -89,7 +75,9 @@ class ObservingConditions:
         # =============================================================================
         #         Note site_in_automatic found in the Enclosure object.
         # =============================================================================
+    
         if self.hostname in self.config["wema_hostname"]:
+
             self.is_wema = True
             self.is_process = False
         else:
@@ -182,6 +170,7 @@ class ObservingConditions:
 
         """
         # Just need to initialise this.
+
         status=None
         # This is purely generic code for a generic site.
         # It may be overwritten with a monkey patch found in the appropriate config.py.
