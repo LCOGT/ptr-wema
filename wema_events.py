@@ -469,7 +469,7 @@ class Events:
             nowheremonth = str(now_here.month)
 
         DAY_Directory = str(now_here.year) + str(nowheremonth) + str(nowhereday)
-        plog('Day_Directory:  ', DAY_Directory)
+        #plog('Day_Directory:  ', DAY_Directory)
         g_dev['day'] = DAY_Directory
 
         return DAY_Directory
@@ -539,8 +539,8 @@ class Events:
         self.mid_moon_ra = moon.ra
         self.mid_moon_dec = moon.dec
         self.mid_moon_phase = moon.phase
-        if loud:
-            plog('Middle night Moon Ra Dec Phase:  ', moon.ra, moon.dec, moon.phase)  # , moon.az, moon.alt)
+        #if loud:
+        #    plog('Middle night Moon Ra Dec Phase:  ', moon.ra, moon.dec, moon.phase)  # , moon.az, moon.alt)
 
         # The end of the night is when "End Morn Bias Dark" occurs. All timings must end with that
         # as this is when the night ends and the schedule gets reconfigured. So anything scheduled AFTER

@@ -236,6 +236,11 @@ class WxEncAgent:
         self.weather_status_check_timer = time.time() - 2*self.weather_status_check_period
         self.safety_check_timer=time.time() - 2*self.safety_status_check_period
 
+        if self.config['observing_conditions']['observing_conditions1']['driver'] == None:
+            self.ocn_exists=False
+        else:
+            self.ocn_exists=True
+
         # This variable prevents the roof being called to open every loop...        
         self.enclosure_next_open_time = time.time()
         # This keeps a track of how many times the roof has been open this evening
@@ -258,9 +263,10 @@ class WxEncAgent:
         self.weather_report_wait_until_open_time=ephem_now
         self.weather_report_close_during_evening=False
         self.weather_report_close_during_evening_time=ephem_now
-        #self.nightly_weather_report_done=False
+        self.hourly_report_holder=[]
+        
         self.nightly_reset_complete = False
-                
+        
         # Run a weather report on bootup so enclosure can run if need be.
         if not g_dev['debug']:
             # self.global_wx()
@@ -344,7 +350,8 @@ class WxEncAgent:
 
 
         # Hourly Weather Report
-        if time.time() > self.weather_report_run_timer + 3600:
+        if time.time() > (self.weather_report_run_timer + 3600):
+            self.weather_report_run_timer=time.time()
             self.run_nightly_weather_report()
 
         
@@ -492,6 +499,9 @@ class WxEncAgent:
             plog("Time until Close and Park     : "+ str(round(( g_dev['events']['Close and Park'] - ephem_now) * 24,2)) + " hours")
             plog("Time until Nightly Reset      : " + str(round((g_dev['events']['Nightly Reset'] - ephem_now) * 24, 2)) + " hours")
             plog("Nightly Reset Complete        : " + str(self.nightly_reset_complete))
+            plog("\n")
+            for line in self.hourly_report_holder:
+                plog(str(line))
             plog("**************************************************************")
 
             if (g_dev['events']['Nightly Reset'] <= ephem.now() < g_dev['events']['End Nightly Reset']): # and g_dev['enc'].mode == 'Automatic' ):
@@ -569,7 +579,7 @@ class WxEncAgent:
                     self.astro_events.calculate_events()
 
                     # Run nightly weather report
-                    self.run_nightly_weather_report()
+                    #self.run_nightly_weather_report()
 
                     if not self.open_and_enabled_to_observe and self.weather_report_is_acceptable_to_observe == True:
                         if (g_dev['events']['Cool Down, Open'] < ephem_now < g_dev['events']['Observing Ends']):
@@ -611,9 +621,11 @@ class WxEncAgent:
             if ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends'])):
                 self.nightly_reset_complete = False
 
+            
+
             if ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends']) and \
-                enc_status['enclosure_mode'] == 'Automatic') and not self.cool_down_latch and not g_dev['ocn'].wx_hold and not \
-                enc_status['shutter_status'] in ['Software Fault', 'Closing', 'Error']:
+                enc_status['enclosure_mode'] == 'Automatic') and not self.cool_down_latch and (self.local_weather_ok == True or (not self.ocn_exists)) and not \
+                enc_status['shutter_status'] in ['Software Fault', 'Opening', 'Closing', 'Error']:
 
                 self.cool_down_latch = True
 
@@ -750,7 +762,7 @@ class WxEncAgent:
 
                     elif  not enc_status['shutter_status'] in ['Open', 'open','Opening','opening'] and \
                             enc_status['enclosure_mode'] == 'Automatic' \
-                            and ocn_status['hold_duration'] <= 0.1  and self.weather_report_is_acceptable_to_observe:  # NB
+                            and time.time() > self.enclosure_next_open_time  and self.weather_report_is_acceptable_to_observe:  # NB
 
                         self.opens_this_evening = self.opens_this_evening + 1
 
@@ -873,6 +885,7 @@ class WxEncAgent:
             hourly_fitzgerald_number=[]
             hourly_fitzgerald_number_by_hour=[]
             hourcounter = 0
+            self.hourly_report_holder=[]
             for entry in fitzgerald_weather_number_grid:
                 if hourcounter >= hours_until_start_of_observing and hourcounter <= hours_until_end_of_observing:
                     
@@ -880,12 +893,16 @@ class WxEncAgent:
                     hourly_fitzgerald_number.append(entry[6])
                     hourly_fitzgerald_number_by_hour.append([entry[5],entry[6],entry[4]])
                 hourcounter=hourcounter+1
-                
+            
             plog ("Hourly Fitzgerald number report")
+            self.hourly_report_holder.append("Hourly Fitzgerald number report")
             plog ("*******************************")
+            self.hourly_report_holder.append("*******************************")
             plog ("Hour(UTC) |  FNumber |  Text    ")
+            self.hourly_report_holder.append("Hour(UTC) |  FNumber |  Text    ")
             for line in hourly_fitzgerald_number_by_hour:
                 plog (str(line[0]) + '         | '+ str(line[1]) + '        | ' + str(line[2]))
+                self.hourly_report_holder.append(str(line[0]) + '         | '+ str(line[1]) + '        | ' + str(line[2]))
             #plog (hourly_fitzgerald_number_by_hour)
             plog ("Night's total fitzgerald number")
             plog (sum(hourly_fitzgerald_number))

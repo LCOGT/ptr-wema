@@ -413,7 +413,7 @@ class ObservingConditions:
             if self.wx_is_ok:
                 wx_str = "Yes"
                 status["wx_ok"] = "Yes"
-                plog('Wx Ok?  ', status["wx_ok"])
+                #plog('Wx Ok?  ', status["wx_ok"])
             else:
                 wx_str = "No"  # Ideally we add the dominant reason in priority order.
                 status["wx_ok"] = "No"
