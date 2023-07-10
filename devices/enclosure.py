@@ -244,18 +244,18 @@ class Enclosure:
             self.observing_conditions_connected = True
             self.site_is_proxy = False
             plog("observing_conditions: Simulator drivers connected True")
-        elif self.config['site_is_custom']:
+        #elif self.config['site_is_custom']:
 
-            self.site_is_specific = True
-            self.site_is_generic = False
+        #    self.site_is_specific = True
+        #    self.site_is_generic = False
 
             #  Note OCN has no associated commands.
             #  Note monkey patch
-            from site_config import get_enc_status
-            self.get_status = get_enc_status
+        #    from site_config import get_enc_status
+        #    self.get_status = get_enc_status
             # self.get_status = config.get_enc_status   # NB NB Bogus line of code
             # Get current ocn status just as a test.
-            self.status = self.get_status(g_dev)
+        #    self.status = self.get_status(g_dev)
 
         elif self.is_wema or not self.dome_on_wema:  # or self.obsid_is_generic
             #  This is meant to be a generic Observing_condition code

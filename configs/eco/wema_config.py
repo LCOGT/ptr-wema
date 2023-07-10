@@ -74,7 +74,7 @@ wema_config = {
     'wema_hostname': 'ECO-WMS-ENC',   # Prefer the shorter version
     'wema_path':  'C:/ptr/',  # '/wema_transfer/',
 
-    'site_is_custom': False,  # Indicates some special code for this site, found at end of config. Set True if SRO
+    #'site_is_custom': False,  # Indicates some special code for this site, found at end of config. Set True if SRO
 
 
     'dome_on_wema':   True,
@@ -114,9 +114,11 @@ wema_config = {
     'reference_ambient':  10,  #  Degrees Celsius.  Alternately 12 entries, one for every - mid month.
     'reference_pressure':  867.254,    #mbar   A rough guess 20200315
     
+    'wema_has_control_of_roof': True,
+    'wema_allowed_to_open_roof': True,
 
-    'site_roof_control': True,  # MTF entered this in to remove sro specific code  NB 'site_is_specifc' also deals with this
-    'site_allowed_to_open_roof': True,
+    #'site_roof_control': True,  # MTF entered this in to remove sro specific code  NB 'site_is_specifc' also deals with this
+    #'site_allowed_to_open_roof': True,
     'period_of_time_to_wait_for_roof_to_open': 100,  # seconds - needed to check if the roof ACTUALLY opens.
     #'only_scope_that_controls_the_roof': False,  # If multiple scopes control the roof, set this to False
     'check_time': 300,  # MF's original setting.
@@ -216,7 +218,7 @@ wema_config = {
     'observing_conditions' : {
         'observing_conditions1': {
             'parent': 'site',
-            'ocn_is_custom':  True, 
+            'ocn_is_custom':  False, 
             # Intention it is found in this file.
             'name': 'SRO File',
             'driver': None,  # Could be redis, ASCOM, ...
@@ -259,6 +261,12 @@ wema_config = {
         },
     },
 }
+
+def get_enc_status_custom():
+    pass
+def get_ocn_status_custom():
+    pass
+
 
 if __name__ == '__main__':
     '''

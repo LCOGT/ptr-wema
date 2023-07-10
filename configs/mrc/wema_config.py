@@ -62,7 +62,7 @@ wema_config = {
     # 'client_read_share_path':  'Q:/ptr/',  # NB these are all very confusing names.
     # 'client_write_share_path': 'Q:/ptr/',
 
-    'site_is_custom':  False,  # Indicates some special code for this site, found at end of config. Set True if SRO
+    #'site_is_custom':  False,  # Indicates some special code for this site, found at end of config. Set True if SRO
     'name': 'Mountain Ranch Camp Observatory',
     'airport_code': 'SBA',
     'location': 'Near Santa Barbara CA,  USA',
@@ -90,8 +90,14 @@ wema_config = {
     'reference_ambient':  10.0,  # Degrees Celsius.  Alternately 12 entries, one for every - mid month.
     'reference_pressure':  977.83,  # mbar Alternately 12 entries, one for every - mid month.
     
-    'obsid_roof_control': False,  # MTF entered this in to remove sro specific code  NB 'site_is_specifc' also deals with this
+    
+    'wema_has_control_of_roof': True,
     'wema_allowed_to_open_roof': True,
+
+    
+    
+    #'obsid_roof_control': False,  # MTF entered this in to remove sro specific code  NB 'site_is_specifc' also deals with this
+    #'wema_allowed_to_open_roof': True,
     'period_of_time_to_wait_for_roof_to_open': 180,  # seconds - needed to check if the roof ACTUALLY opens.
     'check_time': 300,  # MF's original setting.
     'maximum_roof_opens_per_evening': 4,
@@ -168,6 +174,13 @@ wema_config = {
     },
 
 }
+
+def get_enc_status_custom():
+    pass
+def get_ocn_status_custom():
+    pass
+
+
 
 if __name__ == '__main__':
     '''

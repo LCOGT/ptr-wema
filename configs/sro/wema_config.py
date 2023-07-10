@@ -87,7 +87,6 @@ wema_config = {
     'admin_aliases': ["ANS", "WER", "KVH", "TELOPS", "TB", "DH", 'KC'],
 
     #'site_is_custom':  False,  # Indicates some special code for this site, found at end of config. Set True if SRO
-                               # This key may be obsolete WER
 
 
     'name': 'PTR Sierra Remote Observatory',

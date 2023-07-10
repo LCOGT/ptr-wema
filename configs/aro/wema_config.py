@@ -89,7 +89,7 @@ wema_config = {
     'dome_on_wema':  True,  #Temporary assignment   20230617 WER
     'redis_ip': None,   # None if no redis path present, localhost if redis iself-contained
     'site_is_single_host':  False,   # A simple single computer ASCOM site.
-    'site_is_custom':  False,  #  Meaning like SRO with site specific methods to read weateher and roof status
+    #'site_is_custom':  False,  #  Meaning like SRO with site specific methods to read weateher and roof status
                                #  so the Wema for such a site fakes it as needed to assemble WX and Enc conditions.
     #'site_has_proxy': True,   # All site now wil have a wema so this is no longer necessary
     'name': 'Apache Ridge Observatory 0m3f4.9/9',
@@ -116,8 +116,9 @@ wema_config = {
     'reference_ambient':  10.0,  # Degrees Celsius.  Alternately 12 entries, one for every - mid month.
     'reference_pressure':  794.0,    #mbar   A rough guess 20200315
 
-    'obsid_roof_control':False, #MTF entered this in to remove sro specific code.... Basically do we have control of the roof or not see line 338 sequencer.py
-    'wema_allowed_to_open_roof': True,  ##Why do we need this?
+    'wema_has_control_of_roof': True,
+    'wema_allowed_to_open_roof': True,
+
     
     #next few are enclosure parameteers
     'period_of_time_to_wait_for_roof_to_open' : 180, # seconds - needed to check if the roof ACTUALLY opens. 
@@ -224,7 +225,7 @@ wema_config = {
 
     'observing_conditions' : {     #for SAF
         'observing_conditions1': {
-            'ocn_is_custom':  True,  
+            'ocn_is_custom':  False,  
             'name': 'Boltwood',
             'driver': 'ASCOM.Boltwood.ObservingConditions',
             'driver_2':  'ASCOM.Boltwood.OkToOpen.SafetyMonitor',
@@ -277,6 +278,10 @@ wema_config = {
 
 }
 
+def get_enc_status_custom():
+    pass
+def get_ocn_status_custom():
+    pass
 
 if __name__ == '__main__':
     j_dump = json.dumps(site_config)
