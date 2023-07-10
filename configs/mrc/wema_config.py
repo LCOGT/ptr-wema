@@ -62,7 +62,7 @@ wema_config = {
     # 'client_read_share_path':  'Q:/ptr/',  # NB these are all very confusing names.
     # 'client_write_share_path': 'Q:/ptr/',
 
-    'site_is_custom':  False,  # Indicates some special code for this site, found at end of config. Set True if SRO
+    #'site_is_custom':  False,  # Indicates some special code for this site, found at end of config. Set True if SRO
     'name': 'Mountain Ranch Camp Observatory',
     'airport_code': 'SBA',
     'location': 'Near Santa Barbara CA,  USA',

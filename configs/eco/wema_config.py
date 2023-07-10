@@ -74,7 +74,7 @@ wema_config = {
     'wema_hostname': 'ECO-WMS-ENC',   # Prefer the shorter version
     'wema_path':  'C:/ptr/',  # '/wema_transfer/',
 
-    'site_is_custom': False,  # Indicates some special code for this site, found at end of config. Set True if SRO
+    #'site_is_custom': False,  # Indicates some special code for this site, found at end of config. Set True if SRO
 
 
     'dome_on_wema':   True,
@@ -218,7 +218,7 @@ wema_config = {
     'observing_conditions' : {
         'observing_conditions1': {
             'parent': 'site',
-            'ocn_is_custom':  True, 
+            'ocn_is_custom':  False, 
             # Intention it is found in this file.
             'name': 'SRO File',
             'driver': None,  # Could be redis, ASCOM, ...

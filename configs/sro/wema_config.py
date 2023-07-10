@@ -88,7 +88,7 @@ wema_config = {
     'owner_alias': ['WER', 'TELOPS'],
     'admin_aliases': ["ANS", "WER", "KVH", "TELOPS", "TB", "DH", 'KC'],
 
-    'site_is_custom':  False,  # Indicates some special code for this site, found at end of config. Set True if SRO
+    #'site_is_custom':  False,  # Indicates some special code for this site, found at end of config. Set True if SRO
 
 
     'name': 'PTR Sierra Remote Observatory 0m3f38',

@@ -106,16 +106,16 @@ class ObservingConditions:
         else:
             self.site_has_proxy = False
 
-        if self.config["site_is_custom"]:
-            self.site_is_custom = True
+        #if self.config["site_is_custom"]:
+        #    self.site_is_custom = True
             #  Note OCN has no associated commands.
             #  Here we monkey patch
-            from site_config import get_ocn_status
-            self.get_status = get_ocn_status
+        #    from site_config import get_ocn_status
+        #    self.get_status = get_ocn_status
             # Get current ocn status just as a test.
-            self.status = self.get_status(g_dev)
+        #    self.status = self.get_status(g_dev)
         
-        elif self.is_wema or self.config["site_is_custom"]:
+        if self.is_wema: #or self.config["site_is_custom"]:
             #  This is meant to be a generic Observing_condition code
             #  instance that can be accessed by a simple site or by the WEMA,
             #  assuming the transducers are connected to the WEMA.

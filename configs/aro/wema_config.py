@@ -89,7 +89,7 @@ wema_config = {
     'dome_on_wema':  True,  #Temporary assignment   20230617 WER
     'redis_ip': None,   # None if no redis path present, localhost if redis iself-contained
     'site_is_single_host':  False,   # A simple single computer ASCOM site.
-    'site_is_custom':  False,  #  Meaning like SRO with site specific methods to read weateher and roof status
+    #'site_is_custom':  False,  #  Meaning like SRO with site specific methods to read weateher and roof status
                                #  so the Wema for such a site fakes it as needed to assemble WX and Enc conditions.
     #'site_has_proxy': True,   # All site now wil have a wema so this is no longer necessary
     'name': 'Apache Ridge Observatory 0m3f4.9/9',

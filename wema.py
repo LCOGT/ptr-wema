@@ -151,10 +151,10 @@ class WxEncAgent:
             g_dev["wema_write_share_path"] = self.site_path  # Just to be safe.
             self.wema_path = g_dev["wema_write_share_path"]
 
-        if self.config["site_is_custom"]:
-            self.site_is_custom = True
-        else:
-            self.site_is_custom = False
+        #if self.config["site_is_custom"]:
+        #    self.site_is_custom = True
+        #else:
+        #    self.site_is_custom = False
 
         self.last_request = None
         self.stopped = False
