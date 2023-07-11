@@ -597,7 +597,7 @@ class WxEncAgent:
                     plog("Safety check notices that the roof was open outside of the normal observing period")
                     self.park_enclosure_and_close()
                 
-                if not self.local_weather_ok == None:
+                if not self.local_weather_ok == None and enc_status['enclosure_mode'] == 'Automatic':
                     if not self.local_weather_ok:
                         plog("Safety check notices that the local weather is not ok. Shutting the roof.")
                         self.park_enclosure_and_close()
