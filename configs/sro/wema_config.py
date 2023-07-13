@@ -63,6 +63,7 @@ wema_config = {
     'debug_mode': False,
     'debug_duration_sec': 3600,
 
+    'local_weather_always_overrides_OWM': True,
     'enclosure_status_check_period': 30,  #  NB NB Some of these names confilt with those lower. What is the real key? WER
     'weather_status_check_period': 30,
     'safety_status_check_period': 30,

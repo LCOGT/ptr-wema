@@ -225,6 +225,8 @@ class WxEncAgent:
 
         self.open_and_enabled_to_observe = False
 
+        self.local_weather_always_overrides_OWM=config['local_weather_always_overrides_OWM']
+
         self.enclosure_status_check_period=config['enclosure_status_check_period']
         self.weather_status_check_period = config['weather_status_check_period']
         self.safety_status_check_period = config['safety_status_check_period']

@@ -35,7 +35,7 @@ wema_config = {
     'debug_mode': False,
     'admin_owner_commands_only': False,
     'debug_duration_sec': 3600,
-
+    'local_weather_always_overrides_OWM': True,
     'enclosure_status_check_period': 30,
     'weather_status_check_period': 30,
     'safety_status_check_period': 30,
