@@ -495,10 +495,16 @@ class WxEncAgent:
 
             # Here it runs through the various checks and decides whether to open or close the roof or not.
             # Check for delayed opening of the enclosure and act accordingly.
-
+            
+            
 
             # If the enclosure is simply delayed until opening, then wait until then, then attempt to start up the enclosure
             obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
+            if (g_dev['events']['Cool Down, Open'] <= ephem_now):
+                self.nightly_reset_complete = False
+
+            if (g_dev['events']['Close and Park'] <= ephem_now):
+                self.nightly_reset_complete = False
             if self.ocn_status_custom==False:                            
                 ocn_status = g_dev['ocn'].get_status()
             else:
@@ -661,9 +667,6 @@ class WxEncAgent:
             #    self.nightly_weather_report_complete = True
                 # Also make sure nightly reset is switched to go off
             #    self.nightly_reset_complete = False
-
-            if ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends'])):
-                self.nightly_reset_complete = False
 
             
 
