@@ -174,6 +174,7 @@ class ObservingConditions:
         status=None
         # This is purely generic code for a generic site.
         # It may be overwritten with a monkey patch found in the appropriate config.py.
+        breakpoint()
         if not self.is_wema and self.site_is_custom:  #  EG., this was written first for SRO.                                        #  system is a proxoy for having a WEMA
             if self.config["site_IPC_mechanism"] == "shares":
                 try:
