@@ -855,7 +855,7 @@ class WxEncAgent:
                         return
 
                     else:
-                        plog("Failed to open roof, parking telescope again and sending the close command to the roof.")
+                        plog("Failed to open roof. Sending the close command to the roof.")
                         # g_dev['enc'].close_roof_directly()
                         plog("opens this eve: " + str(self.opens_this_evening))
                         plog("minutes until next open attempt ALLOWED: " + str(
@@ -892,8 +892,8 @@ class WxEncAgent:
             # Collect relevant info for fitzgerald weather number calculation
             hourcounter=0
             fitzgerald_weather_number_grid=[]
-            hours_until_end_of_observing= math.ceil((events['Observing Ends'] - ephem_now) * 24)
-            hours_until_start_of_observing= math.ceil((events['Observing Begins'] - ephem_now) * 24)
+            hours_until_end_of_observing= math.ceil((events['Close and Park'] - ephem_now) * 24)
+            hours_until_start_of_observing= math.ceil((events['Cool Down, Open'] - ephem_now) * 24)
             if hours_until_start_of_observing < 0:
                 hours_until_start_of_observing = 0
             plog("Hours until end of observing: " + str(hours_until_end_of_observing))
