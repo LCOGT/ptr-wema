@@ -174,6 +174,7 @@ class ObservingConditions:
         status=None
         # This is purely generic code for a generic site.
         # It may be overwritten with a monkey patch found in the appropriate config.py.
+
         if not self.is_wema and self.site_is_custom:  #  EG., this was written first for SRO.                                        #  system is a proxoy for having a WEMA
             if self.config["site_IPC_mechanism"] == "shares":
                 try:
@@ -290,7 +291,7 @@ class ObservingConditions:
                 self.pressure = self.config["reference_pressure"]
             # NB NB NB This is a very odd problem which showed up at MRC.
             try:
-                self.new_pressure = round(float(self.pressure[0]), 2)
+                self.new_pressure = round(float(self.pressure), 2) # was [0]), 2)
             except:
                 self.new_pressure = round(float(self.pressure), 2)
 
@@ -372,13 +373,13 @@ class ObservingConditions:
             if not sky_amb_limit:
                 wx_reasons.append('(sky - amb) > '+str(sky_temp_limit_setting) +'C')
             try:
-                cloud_cover = float(self.sky_monitor.CloudCover)
-                status['cloud_cover_%'] = round(cloud_cover, 0)
-                if cloud_cover <= cloud_cover_limit_setting:
+                cloud_cover_value = float(self.sky_monitor.CloudCover)
+                status['cloud_cover_%'] = round(cloud_cover_value, 0)
+                if cloud_cover_value <= cloud_cover_limit_setting:
                     cloud_cover = False
                 else:
                     cloud_cover = True
-                    wx_reasons.append('>'+str(cloud_cover_limit_setting)+'% Cloudy')
+                    wx_reasons.append('>='+str(cloud_cover_limit_setting)+'% Cloudy')
             except:
                 status['cloud_cover_%'] = "no report"
                 cloud_cover = True    #  We cannot use this signal to force a wX hold or close
@@ -406,7 +407,7 @@ class ObservingConditions:
             else:
                 wx_str = "No"  # Ideally we add the dominant reason in priority order.
                 status["wx_ok"] = "No"
-                plog('Wx Ok?  ', status["wx_ok"], wx_reasons)
+                plog('Wx Ok: ', status["wx_ok"], wx_reasons)
 
             g_dev["wx_ok"] = self.wx_is_ok
 

@@ -92,7 +92,7 @@ wema_config = {
     #'site_is_custom':  False,  #  Meaning like SRO with site specific methods to read weateher and roof status
                                #  so the Wema for such a site fakes it as needed to assemble WX and Enc conditions.
     #'site_has_proxy': True,   # All site now wil have a wema so this is no longer necessary
-    'name': 'Apache Ridge Observatory 0m3f4.9/9',
+    'name': 'Apache Ridge Observatory',
     'location': 'Santa Fe, New Mexico,  USA',
     'observatory_url': 'https://starz-r-us.sky/clearskies2',   # This is meant to be optional, something supplied by the owner.
     'observatory_logo': None,   # I expect a .bmp or.jpeg supplied by the owner
