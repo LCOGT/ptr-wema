@@ -552,16 +552,26 @@ class WxEncAgent:
             plog("Time until Nightly Reset      : " + str(round((g_dev['events']['Nightly Reset'] - ephem_now) * 24, 2)) + " hours")
             plog("Nightly Reset Complete        : " + str(self.nightly_reset_complete))
             plog("\n")
-            for line in self.hourly_report_holder:
-                plog(str(line))
-                
-                
+
+
+            if len(self.hourly_report_holder) > 0:
+
+                for line in self.hourly_report_holder:
+                    plog(str(line))
+
+                    if 'Hour(UTC)' in line:
+                        plog("-----------------------------")
+                        if g_dev['events']['Cool Down, Open'] > ephem_now:
+                            plog("Cool Down Open")
+                if g_dev['events']['Close and Park'] > ephem_now:
+                    plog("Close and Park")
+                plog("-----------------------------")
                 
             if self.weather_report_wait_until_open:
-                plog ("OWM reports that it thinks it should wait until open in " + str( self.weather_report_wait_until_open_time - ephem_now))
+                plog ("OWM reports that it thinks it should wait until open in " + str( (self.weather_report_wait_until_open_time - ephem_now)*24) + " hours.")
                 
             if self.weather_report_close_during_evening:
-                plog ("OWN reports that it thinks it should close later on in "+ str( self.weather_report_close_during_evening_time - ephem_now))
+                plog ("OWN reports that it thinks it should close later on in "+ str( (self.weather_report_close_during_evening_time - ephem_now)* 24)+ " hours.")
             
             if (self.weather_report_close_during_evening or self.weather_report_wait_until_open) and self.local_weather_always_overrides_OWM:
                 plog ("However the local weather system is in control of this. This is just an OWM advisory")
