@@ -379,7 +379,7 @@ class ObservingConditions:
                     cloud_cover = False
                 else:
                     cloud_cover = True
-                    wx_reasons.append('>'+str(cloud_cover_limit_setting)+'% Cloudy')
+                    wx_reasons.append('>='+str(cloud_cover_limit_setting)+'% Cloudy')
             except:
                 status['cloud_cover_%'] = "no report"
                 cloud_cover = True    #  We cannot use this signal to force a wX hold or close
@@ -407,7 +407,7 @@ class ObservingConditions:
             else:
                 wx_str = "No"  # Ideally we add the dominant reason in priority order.
                 status["wx_ok"] = "No"
-                plog('Wx Ok?  ', status["wx_ok"], wx_reasons)
+                plog('Wx Ok: ', status["wx_ok"], wx_reasons)
 
             g_dev["wx_ok"] = self.wx_is_ok
 
