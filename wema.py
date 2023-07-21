@@ -213,8 +213,8 @@ class WxEncAgent:
         self.cool_down_latch = False
 
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
-        self.weather_report_wait_until_open = False
-        self.weather_report_wait_until_open_time = ephem_now
+        self.weather_report_open_during_evening = False
+        self.weather_report_open_during_evening_time = ephem_now
         self.weather_report_close_during_evening = False
         self.weather_report_close_during_evening_time = ephem_now + 86400
         self.nightly_weather_report_complete = False
@@ -259,12 +259,12 @@ class WxEncAgent:
         # If the night is patchy, the weather report can identify a later time to open
         # or to close the enclosure early during the night.
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
-        self.weather_report_wait_until_open=False
-        self.weather_report_wait_until_open_time=ephem_now
+        self.weather_report_open_during_evening=False
+        self.weather_report_open_during_evening_time=ephem_now
         self.weather_report_close_during_evening=False
         self.weather_report_close_during_evening_time=ephem_now
         self.hourly_report_holder=[]
-        
+        self.weather_report_open_at_start = False
         self.nightly_reset_complete = False
       
         
@@ -280,7 +280,7 @@ class WxEncAgent:
         else:
             #self.nightly_weather_report_complete = True
             self.weather_report_is_acceptable_to_observe = True
-            self.weather_report_wait_until_open = False
+            self.weather_report_open_during_evening = False
 
 
     def create_devices(self, config: dict):
@@ -566,17 +566,32 @@ class WxEncAgent:
                 if g_dev['events']['Close and Park'] > ephem_now:
                     plog("Close and Park")
                 plog("-----------------------------")
+
+            if self.weather_report_open_at_start:
+                plog ("OWM reports that it thinks it should open at the beginning of the night.")
+
+            if self.weather_report_open_during_evening and self.weather_report_close_during_evening:
+                if self.weather_report_close_during_evening_time > self.weather_report_open_during_evening_time:
+                    plog("OWM reports that it thinks it should open later on in " + str(
+                        (self.weather_report_open_during_evening_time - ephem_now) * 24) + " hours.")
+                    plog("OWN reports that it thinks it should close later on in " + str(
+                        (self.weather_report_close_during_evening_time - ephem_now) * 24) + " hours.")
+                else:
+                    plog("OWN reports that it thinks it should close later on in " + str(
+                        (self.weather_report_close_during_evening_time - ephem_now) * 24) + " hours.")
+                    plog("OWM reports that it thinks it should open later on in " + str(
+                        (self.weather_report_open_during_evening_time - ephem_now) * 24) + " hours.")
+
+            elif self.weather_report_open_during_evening:
+                plog ("OWM reports that it thinks it should open later on in " + str( (self.weather_report_open_during_evening_time - ephem_now)*24) + " hours.")
                 
-            if self.weather_report_wait_until_open:
-                plog ("OWM reports that it thinks it should wait until open in " + str( (self.weather_report_wait_until_open_time - ephem_now)*24) + " hours.")
-                
-            if self.weather_report_close_during_evening:
+            elif self.weather_report_close_during_evening:
                 plog ("OWN reports that it thinks it should close later on in "+ str( (self.weather_report_close_during_evening_time - ephem_now)* 24)+ " hours.")
             
-            if (self.weather_report_close_during_evening or self.weather_report_wait_until_open) and self.local_weather_always_overrides_OWM:
+            if (self.weather_report_close_during_evening or self.weather_report_open_during_evening) and self.local_weather_always_overrides_OWM:
                 plog ("However the local weather system is in control of this. This is just an OWM advisory")
             
-            if (self.weather_report_close_during_evening or self.weather_report_wait_until_open) and not self.local_weather_always_overrides_OWM:
+            if (self.weather_report_close_during_evening or self.weather_report_open_during_evening) and not self.local_weather_always_overrides_OWM:
                 plog ("OWM is currently set to open/close the roof at this time because the local weather isn't in override mode.")
             
             plog("**************************************************************")
@@ -643,11 +658,11 @@ class WxEncAgent:
                      str((self.enclosure_next_open_time - time.time()) / 60))
 
             # If OWM wants to open the roof later, this is where it checks if it is past that time. 
-            if self.weather_report_wait_until_open and not self.cool_down_latch and enc_status['enclosure_mode'] == 'Automatic':
-                if ephem_now > self.weather_report_wait_until_open_time :
+            if self.weather_report_open_during_evening and not self.cool_down_latch and enc_status['enclosure_mode'] == 'Automatic':
+                if ephem_now > self.weather_report_open_during_evening_time :
 
                     self.cool_down_latch = True
-                    self.weather_report_wait_until_open == False
+                    self.weather_report_open_during_evening == False
                     # Things may have changed! So re-checking the weather and such
 
                     # Reopening config and resetting all the things.
@@ -667,7 +682,7 @@ class WxEncAgent:
                                 self.open_enclosure(enc_status, ocn_status)
 
                                 if self.open_and_enabled_to_observe:
-                                    self.weather_report_wait_until_open = False
+                                    self.weather_report_open_during_evening = False
                                     self.weather_report_is_acceptable_to_observe = True
 
                     self.cool_down_latch = False
@@ -696,15 +711,23 @@ class WxEncAgent:
                 # Also make sure nightly reset is switched to go off
             #    self.nightly_reset_complete = False
 
-            
 
-            if ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends']) and \
+
+            # Ordinary opening routine.
+            # Do some checks that it isn't meant to be shut.
+
+            temp_meant_to_be_shut= False
+            if self.weather_report_open_during_evening and self.weather_report_close_during_evening:
+                if self.weather_report_close_during_evening_time < ephem_now < self.weather_report_open_during_evening_time:
+                    temp_meant_to_be_shut=True
+
+            if ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends']) and self.weather_report_open_at_start==True and \
                 enc_status['enclosure_mode'] == 'Automatic') and not self.cool_down_latch and (self.local_weather_ok == True or (not self.ocn_exists)) and not \
-                enc_status['shutter_status'] in ['Software Fault', 'Opening', 'Closing', 'Error']:
+                enc_status['shutter_status'] in ['Software Fault', 'Opening', 'Closing', 'Error'] and not temp_meant_to_be_shut:
 
                 self.cool_down_latch = True
 
-                if not self.open_and_enabled_to_observe and self.weather_report_is_acceptable_to_observe == True and (self.weather_report_wait_until_open == False or self.local_weather_always_overrides_OWM):
+                if not self.open_and_enabled_to_observe and self.weather_report_is_acceptable_to_observe == True: # and (self.weather_report_open_during_evening == False or self.local_weather_always_overrides_OWM):
 
                     if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config['maximum_roof_opens_per_evening']:
                         self.nightly_reset_complete = False
@@ -760,8 +783,8 @@ class WxEncAgent:
         # Set weather report back to False until ready to check the weather again. 
         #self.nightly_weather_report_complete=False
         self.weather_report_is_acceptable_to_observe=False
-        self.weather_report_wait_until_open=False
-        self.weather_report_wait_until_open_time=ephem_now
+        self.weather_report_open_during_evening=False
+        self.weather_report_open_during_evening_time=ephem_now
         self.weather_report_close_during_evening=False
         self.weather_report_close_during_evening_time=ephem_now + 86400
         #self.nightly_weather_report_complete=False
@@ -989,22 +1012,25 @@ class WxEncAgent:
             if sum(hourly_fitzgerald_number) < 10:
                 plog ("This is a good observing night!")
                 self.weather_report_is_acceptable_to_observe=True
-                #self.weather_report_wait_until_open=True
-                #self.weather_report_wait_until_open_time=ephem_now
+                self.weather_report_open_at_start=True
+                #self.weather_report_open_during_evening=True
+                #self.weather_report_open_during_evening_time=ephem_now
                 #self.weather_report_close_during_evening=False
                 #self.weather_report_close_during_evening_time=ephem_now
             elif sum(hourly_fitzgerald_number) > 1000:
                 plog ("This is a horrible observing night!")
                 self.weather_report_is_acceptable_to_observe=False
-                #self.weather_report_wait_until_open=False
-                #self.weather_report_wait_until_open_time=ephem_now
+                self.weather_report_open_at_start = False
+                #self.weather_report_open_during_evening=False
+                #self.weather_report_open_during_evening_time=ephem_now
                 #self.weather_report_close_during_evening=False
                 #self.weather_report_close_during_evening_time=ephem_now
             elif sum(hourly_fitzgerald_number) < 100:
                 plog ("This is perhaps not the best night, but we will give it a shot!")
                 self.weather_report_is_acceptable_to_observe=True
-                #self.weather_report_wait_until_open=True
-                #self.weather_report_wait_until_open_time=ephem_now
+                self.weather_report_open_at_start = True
+                #self.weather_report_open_during_evening=True
+                #self.weather_report_open_during_evening_time=ephem_now
                 #self.weather_report_close_during_evening=False
                 #self.weather_report_close_during_evening_time=ephem_now
             else:
@@ -1023,7 +1049,7 @@ class WxEncAgent:
                 later_clearing_hour=99
                 for q in range(len(hourly_restofnight_fitzgerald_number)):
                     if hourly_restofnight_fitzgerald_number[q] < 100:
-                        plog ("looks like it is clear for the rest of the night after hour " + str(q+1) )
+                        plog ("looks like it is clears up after hour " + str(q+1) )
                         later_clearing_hour=q+1
                         number_of_hours_left_after_later_clearing_hour= len(hourly_restofnight_fitzgerald_number) - q
                         break                  
@@ -1061,19 +1087,24 @@ class WxEncAgent:
                         plog ("But that isn't really long enough to rationalise opening the enclosure")
                         self.weather_report_is_acceptable_to_observe=False
                         self.weather_report_close_during_evening=False
-                
+
+                self.weather_report_open_at_start = False
+                if clear_until_hour > 3:
+                    plog ("Looks like it is clear enough to open the observatory from the beginning.")
+                    self.weather_report_open_at_start = True
+
                 if later_clearing_hour != 99:
                     if number_of_hours_left_after_later_clearing_hour > 2:
                         plog ("looks like clears up at hour " + str(later_clearing_hour) )
                         plog ("Will attempt to open/re-open enclosure then.")
-                        self.weather_report_wait_until_open=True
-                        self.weather_report_wait_until_open_time=ephem_now + (later_clearing_hour/24) 
+                        self.weather_report_open_during_evening=True
+                        self.weather_report_open_during_evening_time=ephem_now + (later_clearing_hour/24) 
                     else:
                         plog ("looks like it clears up at hour " + str(later_clearing_hour) )
                         plog ("But there isn't much time after then, so not going to open then. ")
-                        self.weather_report_wait_until_open=False
+                        self.weather_report_open_during_evening=False
                         
-                # if self.weather_report_close_during_evening==True or self.weather_report_wait_until_open==True:
+                # if self.weather_report_close_during_evening==True or self.weather_report_open_during_evening==True:
                 #     self.weather_report_is_acceptable_to_observe=True
                 # else:
                 #     self.weather_report_is_acceptable_to_observe=False
@@ -1226,22 +1257,22 @@ class WxEncAgent:
     #         if sum(hourly_fitzgerald_number) < 10:
     #             plog ("This is a good observing night!")
     #             self.weather_report_is_acceptable_to_observe=True
-    #             self.weather_report_wait_until_open=True
-    #             self.weather_report_wait_until_open_time=ephem_now
+    #             self.weather_report_open_during_evening=True
+    #             self.weather_report_open_during_evening_time=ephem_now
     #             self.weather_report_close_during_evening=False
     #             self.weather_report_close_during_evening_time=ephem_now
     #         elif sum(hourly_fitzgerald_number) > 1000:
     #             plog ("This is a horrible observing night!")
     #             self.weather_report_is_acceptable_to_observe=False
-    #             self.weather_report_wait_until_open=False
-    #             self.weather_report_wait_until_open_time=ephem_now
+    #             self.weather_report_open_during_evening=False
+    #             self.weather_report_open_during_evening_time=ephem_now
     #             self.weather_report_close_during_evening=False
     #             self.weather_report_close_during_evening_time=ephem_now
     #         elif sum(hourly_fitzgerald_number) < 100:
     #             plog ("This is perhaps not the best night, but we will give it a shot!")
     #             self.weather_report_is_acceptable_to_observe=True
-    #             self.weather_report_wait_until_open=True
-    #             self.weather_report_wait_until_open_time=ephem_now
+    #             self.weather_report_open_during_evening=True
+    #             self.weather_report_open_during_evening_time=ephem_now
     #             self.weather_report_close_during_evening=False
     #             self.weather_report_close_during_evening_time=ephem_now
     #         else:
@@ -1303,14 +1334,14 @@ class WxEncAgent:
     #                 if number_of_hours_left_after_later_clearing_hour > 2:
     #                     plog ("looks like clears up at hour " + str(later_clearing_hour) )
     #                     plog ("Will attempt to open/re-open enclosure then.")
-    #                     self.weather_report_wait_until_open=True
-    #                     self.weather_report_wait_until_open_time=ephem_now + (later_clearing_hour/24)
+    #                     self.weather_report_open_during_evening=True
+    #                     self.weather_report_open_during_evening_time=ephem_now + (later_clearing_hour/24)
     #                 else:
     #                     plog ("looks like it clears up at hour " + str(later_clearing_hour) )
     #                     plog ("But there isn't much time after then, so not going to open then. ")
-    #                     self.weather_report_wait_until_open=False
+    #                     self.weather_report_open_during_evening=False
     #
-    #             # if self.weather_report_close_during_evening==True or self.weather_report_wait_until_open==True:
+    #             # if self.weather_report_close_during_evening==True or self.weather_report_open_during_evening==True:
     #             #     self.weather_report_is_acceptable_to_observe=True
     #             # else:
     #             #     self.weather_report_is_acceptable_to_observe=False
