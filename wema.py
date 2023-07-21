@@ -572,22 +572,23 @@ class WxEncAgent:
 
             if self.weather_report_open_during_evening and self.weather_report_close_during_evening:
                 if self.weather_report_close_during_evening_time > self.weather_report_open_during_evening_time:
-                    plog("OWM reports that it thinks it should open later on in " + str(
-                        (self.weather_report_open_during_evening_time - ephem_now) * 24) + " hours.")
-                    plog("OWN reports that it thinks it should close later on in " + str(
-                        (self.weather_report_close_during_evening_time - ephem_now) * 24) + " hours.")
+                    plog("OWM reports that it thinks it should open later on in " + str(round(float(self.weather_report_open_during_evening_time - ephem_now) * 24,2))+ " hours.")
+                    plog("OWN reports that it thinks it should close later on in " + str(round(float(self.weather_report_close_during_evening_time - ephem_now) * 24,2)) + " hours.")
                 else:
-                    plog("OWN reports that it thinks it should close later on in " + str(
-                        (self.weather_report_close_during_evening_time - ephem_now) * 24) + " hours.")
+                    plog("OWN reports that it thinks it should close later on in " + str(round(float(self.weather_report_close_during_evening_time - ephem_now) * 24,2)) + " hours.")
                     plog("OWM reports that it thinks it should open later on in " + str(
-                        (self.weather_report_open_during_evening_time - ephem_now) * 24) + " hours.")
+                        round(float(self.weather_report_open_during_evening_time - ephem_now) * 24, 2)) + " hours.")
+                    #breakpoint()
+
 
             elif self.weather_report_open_during_evening:
-                plog ("OWM reports that it thinks it should open later on in " + str( (self.weather_report_open_during_evening_time - ephem_now)*24) + " hours.")
-                
+                plog("OWM reports that it thinks it should open later on in " + str(
+                    round(float(self.weather_report_open_during_evening_time - ephem_now) * 24, 2)) + " hours.")
+
+
             elif self.weather_report_close_during_evening:
-                plog ("OWN reports that it thinks it should close later on in "+ str( (self.weather_report_close_during_evening_time - ephem_now)* 24)+ " hours.")
-            
+                plog("OWN reports that it thinks it should close later on in " + str(round(float(self.weather_report_close_during_evening_time - ephem_now) * 24,2)) + " hours.")
+
             if (self.weather_report_close_during_evening or self.weather_report_open_during_evening) and self.local_weather_always_overrides_OWM:
                 plog ("However the local weather system is in control of this. This is just an OWM advisory")
             

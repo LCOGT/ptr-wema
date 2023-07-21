@@ -263,7 +263,7 @@ class Enclosure:
             #  assuming the transducers are connected to the WEMA.
             self.obsid_is_generic = True
             win32com.client.pythoncom.CoInitialize()
-            breakpoint()
+            #breakpoint()
             self.enclosure = win32com.client.Dispatch(driver)
 
             plog(self.enclosure)
