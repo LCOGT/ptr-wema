@@ -263,7 +263,7 @@ class Enclosure:
             #  assuming the transducers are connected to the WEMA.
             self.obsid_is_generic = True
             win32com.client.pythoncom.CoInitialize()
-
+            breakpoint()
             self.enclosure = win32com.client.Dispatch(driver)
 
             plog(self.enclosure)
@@ -360,6 +360,12 @@ class Enclosure:
             #status['dome_slewing'] = False
             status['enclosure_mode'] = str(self.mode)
             status['dome_azimuth'] = 0.0
+            status['inside_temperature C'] = 20.0
+            status['inside_humidity %'] = 51.2
+            status['access_door'] = "Open"
+            status['end_wall'] = 'n/a'
+            status['lights_on'] = 'Red'
+            
             #status['enclosure_mode'] = self.mode
             #status['enclosure_message']: self.state
             #status['enclosure_synchronized']= True
@@ -465,6 +471,12 @@ class Enclosure:
             status['enclosure_mode'] = self.mode
             #status['enclosure_message']: self.state
             status['enclosure_synchronized'] = True
+            status['inside_temperature C'] = 20.0
+            status['inside_humidity %'] = 51.2
+            status['access_door'] = "Open"
+            status['end_wall'] = 'n/a'
+            status['lights_on'] = 'Red'
+            
             # g_dev['redis'].set('enc_status', status, ex=3600)  #This is occasionally used by mouning.
 
             if self.is_dome:
@@ -502,7 +514,12 @@ class Enclosure:
                           'dome_azimuth': round(self.enclosure.Azimuth, 1),
                           'dome_slewing': slewing,
                           'enclosure_mode': self.mode,
-                          'enclosure_message': "No message"},  # self.state}#self.following, 20220103_0135 WER
+                          'enclosure_message': "Hello Tim!",  # self.state}#self.following, 20220103_0135 WER
+                          'inside_temperature C': 20.0,
+                          'inside_humidity %': 51.2,
+                          'access_door': "Open",
+                          'end_wall': 'n/a',
+                          'lights_on': 'Red'}
                 try:
                     status = status[0]
                 except:

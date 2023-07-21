@@ -313,7 +313,9 @@ class ObservingConditions:
                     "calc_sky_mpsas": round(
                         uni_measure, 2
                     ),  # Provenance of 20.01 is dubious 20200504 WER
-                    "open_ok": self.ok_to_open#,
+                    "open_ok": self.ok_to_open,
+                    "lightning_strike_radius km":  99.99,
+                    "general_obscuration %":  12.3,
                     #"wx_hold": None,
                     #"hold_duration": 0,
                 }
@@ -335,7 +337,9 @@ class ObservingConditions:
                     "calc_sky_mpsas": round(
                         uni_measure, 2
                     ),  #  Provenance of 20.01 is dubious 20200504 WER
-                    "open_ok": self.ok_to_open#,
+                    "open_ok": self.ok_to_open,
+                    "lightning_strike_radius km":  99.99,
+                    "general_obscuration %":  12.3,
                     #"wx_hold": None,
                     #"hold_duration": 0,
                 }
