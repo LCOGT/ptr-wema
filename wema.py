@@ -568,7 +568,7 @@ class WxEncAgent:
                 plog("-----------------------------")
 
             if self.weather_report_open_at_start:
-                plog ("OWM reports that it thinks it should open at the beginning of the night.")
+                plog ("OWM reports that it thinks it should open at the beginning of the calendar.")
 
             if self.weather_report_open_during_evening and self.weather_report_close_during_evening:
                 if self.weather_report_close_during_evening_time > self.weather_report_open_during_evening_time:
