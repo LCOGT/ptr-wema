@@ -56,7 +56,7 @@ class ObservingConditions:
         g_dev["ocn"] = self
         g_dev['obs'].night_fitzgerald_number = 0,  # 20230709 initialse this varable to permissive state WER
         self.sample_time = 0
-        self.ok_to_open = "No"
+        self.ok_to_open = "No"    #   This is a default on startup.
         self.observing_condtions_message = "-"
         self.wx_is_ok = False
         self.clamp_latch = False
@@ -110,15 +110,21 @@ class ObservingConditions:
             self.obsid_is_generic = True
             win32com.client.pythoncom.CoInitialize()
             self.sky_monitor = win32com.client.Dispatch(driver)
-            self.sky_monitor.connected = True  # This is not an ASCOM device.
-            driver_2 = config["observing_conditions"]["observing_conditions1"][
+           # breakpoint()
+            self.sky_monitor.connected = True  
+            try:
+                driver_2 = config["observing_conditions"]["observing_conditions1"][
                 "driver_2"
-            ]
-            self.sky_monitor_oktoopen = win32com.client.Dispatch(driver_2)
-            self.sky_monitor_oktoopen.Connected = True
-            driver_3 = config["observing_conditions"]["observing_conditions1"][
-                "driver_3"
-            ]
+                ]
+                self.sky_monitor_oktoopen = win32com.client.Dispatch(driver_2)
+                self.sky_monitor_oktoopen.Connected = True
+                driver_3 = config["observing_conditions"]["observing_conditions1"][
+                    "driver_3"
+                ]
+            except:
+                plog('ocn Drivers 2 or 3 not present.')
+                driver_2 = None
+                driver_3 = None
             if driver_3 is not None:
                 self.sky_monitor_oktoimage = win32com.client.Dispatch(driver_3)
                 self.sky_monitor_oktoimage.Connected = True
@@ -256,6 +262,7 @@ class ObservingConditions:
 
         elif self.is_wema : # These operations are common to a generic single computer or wema site.
             ## Here we get the status from local devices
+
             status = {}
             illum, mag = self.astro_events.illuminationNow()
             # illum = float(redis_monitor["illum lux"])
@@ -284,11 +291,12 @@ class ObservingConditions:
 
             self.temperature = round(self.sky_monitor.Temperature, 2)
             try:  # NB NB Boltwood vs. SkyAlert difference.  What about SRO?
-                self.pressure = (
-                    self.sky_monitor.Pressure,
-                )  # 978   #Mbar to mmHg  #THIS IS A KLUDGE
+                self.pressure = self.sky_monitor.Pressure
+                assert self.pressure > 200
+
             except:
                 self.pressure = self.config["reference_pressure"]
+
             # NB NB NB This is a very odd problem which showed up at MRC.
             try:
                 self.new_pressure = round(float(self.pressure), 2) # was [0]), 2)
@@ -314,8 +322,9 @@ class ObservingConditions:
                         uni_measure, 2
                     ),  # Provenance of 20.01 is dubious 20200504 WER
                     "open_ok": self.ok_to_open,
-                    "lightning_strike_radius km":  99.99,
-                    "general_obscuration %":  12.3,
+                    "lightning_strike_radius km":  'n/a',
+                    "general_obscuration %":  'n/a',
+                    "photometric extinction k'": 'n/a',
                     #"wx_hold": None,
                     #"hold_duration": 0,
                 }
@@ -338,12 +347,12 @@ class ObservingConditions:
                         uni_measure, 2
                     ),  #  Provenance of 20.01 is dubious 20200504 WER
                     "open_ok": self.ok_to_open,
-                    "lightning_strike_radius km":  99.99,
-                    "general_obscuration %":  12.3,
+                    "lightning_strike_radius km":  'n/a',
+                    "general_obscuration %":  'n/a',
+                    "photometric extinction k'": 'n/a',
                     #"wx_hold": None,
                     #"hold_duration": 0,
                 }
-
             rain_limit_setting=self.config['rain_limit']
             humidity_limit_setting=self.config['humidity_limit']
             windspeed_limit_setting=self.config['windspeed_limit']
@@ -357,6 +366,7 @@ class ObservingConditions:
 
             rain_limit = self.sky_monitor.RainRate > rain_limit_setting
             if  rain_limit:
+                plog("Reported rain rate in mm/hr:  ", self.sky_monitor.RainRate)
                 wx_reasons.append('Rain > ' + str(rain_limit_setting))
             humidity_limit = self.sky_monitor.Humidity < humidity_limit_setting
             if not humidity_limit:
@@ -399,11 +409,20 @@ class ObservingConditions:
                 and wind_limit
                 and sky_amb_limit
                 and humidity_limit
-                and not rain_limit
+                #and not rain_limit
                 and not cloud_cover
             )
             #  NB wx_is_ok does not include ambient light or altitude of the Sun
             #the notion of Obs OK should bring in Sun Elevation and or ambient light.
+            
+            if rain_limit:
+                plog ("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
+                plog ("Rain Limit is triggered")            
+                plog('Rain > ' + str(rain_limit_setting))
+                plog ("Rain limit currently disabled for debugging.")
+                plog ("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
+            
+            
             if self.wx_is_ok:
                 wx_str = "Yes"
                 status["wx_ok"] = "Yes"
