@@ -92,7 +92,7 @@ wema_config = {
     #'site_is_custom':  False,  #  Meaning like SRO with site specific methods to read weateher and roof status
                                #  so the Wema for such a site fakes it as needed to assemble WX and Enc conditions.
     #'site_has_proxy': True,   # All site now wil have a wema so this is no longer necessary
-    'name': 'Apache Ridge Observatoryi',
+    'name': "Apache Ridge Observatory, Santa Fe, NM, USA. 2194m",
     'location': 'Santa Fe, New Mexico,  USA',
     'observatory_url': 'https://starz-r-us.sky/clearskies2',   # This is meant to be optional, something supplied by the owner.
     'observatory_logo': None,   # I expect a .bmp or.jpeg supplied by the owner
@@ -134,7 +134,7 @@ wema_config = {
     
     'site_enclosure_default_mode': "Manual",   # ["Manual", "Shutdown", "Automatic"]
     
-    'automatic_detail_default': "Enclosure is initially set to Manual by ARO site_config.",
+    'automatic_detail_default': "Enclosure is initially set to  Manual by ARO site_config.",
     'observing_check_period' : 2,    # How many minutes between weather checks
     'enclosure_check_period' : 2,    # How many minutes between enclosure checks
     
@@ -147,15 +147,15 @@ wema_config = {
     #'eve_sky_flat_sunset_offset': -60.0,  # Minutes  neg means before, + after.
 
 
-    # Local weather limits
-    'rain_limit': 0,
-    'humidity_limit': 85,
-    'windspeed_limit': 25,
+    # Local weather limits   #NB we should move these into OCN config section
+    'rain_limit': 0,         # NO we shouldn't because it will be different per site
+    'humidity_limit': 75,   # With multiple elements etc. I think.
+    'windspeed_limit': 25,  # Some of this could be OWM stuff e.g.
     'temperature_minus_dewpoint_limit': 2,
-    'sky_temperature_limit': -17,
+    'sky_temperature_limit': -1,
     'cloud_cover_limit': 25,
     'lowest_ambient_temperature': 1,
-    'highest_ambient_temperature': 40,
+    'highest_ambient_temperature': 45,
 
     
     #'auto_morn_sky_flat': True,
@@ -227,9 +227,9 @@ wema_config = {
         'observing_conditions1': {
             'ocn_is_custom':  False,  
             'name': 'Boltwood',
-            'driver': 'ASCOM.Boltwood.ObservingConditions',
-            'driver_2':  'ASCOM.Boltwood.OkToOpen.SafetyMonitor',
-            'driver_3':  'ASCOM.Boltwood.OkToImage.SafetyMonitor',
+            'driver': 'ASCOM.SkyAlert.ObservingConditions',
+            'driver_2':  None,
+            'driver_3':  None,
             'redis_ip': '127.0.0.1',   #None if no redis path present
             'has_unihedron':  True,
             'have_local_unihedron': True,  

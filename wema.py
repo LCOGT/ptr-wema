@@ -75,9 +75,9 @@ def send_status(obsy, column, status_to_send):
     try:
         response = requests.post(uri_status, data=data, timeout=20)
 
-    #if response.ok:
-       # pass
-       # print("Status sent successfully.")
+        if response.ok:
+           # pass
+           print("~")
     except:
         print(
             'self.api.authenticated_request("PUT", uri, status):  Failed! ',
@@ -931,7 +931,7 @@ class WxEncAgent:
         # First thing to do at the Cool Down, Open time is to calculate the quality of the evening
         # using the broad weather report.
         try: 
-            plog("Appraising quality of evening from Open Weather Map.")
+            plog("Applsing quality of evening from Open Weather Map.")
             owm = OWM('d5c3eae1b48bf7df3f240b8474af3ed0')
             mgr = owm.weather_manager()            
             one_call = mgr.one_call(lat=self.config["latitude"], lon=self.config["longitude"])
