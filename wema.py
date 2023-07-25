@@ -961,11 +961,11 @@ class WxEncAgent:
                     tempFn=0
                     # Add humidity score up
                     if 80 < hourly_report.humidity <= 85:
-                        tempFn=tempFn+1
-                    elif 85 < hourly_report.humidity <= 90:
                         tempFn=tempFn+4
+                    elif 85 < hourly_report.humidity <= 90:
+                        tempFn=tempFn+20
                     elif 90 < hourly_report.humidity <= 100:
-                        tempFn=tempFn+40
+                        tempFn=tempFn+100
                     
                     # Add cloud score up
                     if 20 < hourly_report.clouds <= 40:
@@ -1003,9 +1003,12 @@ class WxEncAgent:
             for entry in fitzgerald_weather_number_grid:
                 if hourcounter >= hours_until_start_of_observing and hourcounter <= hours_until_end_of_observing:
                     
-                    
+                    #breakpoint()
+
+                    textdescription= entry[4]+ ',' + str(entry[0]) +'% Hum,' + str(entry[1]) +'% Cloud,' +str(entry[2])+'m/s wind'
+
                     hourly_fitzgerald_number.append(entry[6])
-                    hourly_fitzgerald_number_by_hour.append([entry[5],entry[6],entry[4]])
+                    hourly_fitzgerald_number_by_hour.append([entry[5],entry[6],textdescription])
                 hourcounter=hourcounter+1
             
             plog ("Hourly Fitzgerald number report")
