@@ -563,12 +563,13 @@ class WxEncAgent:
                     if pasttitle==True:
                         current_utc_hour= float(line.split(' ')[0])
                         if self.weather_report_open_during_evening:
-                            if current_utc_hour <= self.weather_report_open_during_evening_time.datetime().hour < (current_utc_hour + 1):
-                                plog ("OWM would plan to open the roof around this point")
+                            #breakpoint()
+                            if current_utc_hour <= (ephem.Date(self.weather_report_open_during_evening_time).datetime().hour) < (current_utc_hour + 1):
+                                plog ("OWM would plan to open the roof")
                         if self.weather_report_close_during_evening:
-                            if current_utc_hour <= weather_report_close_during_evening_time.datetime().hour < (
+                            if current_utc_hour <= (ephem.Date(self.weather_report_close_during_evening_time).datetime().hour) < (
                                     current_utc_hour + 1):
-                                plog("OWM would plan to close the roof around this point")
+                                plog("OWM would plan to close the roof")
 
                     if 'Hour(UTC)' in line:
                         pasttitle=True
@@ -1057,22 +1058,19 @@ class WxEncAgent:
                 plog ("This is a problematic night, lets check if one part of the night is clearer than the other.")
                 TEMPhourly_restofnight_fitzgerald_number=hourly_fitzgerald_number.copy()
                 TEMPhourly_nightuptothen_fitzgerald_number=hourly_fitzgerald_number.copy()
-                hourly_restofnight_fitzgerald_number=[]                
+                hourly_restofnight_fitzgerald_number=[]   
+                hourly_restofnight_fitzgerald_number_averages=[]
                 
                 for entry in range(len(TEMPhourly_restofnight_fitzgerald_number)):
                     hourly_restofnight_fitzgerald_number.append(sum(TEMPhourly_restofnight_fitzgerald_number))
+                    hourly_restofnight_fitzgerald_number_averages.append(sum(TEMPhourly_restofnight_fitzgerald_number)/len(TEMPhourly_restofnight_fitzgerald_number))
+                    
                     TEMPhourly_restofnight_fitzgerald_number.pop(0)
                 
                 plog ("Hourly Fitzgerald Number for the Rest of the Night")
                 plog (hourly_restofnight_fitzgerald_number)
                 
-                later_clearing_hour=99
-                for q in range(len(hourly_restofnight_fitzgerald_number)):
-                    if hourly_restofnight_fitzgerald_number[q] < 100:
-                        plog ("looks like it is clears up after hour " + str(q+1) )
-                        later_clearing_hour=q+1
-                        number_of_hours_left_after_later_clearing_hour= len(hourly_restofnight_fitzgerald_number) - q
-                        break                  
+                                
                 
                 hourly_nightuptothen_fitzgerald_number=[]
                 counter=0
@@ -1112,6 +1110,21 @@ class WxEncAgent:
                 if clear_until_hour > 3:
                     plog ("Looks like it is clear enough to open the observatory from the beginning.")
                     self.weather_report_open_at_start = True
+
+                later_clearing_hour=99
+                for q in range(len(hourly_restofnight_fitzgerald_number)):
+                    #breakpoint()
+                    if self.weather_report_open_at_start and self.weather_report_close_during_evening and q < clear_until_hour:
+                        pass
+                    elif hourly_restofnight_fitzgerald_number[q] < 100 or hourly_restofnight_fitzgerald_number_averages[q] <40 :
+                        #breakpoint()
+                        if hourly_fitzgerald_number[q-1] < 40:
+                            plog ("looks like it is clears up after hour " + str(q+1) )
+                            later_clearing_hour=q+1
+                            # Just test if there isn't a couple of "bad" hours at the start
+                            #breakpoint()
+                            number_of_hours_left_after_later_clearing_hour= len(hourly_restofnight_fitzgerald_number) - q
+                            break  
 
                 if later_clearing_hour != 99:
                     if number_of_hours_left_after_later_clearing_hour > 2:
