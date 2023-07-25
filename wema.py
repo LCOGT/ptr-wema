@@ -1003,14 +1003,19 @@ class WxEncAgent:
                 plog (str(line[0]) + '         | '+ str(line[1]) + '        | ' + str(line[2]))
                 self.hourly_report_holder.append(str(line[0]) + '         | '+ str(line[1]) + '        | ' + str(line[2]))
             #plog (hourly_fitzgerald_number_by_hour)
-            plog ("Night's total fitzgerald number")
-            plog (sum(hourly_fitzgerald_number))
+            plog ("Night's total fitzgerald number: " + str(sum(hourly_fitzgerald_number)))
+            #plog (sum(hourly_fitzgerald_number))
 
             #breakpoint()
 
             self.night_fitzgerald_number = sum(hourly_fitzgerald_number)
 
-            if sum(hourly_fitzgerald_number) < 10:
+            average_fitzn_for_rest_of_night = sum(hourly_fitzgerald_number) / len(hourly_fitzgerald_number)
+            #breakpoint()
+            plog("Night's average fitzgerald number: " + str(average_fitzn_for_rest_of_night))
+            #plog(sum(hourly_fitzgerald_number))
+
+            if average_fitzn_for_rest_of_night < 10:
                 plog ("This is a good observing night!")
                 self.weather_report_is_acceptable_to_observe=True
                 self.weather_report_open_at_start=True
@@ -1018,7 +1023,7 @@ class WxEncAgent:
                 #self.weather_report_open_during_evening_time=ephem_now
                 #self.weather_report_close_during_evening=False
                 #self.weather_report_close_during_evening_time=ephem_now
-            elif sum(hourly_fitzgerald_number) > 1000:
+            elif average_fitzn_for_rest_of_night > 40:
                 plog ("This is a horrible observing night!")
                 self.weather_report_is_acceptable_to_observe=False
                 self.weather_report_open_at_start = False
@@ -1026,7 +1031,7 @@ class WxEncAgent:
                 #self.weather_report_open_during_evening_time=ephem_now
                 #self.weather_report_close_during_evening=False
                 #self.weather_report_close_during_evening_time=ephem_now
-            elif sum(hourly_fitzgerald_number) < 100:
+            elif average_fitzn_for_rest_of_night < 18:
                 plog ("This is perhaps not the best night, but we will give it a shot!")
                 self.weather_report_is_acceptable_to_observe=True
                 self.weather_report_open_at_start = True
