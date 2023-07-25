@@ -554,19 +554,33 @@ class WxEncAgent:
             plog("\n")
 
 
-            if len(self.hourly_report_holder) > 0:
 
+            if len(self.hourly_report_holder) > 0:
+                pasttitle=False
                 for line in self.hourly_report_holder:
                     plog(str(line))
 
+                    if pasttitle==True:
+                        current_utc_hour= float(line.split(' ')[0])
+                        if self.weather_report_open_during_evening:
+                            if current_utc_hour <= self.weather_report_open_during_evening_time.datetime().hour < (current_utc_hour + 1):
+                                plog ("OWM would plan to open the roof around this point")
+                        if self.weather_report_close_during_evening:
+                            if current_utc_hour <= weather_report_close_during_evening_time.datetime().hour < (
+                                    current_utc_hour + 1):
+                                plog("OWM would plan to close the roof around this point")
+
                     if 'Hour(UTC)' in line:
+                        pasttitle=True
                         plog("-----------------------------")
                         if g_dev['events']['Cool Down, Open'] > ephem_now:
                             plog("Cool Down Open")
+                        if self.weather_report_open_at_start:
+                            plog("OWM would plan to open at this point.")
                 if g_dev['events']['Close and Park'] > ephem_now:
                     plog("Close and Park")
                 plog("-----------------------------")
-
+            #breakpoint()
             if self.weather_report_open_at_start:
                 plog ("OWM reports that it thinks it should open at the beginning of the calendar.")
 
