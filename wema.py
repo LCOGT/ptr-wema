@@ -987,7 +987,8 @@ class WxEncAgent:
                     elif 20 < hourly_report.wind()['speed'] :
                         tempFn=tempFn+100
                     
-                    
+                    if 'rain' or 'storm' in hourly_report.detailed_status:
+                        tempFn=tempFn+100
                     
                     fitzgerald_weather_number_grid.append([hourly_report.humidity,hourly_report.clouds,hourly_report.wind()['speed'],hourly_report.status, hourly_report.detailed_status, clock_hour, tempFn])
                     hourcounter=hourcounter + 1

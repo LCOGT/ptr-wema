@@ -297,9 +297,11 @@ class ObservingConditions:
             except:
                 self.pressure = self.config["reference_pressure"]
 
+
             # NB NB NB This is a very odd problem which showed up at MRC.
+
             try:
-                self.new_pressure = round(float(self.pressure), 2) # was [0]), 2)
+                self.new_pressure = round(float(self.pressure[0]), 2) # was [0]), 2)
             except:
                 self.new_pressure = round(float(self.pressure), 2)
 
