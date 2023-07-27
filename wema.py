@@ -1003,6 +1003,7 @@ class WxEncAgent:
 
             #if OWM_status_json is not None:
             #    lane = "owmweather"
+            #    obsy = self.config['wema_name']
             #    try:
             #        send_status(obsy, lane, OWM_status_json)
             #    except:
