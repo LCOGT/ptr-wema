@@ -987,9 +987,11 @@ class WxEncAgent:
                     elif 20 < hourly_report.wind()['speed'] :
                         tempFn=tempFn+100
                     
-                    if 'rain' or 'storm' in hourly_report.detailed_status:
+                    if 'rain'  in hourly_report.detailed_status or 'storm'  in hourly_report.detailed_status:
                         tempFn=tempFn+100
-                    
+
+                    #breakpoint()
+
                     fitzgerald_weather_number_grid.append([hourly_report.humidity,hourly_report.clouds,hourly_report.wind()['speed'],hourly_report.status, hourly_report.detailed_status, clock_hour, tempFn])
                     hourcounter=hourcounter + 1
                     
@@ -1042,10 +1044,10 @@ class WxEncAgent:
                 #self.weather_report_open_during_evening_time=ephem_now
                 #self.weather_report_close_during_evening=False
                 #self.weather_report_close_during_evening_time=ephem_now
-            elif average_fitzn_for_rest_of_night > 40:
-                plog ("This is a horrible observing night!")
-                self.weather_report_is_acceptable_to_observe=False
-                self.weather_report_open_at_start = False
+            #elif average_fitzn_for_rest_of_night > 40:
+            #    plog ("This is a horrible observing night!")
+            #    self.weather_report_is_acceptable_to_observe=False
+            #    self.weather_report_open_at_start = False
                 #self.weather_report_open_during_evening=False
                 #self.weather_report_open_during_evening_time=ephem_now
                 #self.weather_report_close_during_evening=False
@@ -1102,8 +1104,8 @@ class WxEncAgent:
                         plog ("Will observe until then then close down enclosure")
                         self.weather_report_is_acceptable_to_observe=True
                         self.weather_report_close_during_evening=True
-                        self.weather_report_close_during_evening_time=ephem_now + (clear_until_hour/24)
-                        g_dev['events']['Observing Ends'] = ephem_now + (clear_until_hour/24)
+                        self.weather_report_close_during_evening_time=ephem_now + ((clear_until_hour+1)/24)
+                        g_dev['events']['Observing Ends'] = ephem_now + ((clear_until_hour+1)/24)
                     else:
                         plog ("looks like it is clear until hour " + str(clear_until_hour) )
                         plog ("But that isn't really long enough to rationalise opening the enclosure")
