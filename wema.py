@@ -947,57 +947,69 @@ class WxEncAgent:
                 hours_until_start_of_observing = 0
             plog("Hours until end of observing: " + str(hours_until_end_of_observing))
             
-            
+
+            OWM_status_json={}
+            OWM_status_json["timestamp"] = round(time.time(), 1)
             for hourly_report in one_call.forecast_hourly:
                 
-                if hourcounter > 24:
-                    pass
-                else:
-                    #breakpoint()
-                    clock_hour=int(hourly_report.reference_time('iso').split(' ')[1].split(':')[0])
-                    
-                    
-                    # Calculate Fitzgerald number for this hour
-                    tempFn=0
-                    # Add humidity score up
-                    if 80 < hourly_report.humidity <= 85:
-                        tempFn=tempFn+4
-                    elif 85 < hourly_report.humidity <= 90:
-                        tempFn=tempFn+20
-                    elif 90 < hourly_report.humidity <= 100:
-                        tempFn=tempFn+100
-                    
-                    # Add cloud score up
-                    if 20 < hourly_report.clouds <= 40:
-                        tempFn=tempFn+1
-                    elif 40 < hourly_report.clouds <= 60:
-                        tempFn=tempFn+4
-                    elif 60 < hourly_report.clouds <= 80:
-                        tempFn=tempFn+40
-                    elif 80 < hourly_report.clouds <= 100:
-                        tempFn=tempFn+100
-                    
-                    # Add wind score up
-                    if 8 < hourly_report.wind()['speed'] <=12:
-                        tempFn=tempFn+1
-                    elif 12 < hourly_report.wind()['speed'] <= 15:
-                        tempFn=tempFn+4
-                    elif 15 < hourly_report.wind()['speed'] <= 20:
-                        tempFn=tempFn+40
-                    elif 20 < hourly_report.wind()['speed'] :
-                        tempFn=tempFn+100
-                    
-                    if 'rain'  in hourly_report.detailed_status or 'storm'  in hourly_report.detailed_status:
-                        tempFn=tempFn+100
+                #if hourcounter > 24:
+                #    pass
+                #else:
+                #breakpoint()
+                clock_hour=int(hourly_report.reference_time('iso').split(' ')[1].split(':')[0])
 
-                    #breakpoint()
 
-                    fitzgerald_weather_number_grid.append([hourly_report.humidity,hourly_report.clouds,hourly_report.wind()['speed'],hourly_report.status, hourly_report.detailed_status, clock_hour, tempFn])
-                    hourcounter=hourcounter + 1
-                    
+                # Calculate Fitzgerald number for this hour
+                tempFn=0
+                # Add humidity score up
+                if 80 < hourly_report.humidity <= 85:
+                    tempFn=tempFn+4
+                elif 85 < hourly_report.humidity <= 90:
+                    tempFn=tempFn+20
+                elif 90 < hourly_report.humidity <= 100:
+                    tempFn=tempFn+100
+
+                # Add cloud score up
+                if 20 < hourly_report.clouds <= 40:
+                    tempFn=tempFn+1
+                elif 40 < hourly_report.clouds <= 60:
+                    tempFn=tempFn+4
+                elif 60 < hourly_report.clouds <= 80:
+                    tempFn=tempFn+40
+                elif 80 < hourly_report.clouds <= 100:
+                    tempFn=tempFn+100
+
+                # Add wind score up
+                if 8 < hourly_report.wind()['speed'] <=12:
+                    tempFn=tempFn+1
+                elif 12 < hourly_report.wind()['speed'] <= 15:
+                    tempFn=tempFn+4
+                elif 15 < hourly_report.wind()['speed'] <= 20:
+                    tempFn=tempFn+40
+                elif 20 < hourly_report.wind()['speed'] :
+                    tempFn=tempFn+100
+
+                if 'rain'  in hourly_report.detailed_status or 'storm'  in hourly_report.detailed_status:
+                    tempFn=tempFn+100
+
+                #breakpoint()
+                weatherline=[hourly_report.humidity,hourly_report.clouds,hourly_report.wind()['speed'],hourly_report.status, hourly_report.detailed_status, clock_hour, tempFn, hourly_report.reference_time('iso')]
+                fitzgerald_weather_number_grid.append(weatherline)
+                OWM_status_json[str(hourcounter)] = weatherline
+                hourcounter=hourcounter + 1
+
+
             #plog (fitzgerald_weather_number_grid)    
-            
-            
+
+            #if OWM_status_json is not None:
+            #    lane = "owmweather"
+            #    try:
+            #        send_status(obsy, lane, OWM_status_json)
+            #    except:
+            #        plog('could not send owm weather status')
+
+
+            #breakpoint()
             # Fitzgerald weather number calculation.
             hourly_fitzgerald_number=[]
             hourly_fitzgerald_number_by_hour=[]
