@@ -132,9 +132,9 @@ wema_config = {
     # 'lowest_requestable_altitude': -5, # Degrees. For normal pointing requests don't allow requests to go this low. 
     
     
-    'site_enclosure_default_mode': "Manual",   # ["Manual", "Shutdown", "Automatic"]
+    'site_enclosure_default_mode': "Automatic",   # ["Manual", "Shutdown", "Automatic"]
     
-    'automatic_detail_default': "Enclosure is initially set to  Manual by ARO site_config.",
+    'automatic_detail_default': "Enclosure is initially set to  Automatic by ARO site_config.",
     'observing_check_period' : 2,    # How many minutes between weather checks
     'enclosure_check_period' : 2,    # How many minutes between enclosure checks
     
@@ -148,7 +148,7 @@ wema_config = {
 
 
     # Local weather limits   #NB we should move these into OCN config section
-    'rain_limit': 0,         # NO we shouldn't because it will be different per site
+    'rain_limit': 1.0,         # NO we shouldn't because it will be different per site
     'humidity_limit': 75,   # With multiple elements etc. I think.
     'windspeed_limit': 25,  # Some of this could be OWM stuff e.g.
     'temperature_minus_dewpoint_limit': 2,

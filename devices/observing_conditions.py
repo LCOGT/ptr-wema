@@ -411,17 +411,17 @@ class ObservingConditions:
                 and wind_limit
                 and sky_amb_limit
                 and humidity_limit
-                #and not rain_limit
+                and not rain_limit
                 and not cloud_cover
             )
             #  NB wx_is_ok does not include ambient light or altitude of the Sun
             #the notion of Obs OK should bring in Sun Elevation and or ambient light.
             
-            if rain_limit:
+            if self.sky_monitor.RainRate == 1.0:
                 plog ("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
-                plog ("Rain Limit is triggered")            
-                plog('Rain > ' + str(rain_limit_setting))
-                plog ("Rain limit currently disabled for debugging.")
+                plog ("Rain Rate is 1.0")            
+                #plog('Rain > ' + str(rain_limit_setting))
+                plog ("This is usually a glitch so ignoring. Higher rain rates will trigger roof.")
                 plog ("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
             
             
