@@ -993,21 +993,66 @@ class WxEncAgent:
                     tempFn=tempFn+100
 
                 #breakpoint()
-                weatherline=[hourly_report.humidity,hourly_report.clouds,hourly_report.wind()['speed'],hourly_report.status, hourly_report.detailed_status, clock_hour, tempFn, hourly_report.reference_time('iso')]
+                #
+                weatherline=[hourly_report.humidity,hourly_report.clouds,hourly_report.wind()['speed'],hourly_report.status, hourly_report.detailed_status, clock_hour, tempFn, hourly_report.reference_time('iso'), hourly_report.temperature()['temp'] - 273.15]
                 fitzgerald_weather_number_grid.append(weatherline)
-                OWM_status_json[str(hourcounter)] = weatherline
+
                 hourcounter=hourcounter + 1
 
 
+            forecast_status=[]
+            for weatherline in fitzgerald_weather_number_grid:
+
+                status_line={}
+                #breakpoint()
+                status_line['humidity']=weatherline[0]
+                status_line['cloud_cover'] = weatherline[1]
+                status_line['wind_speed'] = weatherline[2]
+                status_line['short_text'] = weatherline[3]
+                status_line['long_text'] = weatherline[4]
+                #breakpoint()
+                status_line['utc_clock_hour'] = weatherline[5]
+                status_line['fitz_number'] = weatherline[6]
+                status_line['utc_long_form'] = weatherline[7].replace(' ','T').split('+')[0]+'Z'
+                status_line['temperature'] = weatherline[8]
+
+                if float(weatherline[6]) < 11:
+                    status_line['weather_quality_number'] = 1
+                elif float (weatherline[6]) < 21:
+                    status_line['weather_quality_number'] = 2
+                elif float (weatherline[6]) < 41:
+                    status_line['weather_quality_number'] = 3
+                elif float (weatherline[6]) < 101:
+                    status_line['weather_quality_number'] = 4
+                else:
+                    status_line['weather_quality_number'] = 5
+
+                forecast_status.append(status_line)
+                #breakpoint()
+                #OWM_status_json[str(hourcounter)] = weatherline
             #plog (fitzgerald_weather_number_grid)    
 
-            #if OWM_status_json is not None:
-            #    lane = "owmweather"
-            #    obsy = self.config['wema_name']
-            #    try:
-            #        send_status(obsy, lane, OWM_status_json)
-            #    except:
-            #        plog('could not send owm weather status')
+            #breakpoint()
+
+            if forecast_status is not None:
+                lane = "forecast"
+                obsy = self.config['wema_name']
+                url = f"https://status.photonranch.org/status/{obsy}/status"
+
+                payload = json.dumps({
+                    "statusType": "forecast",
+                    "status": { "forecast": forecast_status }
+                })
+                response = requests.request("POST", url, data=payload)
+                #print(response.json())
+
+                #breakpoint()
+
+
+                #try:
+                #    send_status(obsy, lane, forecast_status)
+                #except:
+                #    plog('could not send owm weather status')
 
 
             #breakpoint()
