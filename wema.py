@@ -1162,8 +1162,8 @@ class WxEncAgent:
                         plog ("Will observe until then then close down enclosure")
                         self.weather_report_is_acceptable_to_observe=True
                         self.weather_report_close_during_evening=True
-                        self.weather_report_close_during_evening_time=ephem_now + ((clear_until_hour+1)/24)
-                        g_dev['events']['Observing Ends'] = ephem_now + ((clear_until_hour+1)/24)
+                        self.weather_report_close_during_evening_time=ephem_now + (clear_until_hour/24)
+                        g_dev['events']['Observing Ends'] = ephem_now + (clear_until_hour/24)
                     else:
                         plog ("looks like it is clear until hour " + str(clear_until_hour) )
                         plog ("But that isn't really long enough to rationalise opening the enclosure")
