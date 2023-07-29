@@ -1180,15 +1180,24 @@ class WxEncAgent:
                     #breakpoint()
                     if self.weather_report_open_at_start and self.weather_report_close_during_evening and q < clear_until_hour:
                         pass
-                    elif hourly_restofnight_fitzgerald_number[q] < 100 or hourly_restofnight_fitzgerald_number_averages[q] <40 :
+                    elif hourly_restofnight_fitzgerald_number[q] < 100 or hourly_restofnight_fitzgerald_number_averages[q] < 40 :
                         #breakpoint()
-                        if hourly_fitzgerald_number[q-1] < 40:
-                            plog ("looks like it is clears up after hour " + str(q+1) )
-                            later_clearing_hour=q+1
-                            # Just test if there isn't a couple of "bad" hours at the start
-                            #breakpoint()
-                            number_of_hours_left_after_later_clearing_hour= len(hourly_restofnight_fitzgerald_number) - q
-                            break  
+                        if q > 2:
+                            if hourly_fitzgerald_number[q-1] < 41:
+                                # Then step backwards until it is a good number
+                                #breakpoint()
+                                #even_earlier=0
+
+
+                                plog ("looks like it is clears up after hour " + str(q-1) )
+                                later_clearing_hour=q-1
+
+                                #plog ("looks like it is clears up after hour " + str(q+1) )
+                                #later_clearing_hour=q+1
+                                # Just test if there isn't a couple of "bad" hours at the start
+                                #breakpoint()
+                                number_of_hours_left_after_later_clearing_hour= len(hourly_restofnight_fitzgerald_number) - q
+                                break
 
                 if later_clearing_hour != 99:
                     if number_of_hours_left_after_later_clearing_hour > 2:
