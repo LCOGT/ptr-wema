@@ -1092,8 +1092,10 @@ class WxEncAgent:
             #breakpoint()
 
             self.night_fitzgerald_number = sum(hourly_fitzgerald_number)
-
-            average_fitzn_for_rest_of_night = sum(hourly_fitzgerald_number) / len(hourly_fitzgerald_number)
+            if len(hourly_fitzgerald_number) < 1:
+                average_fitzn_for_rest_of_night = sum(hourly_fitzgerald_number) / len(hourly_fitzgerald_number)
+            else:
+                average_fitzn_for_rest_of_night = 100
             #breakpoint()
             plog("Night's average fitzgerald number: " + str(average_fitzn_for_rest_of_night))
             #plog(sum(hourly_fitzgerald_number))
