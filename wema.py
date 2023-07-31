@@ -1066,7 +1066,7 @@ class WxEncAgent:
                     
                     #breakpoint()
 
-                    textdescription= entry[4]+ '   ' + str(entry[0]) +'% Hum   ' + str(entry[1]) +'% Cloud   ' +str(entry[2])+'m/s wind'
+                    textdescription= entry[4]+ '   Cloud:   ' + str(entry[1]) + '%     Hum:    ' + str(entry[0]) +   '%    Wind:  ' +str(entry[2])+' m/s'  # WER changed to make more readable.
 
                     hourly_fitzgerald_number.append(entry[6])
                     hourly_fitzgerald_number_by_hour.append([entry[5],entry[6],textdescription])
