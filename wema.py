@@ -737,13 +737,13 @@ class WxEncAgent:
                 if self.weather_report_close_during_evening_time < ephem_now < self.weather_report_open_during_evening_time:
                     temp_meant_to_be_shut=True
 
-            if ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends']) and self.weather_report_open_at_start==True and \
+            if ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends']) and (self.weather_report_open_at_start==True or self.local_weather_always_overrides_OWM) and \
                 enc_status['enclosure_mode'] == 'Automatic') and not self.cool_down_latch and (self.local_weather_ok == True or (not self.ocn_exists)) and not \
                 enc_status['shutter_status'] in ['Software Fault', 'Opening', 'Closing', 'Error'] and not temp_meant_to_be_shut:
 
                 self.cool_down_latch = True
 
-                if not self.open_and_enabled_to_observe and self.weather_report_is_acceptable_to_observe == True: # and (self.weather_report_open_during_evening == False or self.local_weather_always_overrides_OWM):
+                if not self.open_and_enabled_to_observe and (self.weather_report_is_acceptable_to_observe or self.local_weather_always_overrides_OWM): # and (self.weather_report_open_during_evening == False or self.local_weather_always_overrides_OWM):
 
                     if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config['maximum_roof_opens_per_evening']:
                         self.nightly_reset_complete = False
