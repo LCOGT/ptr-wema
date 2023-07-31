@@ -41,7 +41,7 @@ wema_config = {
     #'debug_obsy_mode': False,   #not needed for a WEMA instance 
     'admin_owner_commands_only': False,
     'debug_duration_sec': 80000,
-    'local_weather_always_overrides_OWM': True,
+    'local_weather_always_overrides_OWM': False,
     'enclosure_status_check_period': 30,
     'weather_status_check_period': 30,
     'safety_status_check_period': 30,

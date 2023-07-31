@@ -411,13 +411,13 @@ class ObservingConditions:
                 and wind_limit
                 and sky_amb_limit
                 and humidity_limit
-                and not rain_limit
+                #and not rain_limit
                 and not cloud_cover
             )
             #  NB wx_is_ok does not include ambient light or altitude of the Sun
             #the notion of Obs OK should bring in Sun Elevation and or ambient light.
             
-            if self.sky_monitor.RainRate == 1.0:
+            if self.sky_monitor.RainRate > 0.0:
                 plog ("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
                 plog ("Rain Rate is 1.0")            
                 #plog('Rain > ' + str(rain_limit_setting))
