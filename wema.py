@@ -579,6 +579,8 @@ class WxEncAgent:
                             plog("Cool Down Open")
                         if self.weather_report_open_at_start:
                             plog("OWM would plan to open at this point.")
+                        else:
+                            plog("OWM would keep the roof shut at this point.")
                 if g_dev['events']['Close and Park'] > ephem_now:
                     plog("Close and Park")
                 plog("-----------------------------")
