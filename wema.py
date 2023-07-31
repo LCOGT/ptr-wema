@@ -271,14 +271,15 @@ class WxEncAgent:
         
         self.wema_has_roof_control=config['wema_has_control_of_roof']
 
-        
+        #self.update_status()
+        #breakpoint()
         # Run a weather report on bootup so enclosure can run if need be.
         if not g_dev['debug']:
             # self.global_wx()
 
-            self.run_nightly_weather_report()
+            self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
         else:
-            #self.nightly_weather_report_complete = True
+            self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
             self.weather_report_is_acceptable_to_observe = True
             self.weather_report_open_during_evening = False
 
@@ -372,7 +373,7 @@ class WxEncAgent:
         # Hourly Weather Report
         if time.time() > (self.weather_report_run_timer + 3600):
             self.weather_report_run_timer=time.time()
-            self.run_nightly_weather_report()
+            self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
 
         
         
@@ -838,7 +839,8 @@ class WxEncAgent:
             print("Log did not send, usually not fatal.")
 
     def park_enclosure_and_close(self):
-        
+
+        self.open_and_enabled_to_observe = False
         g_dev['enc'].close_roof_directly({}, {})
         
         return
@@ -922,13 +924,13 @@ class WxEncAgent:
 
         return
 
-    def run_nightly_weather_report(self):
+    def run_nightly_weather_report(self,enc_status=None):
        
         events = g_dev['events']
         self.weather_report_run_timer=time.time()
         obs_win_begin, sunset, sunrise, ephem_now = self.astro_events.getSunEvents()
         #if self.nightly_weather_report_complete==False:
-            
+        self.update_status()
         # First thing to do at the Cool Down, Open time is to calculate the quality of the evening
         # using the broad weather report.
         try: 
@@ -1174,6 +1176,11 @@ class WxEncAgent:
                 if clear_until_hour > 3:
                     plog ("Looks like it is clear enough to open the observatory from the beginning.")
                     self.weather_report_open_at_start = True
+                elif hourly_fitzgerald_number[0] > 40 and enc_status['enclosure_mode'] == 'Automatic' and not enc_status['shutter_status'] in ['Closed', 'closed'] and not self.local_weather_always_overrides_OWM:
+                    plog ("Looks like the weather gets rough in the first hour, shutting up observatory.")
+                    self.park_enclosure_and_close()
+
+                #breakpoint()
 
                 later_clearing_hour=99
                 for q in range(len(hourly_restofnight_fitzgerald_number)):
@@ -1189,8 +1196,8 @@ class WxEncAgent:
                                 #even_earlier=0
 
 
-                                plog ("looks like it is clears up after hour " + str(q-1) )
-                                later_clearing_hour=q-1
+                                plog ("looks like it is clears up after hour " + str(q) )
+                                later_clearing_hour=q
 
                                 #plog ("looks like it is clears up after hour " + str(q+1) )
                                 #later_clearing_hour=q+1
@@ -1220,6 +1227,8 @@ class WxEncAgent:
                     self.weather_report_is_acceptable_to_observe=False
         except Exception as e:
             plog ("OWN failed", e)
+            plog(traceback.format_exc())
+            breakpoint()
 
         # However, if the enclosure is under manual control, leave this switch on.
         if self.enc_status_custom==False:
