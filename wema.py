@@ -824,21 +824,21 @@ class WxEncAgent:
             self.stopped = True
             return
 
-    def send_to_user(self, p_log, p_level="INFO"):
-        """ """
-        url_log = "https://logs.photonranch.org/logs/newlog"
-        body = json.dumps(
-            {
-                "site": self.config["site"],
-                "log_message": str(p_log),
-                "log_level": str(p_level),
-                "timestamp": time.time(),
-            }
-        )
-        try:
-            response = requests.post(url_log, body, timeout=20)
-        except Exception:
-            print("Log did not send, usually not fatal.")
+    # def send_to_user(self, p_log, p_level="INFO"):
+    #     """ """
+    #     url_log = "https://logs.photonranch.org/logs/newlog"
+    #     body = json.dumps(
+    #         {
+    #             "site": self.config["site"],
+    #             "log_message": str(p_log),
+    #             "log_level": str(p_level),
+    #             "timestamp": time.time(),
+    #         }
+    #     )
+    #     try:
+    #         response = requests.post(url_log, body, timeout=20)
+    #     except Exception:
+    #         print("Log did not send, usually not fatal.")
 
     def park_enclosure_and_close(self):
 
@@ -860,7 +860,7 @@ class WxEncAgent:
                     ephem_now < g_dev['events']['Cool Down, Open']) or \
                     (g_dev['events']['Close and Park'] < ephem_now < g_dev['events']['Nightly Reset']):
                 plog("NOT OPENING THE enclosure -- IT IS THE DAYTIME!!")
-                self.send_to_user("An open enclosure request was rejected as it is during the daytime.")
+                #self.send_to_user("An open enclosure request was rejected as it is during the daytime.")
                 return
             else:
 
