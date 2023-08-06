@@ -1093,7 +1093,7 @@ class WxEncAgent:
             #breakpoint()
 
             self.night_fitzgerald_number = sum(hourly_fitzgerald_number)
-            if len(hourly_fitzgerald_number) < 1:
+            if len(hourly_fitzgerald_number) >= 1:
                 average_fitzn_for_rest_of_night = sum(hourly_fitzgerald_number) / len(hourly_fitzgerald_number)
             else:
                 average_fitzn_for_rest_of_night = 100
@@ -1232,8 +1232,9 @@ class WxEncAgent:
                     self.weather_report_is_acceptable_to_observe=False
         except Exception as e:
             plog ("OWN failed", e)
-            plog(traceback.format_exc())
-            breakpoint()
+            plog ("Usually a connection glitch")
+            #plog(traceback.format_exc())
+            #breakpoint()
 
         # However, if the enclosure is under manual control, leave this switch on.
         if self.enc_status_custom==False:
