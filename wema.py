@@ -1231,8 +1231,9 @@ class WxEncAgent:
                     self.weather_report_is_acceptable_to_observe=False
         except Exception as e:
             plog ("OWN failed", e)
-            plog(traceback.format_exc())
-            breakpoint()
+            plog ("Usually a connection glitch")
+            #plog(traceback.format_exc())
+            #breakpoint()
 
         # However, if the enclosure is under manual control, leave this switch on.
         if self.enc_status_custom==False:
