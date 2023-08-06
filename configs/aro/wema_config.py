@@ -226,8 +226,8 @@ wema_config = {
     'observing_conditions' : {     #for SAF
         'observing_conditions1': {
             'ocn_is_custom':  False,  
-            'name': 'Boltwood',
-            'driver': 'ASCOM.SkyAlert.ObservingConditions',
+            'name': 'Boltwood Custom for ARO',
+            'driver': 'ASCOM.Boltwood.ObservingConditions',
             'driver_2':  None,
             'driver_3':  None,
             'redis_ip': '127.0.0.1',   #None if no redis path present

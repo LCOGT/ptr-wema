@@ -571,6 +571,7 @@ class WxEncAgent:
                             if current_utc_hour <= (ephem.Date(self.weather_report_close_during_evening_time).datetime().hour) < (
                                     current_utc_hour + 1):
                                 plog("OWM would plan to close the roof")
+                                
 
                     if 'Hour(UTC)' in line:
                         pasttitle=True

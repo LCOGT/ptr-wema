@@ -260,6 +260,101 @@ class ObservingConditions:
             #     pass
             # return status
 
+        elif self.config['observing_conditions']['observing_conditions1']["name"] == 'Boltwood Custom for ARO':
+  
+            with open("C:\ptr\wema_transfer\\boltwood.txt", 'r') as bw_rec:
+                bw1= bw_rec.readline().split()
+            with open('W:\skyalert\weatherdata_nw.txt', 'r') as bw_rec:
+                sa_nw = bw_rec.readline().split()
+            print(bw1)
+            print(sa_nw)
+            rate = [0, 0, 1, 2]
+            cover = ['Clear', 'Cloudy', 'Very Cloudy']
+            self.temperature = round((float(bw1[5]) + float(sa_nw[5]))/2., 1)
+            self.sky_temp = round((float(bw1[4]) + float(sa_nw[4]))/2., 2)
+            self.sky_minus_ambient = round(self.sky_temp - self.temperature, 2)
+            self.humidity = round((float(bw1[8]) + float(sa_nw[8]))/2., 1)
+            self.dewpoint = round((float(bw1[9]) + float(sa_nw[9]))/2., 2)
+            self.windspeed = round(1.60934*(float(bw1[7]) + float(sa_nw[7]))/2., 2) #incoming mph output km/hs
+            self.time_since = int((float(bw1[13]) + float(sa_nw[13]))/2.)
+            self.time_of_update = round((float(bw1[14]) + float(sa_nw[14]))/2., 5) 
+            self.rain_wet_current = max(int(bw1[11]), int(sa_nw[12]), int(bw1[11]), int(sa_nw[12]))
+            self.cloud_condition = max(int(bw1[15]), int(sa_nw[15]))
+            self.rain_wet_condition = max(int(bw1[16]), int(sa_nw[16]), int(bw1[17]), int(sa_nw[17]))
+            self.daylight_condition = max(int(bw1[18]), int(sa_nw[18]))
+            self.req_close = bool(bw1[19])
+            self.rain_rate = rate[self.rain_wet_condition]
+            self.cloud_cover = cover[self.cloud_condition]
+            #At this point cloud is grossly different from reality based on the Clarity app reporting.
+
+            
+            status = {}
+            illum, mag = self.astro_events.illuminationNow()
+            # illum = float(redis_monitor["illum lux"])
+            if illum > 500:
+                illum = int(illum)
+            else:
+                illum = round(illum, 3)
+            if self.unihedron_connected:
+                try:
+                    uni_measure = (
+                        self.unihedron.SkyQuality
+                    )  #  Provenance of 20.01 is dubious 20200504 WER
+                except:
+                    uni_measure = 0
+            else:
+                uni_measure = 0
+            if uni_measure == 0:
+                uni_measure = round(
+                    (mag - 20.01), 2
+                )  #  Fixes Unihedron when sky is too bright
+                status["meas_sky_mpsas"] = uni_measure
+                self.meas_sky_lux = illum
+            else:
+                self.meas_sky_lux = linearize_unihedron(uni_measure)
+                status["meas_sky_mpsas"] = uni_measure
+                
+            #self.temperature = round((bw1[5] + sa_nw[5])/2., 2)
+            self.humidity
+            try:  # NB NB Boltwood vs. SkyAlert difference.  What about SRO?
+                self.pressure = self.sky_monitor.Pressure
+                assert self.pressure > 200
+            
+            except:
+                self.pressure = self.config["reference_pressure"]
+            
+            
+            # NB NB NB This is a very odd problem which showed up at MRC.
+            
+            try:
+                self.new_pressure = round(float(self.pressure[0]), 2) # was [0]), 2)
+            except:
+                self.new_pressure = round(float(self.pressure), 2)
+            
+
+            status = {
+                "temperature_C": self.temperature,
+                "pressure_mbar": self.new_pressure,
+                "humidity_%": self.humidity,
+                "dewpoint_C": self.dewpoint,
+                "sky_temp_C": self.sky_minus_ambient,
+                "last_sky_update_s":  self.time_since,
+                "wind_m/s": self.windspeed,
+                "rain_rate": self.rain_rate,
+                "solar_flux_w/m^2": None,
+                "cloud_cover_%": self.cloud_cover,
+                "calc_HSI_lux": illum,
+                "calc_sky_mpsas": round(uni_measure, 2),  # Provenance of 20.01 is dubious 20200504 WER
+                "open_ok": self.ok_to_open,
+                "lightning_strike_radius km":  'n/a',
+                "general_obscuration %":  'n/a',
+                "photometric extinction k'": 'n/a',
+                #"wx_hold": None,
+                #"hold_duration": 0,
+            }
+            return status
+        
+        
         elif self.is_wema : # These operations are common to a generic single computer or wema site.
             ## Here we get the status from local devices
 
@@ -412,7 +507,7 @@ class ObservingConditions:
                 and sky_amb_limit
                 and humidity_limit
                 #and not rain_limit
-                and not cloud_cover
+                #and not cloud_cover
             )
             #  NB wx_is_ok does not include ambient light or altitude of the Sun
             #the notion of Obs OK should bring in Sun Elevation and or ambient light.
