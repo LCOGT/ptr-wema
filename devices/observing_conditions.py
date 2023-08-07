@@ -269,7 +269,8 @@ class ObservingConditions:
             print(bw1)
             print(sa_nw)
             rate = [0, 0, 1, 2]
-            cover = ['Clear', 'Cloudy', 'Very Cloudy']
+            #cover = ['Clear', 'Cloudy', 'Very Cloudy']
+            cover = [0.0, 50.0, 100.0]
             self.temperature = round((float(bw1[5]) + float(sa_nw[5]))/2., 1)
             self.sky_temp = round((float(bw1[4]) + float(sa_nw[4]))/2., 2)
             self.sky_minus_ambient = round(self.sky_temp - self.temperature, 2)
@@ -287,7 +288,7 @@ class ObservingConditions:
             self.cloud_cover = cover[self.cloud_condition]
             #At this point cloud is grossly different from reality based on the Clarity app reporting.
 
-            
+            #breakpoint()
             status = {}
             illum, mag = self.astro_events.illuminationNow()
             # illum = float(redis_monitor["illum lux"])
@@ -332,6 +333,11 @@ class ObservingConditions:
                 self.new_pressure = round(float(self.pressure), 2)
             
 
+
+            
+
+
+
             status = {
                 "temperature_C": self.temperature,
                 "pressure_mbar": self.new_pressure,
@@ -352,6 +358,95 @@ class ObservingConditions:
                 #"wx_hold": None,
                 #"hold_duration": 0,
             }
+            
+            #MTF adding in necessary "ok to open" stuff to the BOLTWOOD
+            
+            rain_limit_setting=self.config['rain_limit']
+            humidity_limit_setting=self.config['humidity_limit']
+            windspeed_limit_setting=self.config['windspeed_limit']
+            temp_minus_dew_setting=self.config['temperature_minus_dewpoint_limit']
+            sky_temp_limit_setting=self.config['sky_temperature_limit']
+            cloud_cover_limit_setting=self.config['cloud_cover_limit']
+            lowest_temperature_setting=self.config['lowest_ambient_temperature']
+            highest_temperature_setting=self.config['highest_ambient_temperature']
+
+            wx_reasons =[]
+
+            rain_limit = self.sky_monitor.RainRate > rain_limit_setting
+            if  rain_limit:
+                plog("Reported rain rate in mm/hr:  ", self.sky_monitor.RainRate)
+                wx_reasons.append('Rain > ' + str(rain_limit_setting))
+            humidity_limit = self.sky_monitor.Humidity < humidity_limit_setting
+            if not humidity_limit:
+                wx_reasons.append('Humidity >= '+ str(humidity_limit_setting) +'%')
+            wind_limit = (
+                self.sky_monitor.WindSpeed < windspeed_limit_setting
+            )  # sky_monitor reports km/h, Clarity may report in MPH
+            if not wind_limit:
+                wx_reasons.append('Wind > '+str(windspeed_limit_setting) +' km/h')
+            dewpoint_gap = (
+                not (self.sky_monitor.Temperature - self.sky_monitor.DewPoint) < temp_minus_dew_setting
+            )
+            if not dewpoint_gap:
+                wx_reasons.append('Ambient - Dewpoint < ' + str(temp_minus_dew_setting) + 'C')
+            sky_amb_limit = (
+                self.sky_monitor.SkyTemperature - self.sky_monitor.Temperature 
+            ) < sky_temp_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
+            if not sky_amb_limit:
+                wx_reasons.append('(sky - amb) > '+str(sky_temp_limit_setting) +'C')
+            try:
+                cloud_cover_value = float(self.sky_monitor.CloudCover)
+                status['cloud_cover_%'] = round(cloud_cover_value, 0)
+                if cloud_cover_value <= cloud_cover_limit_setting:
+                    cloud_cover = False
+                else:
+                    cloud_cover = True
+                    wx_reasons.append('>='+str(cloud_cover_limit_setting)+'% Cloudy')
+            except:
+                status['cloud_cover_%'] = "no report"
+                cloud_cover = True    #  We cannot use this signal to force a wX hold or close
+            self.current_ambient = round(self.temperature, 2)
+            temp_bounds = lowest_temperature_setting < self.sky_monitor.Temperature < highest_temperature_setting
+
+            if not temp_bounds:
+                wx_reasons.append('amb temp out of range')
+
+            self.wx_is_ok = (
+                dewpoint_gap
+                and temp_bounds
+                and wind_limit
+                and sky_amb_limit
+                and humidity_limit
+                #and not rain_limit
+                #and not cloud_cover
+            )
+            #  NB wx_is_ok does not include ambient light or altitude of the Sun
+            #the notion of Obs OK should bring in Sun Elevation and or ambient light.
+            
+            if self.sky_monitor.RainRate > 0.0:
+                plog ("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
+                plog ("Rain Rate is 1.0")            
+                #plog('Rain > ' + str(rain_limit_setting))
+                plog ("This is usually a glitch so ignoring. Higher rain rates will trigger roof.")
+                plog ("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
+            
+            
+            if self.wx_is_ok:
+                wx_str = "Yes"
+                status["wx_ok"] = "Yes"
+                #plog('Wx Ok?  ', status["wx_ok"])
+            else:
+                wx_str = "No"  # Ideally we add the dominant reason in priority order.
+                status["wx_ok"] = "No"
+                plog('Wx Ok: ', status["wx_ok"], wx_reasons)
+
+            g_dev["wx_ok"] = self.wx_is_ok
+            
+            
+            
+            
+            
+            
             return status
         
         
