@@ -153,7 +153,7 @@ wema_config = {
     'windspeed_limit': 25,  # Some of this could be OWM stuff e.g.
     'temperature_minus_dewpoint_limit': 2,
     'sky_temperature_limit': -1,
-    'cloud_cover_limit': 25,
+    'cloud_cover_limit': 51,
     'lowest_ambient_temperature': 1,
     'highest_ambient_temperature': 45,
 
