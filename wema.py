@@ -276,10 +276,23 @@ class WxEncAgent:
         # Run a weather report on bootup so enclosure can run if need be.
         if not g_dev['debug']:
             # self.global_wx()
+            if self.enc_status_custom:
+                enc_status={}
+                enc_status['enclosure']={}
 
-            self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
+                enc_status['enclosure']['enclosure1']= get_enc_status_custom()
+                self.run_nightly_weather_report(enc_status=enc_status)
+            else:
+                self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
         else:
-            self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
+            if self.enc_status_custom:
+                enc_status={}
+                enc_status['enclosure']={}
+
+                enc_status['enclosure']['enclosure1']= get_enc_status_custom()
+                self.run_nightly_weather_report(enc_status=enc_status)
+            else:
+                self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
             self.weather_report_is_acceptable_to_observe = True
             self.weather_report_open_during_evening = False
 
@@ -373,8 +386,14 @@ class WxEncAgent:
         # Hourly Weather Report
         if time.time() > (self.weather_report_run_timer + 3600):
             self.weather_report_run_timer=time.time()
-            self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
+            if self.enc_status_custom:
+                enc_status={}
+                enc_status['enclosure']={}
 
+                enc_status['enclosure']['enclosure1']= get_enc_status_custom()
+                self.run_nightly_weather_report(enc_status=enc_status)
+            else:
+                self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
         
         
 
@@ -464,7 +483,10 @@ class WxEncAgent:
 
 
             ocn_status['observing_conditions']['observing_conditions1']['weather_report_good'] = self.weather_report_is_acceptable_to_observe
-            ocn_status['observing_conditions']['observing_conditions1']['fitzgerald_number'] = self.night_fitzgerald_number
+            try:
+                ocn_status['observing_conditions']['observing_conditions1']['fitzgerald_number'] = self.night_fitzgerald_number
+            except:
+                pass
 
 
             #breakpoint()
