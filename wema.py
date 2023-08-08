@@ -1021,7 +1021,7 @@ class WxEncAgent:
 
                 #breakpoint()
                 #
-                weatherline=[hourly_report.humidity,hourly_report.clouds,hourly_report.wind()['speed'],hourly_report.status, hourly_report.detailed_status, clock_hour, tempFn, hourly_report.reference_time('iso'), hourly_report.temperature()['temp'] - 273.15]
+                weatherline=[hourly_report.humidity,hourly_report.clouds,hourly_report.wind()['speed'],hourly_report.status, hourly_report.detailed_status, clock_hour, tempFn, hourly_report.reference_time('iso'), hourly_report.temperature()['temp'] - 273.15, hourly_report.rain]
                 fitzgerald_weather_number_grid.append(weatherline)
 
                 hourcounter=hourcounter + 1
@@ -1042,6 +1042,7 @@ class WxEncAgent:
                 status_line['fitz_number'] = weatherline[6]
                 status_line['utc_long_form'] = weatherline[7].replace(' ','T').split('+')[0]+'Z'
                 status_line['temperature'] = weatherline[8]
+                status_line['rain'] = weatherline[9]
 
                 if float(weatherline[6]) < 11:
                     status_line['weather_quality_number'] = 1
@@ -1093,7 +1094,7 @@ class WxEncAgent:
                     
                     #breakpoint()
 
-                    textdescription= entry[4]+ '   Cloud:   ' + str(entry[1]) + '%     Hum:    ' + str(entry[0]) +   '%    Wind:  ' +str(entry[2])+' m/s'  # WER changed to make more readable.
+                    textdescription= entry[4]+ '   Cloud:   ' + str(entry[1]) + '%     Hum:    ' + str(entry[0]) +   '%    Wind:  ' +str(entry[2])+' m/s      rain: ' + str(entry[9])  # WER changed to make more readable.
 
                     hourly_fitzgerald_number.append(entry[6])
                     hourly_fitzgerald_number_by_hour.append([entry[5],entry[6],textdescription])
