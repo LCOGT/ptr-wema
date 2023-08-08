@@ -998,11 +998,11 @@ class WxEncAgent:
 
                 # Add cloud score up
                 if 20 < hourly_report.clouds <= 40:
-                    tempFn=tempFn+1
+                    tempFn=tempFn+10
                 elif 40 < hourly_report.clouds <= 60:
-                    tempFn=tempFn+4
-                elif 60 < hourly_report.clouds <= 80:
                     tempFn=tempFn+40
+                elif 60 < hourly_report.clouds <= 80:
+                    tempFn=tempFn+60
                 elif 80 < hourly_report.clouds <= 100:
                     tempFn=tempFn+100
 
