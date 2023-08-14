@@ -55,7 +55,7 @@ class ObservingConditions:
         self.siteid = config["wema_name"]
         self.config = config
         g_dev["ocn"] = self
-        g_dev['obs'].night_fitzgerald_number = 0,  # 20230709 initialse this varable to permissive state WER
+        #g_dev['obs'].night_fitzgerald_number = 0,  # 20230709 initialse this varable to permissive state WER
         self.sample_time = 0
         self.ok_to_open = "No"    #   This is a default on startup.
         self.observing_condtions_message = "-"

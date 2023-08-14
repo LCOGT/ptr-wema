@@ -93,7 +93,7 @@ class WxEncAgent:
         self.command_interval = 30
         self.status_interval = 30
         self.config = config
-        g_dev["obs"] = self
+        #g_dev["obs"] = self
         #g_dev['debug'] = False
        
         # self.debug_flag = self.config['debug_mode']
@@ -230,11 +230,16 @@ class WxEncAgent:
         self.enclosure_status_check_period=config['enclosure_status_check_period']
         self.weather_status_check_period = config['weather_status_check_period']
         self.safety_status_check_period = config['safety_status_check_period']
+        self.scan_requests_check_period = 4
 
         # Timers rather than time.sleeps
         self.enclosure_status_check_timer=time.time() - 2*self.enclosure_status_check_period
         self.weather_status_check_timer = time.time() - 2*self.weather_status_check_period
         self.safety_check_timer=time.time() - 2*self.safety_status_check_period
+        self.scan_requests_timer=time.time() -2 * self.scan_requests_check_period
+
+
+
 
         if self.config['observing_conditions']['observing_conditions1']['driver'] == None:
             self.ocn_exists=False
@@ -348,7 +353,7 @@ class WxEncAgent:
         if response:
             print("\n\nConfig uploaded successfully.")
 
-    def scan_requests(self, mount):
+    def scan_requests(self):
         """
         
         This can pick up owner/admin Shutdown and Automatic request but it 
@@ -364,7 +369,46 @@ class WxEncAgent:
         any commands directed at the Wx station, or if the agent is going to
         always exist lets develop a seperate command queue for it.
         """
+
+
+        url_job = "https://jobs.photonranch.org/jobs/getnewjobs"
+        body = {"site": self.config['wema_name']}
+        cmd = {}
+        # Get a list of new jobs to complete (this request
+        # marks the commands as "RECEIVED")
+        #plog ("scanning requests")
+        try:
+            unread_commands = requests.request(
+                "POST", url_job, data=json.dumps(body), timeout=20
+            ).json()
+        except:
+            plog(traceback.format_exc())
+            plog("problem gathering scan requests. Likely just a connection glitch.")
+            breakpoint()
+            unread_commands = []
+        # Make sure the list is sorted in the order the jobs were issued
+        # Note: the ulid for a job is a unique lexicographically-sortable id.
+        if len(unread_commands) > 0:
+            try:
+                unread_commands.sort(key=lambda x: x["timestamp_ms"])
+                # Process each job one at a time
+                for cmd in unread_commands:
+
+
+                    plog(cmd)
+
+            except:
+                if 'Internal server error' in str(unread_commands):
+                    plog("AWS server glitch reading unread_commands")
+                else:
+                    plog(traceback.format_exc())
+                    plog("unread commands")
+                    plog(unread_commands)
+                    plog("MF trying to find whats happening with this relatively rare bug!")
+
         return
+
+
 
     def update_status(self):
         """
@@ -513,6 +557,10 @@ class WxEncAgent:
 
     def update(self):     ## NB NB NB This is essentially the sequencer for the WEMA.
         self.update_status()
+
+        if time.time() > self.scan_requests_timer + self.scan_requests_check_period:
+            self.scan_requests_timer=time.time()
+            self.scan_requests()
 
 
         if time.time() > self.safety_check_timer + self.safety_status_check_period:
@@ -964,7 +1012,7 @@ class WxEncAgent:
             mgr = owm.weather_manager()            
             one_call = mgr.one_call(lat=self.config["latitude"], lon=self.config["longitude"])
             #self.nightly_weather_report_complete=True
-            
+            #breakpoint()
             # Collect relevant info for fitzgerald weather number calculation
             hourcounter=0
             fitzgerald_weather_number_grid=[]
