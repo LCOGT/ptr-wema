@@ -384,7 +384,7 @@ class WxEncAgent:
         except:
             plog(traceback.format_exc())
             plog("problem gathering scan requests. Likely just a connection glitch.")
-            breakpoint()
+            #breakpoint()
             unread_commands = []
         # Make sure the list is sorted in the order the jobs were issued
         # Note: the ulid for a job is a unique lexicographically-sortable id.
