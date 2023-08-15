@@ -273,7 +273,7 @@ class WxEncAgent:
         # necessarily a GOOD night at all, just that there are patches of feasible
         # observing during the night.
         #self.nightly_weather_report_complete = False
-        self.weather_report_is_acceptable_to_observe = False
+        #self.weather_report_is_acceptable_to_observe = False
         # If the night is patchy, the weather report can identify a later time to open
         # or to close the enclosure early during the night.
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
@@ -333,8 +333,8 @@ class WxEncAgent:
                 self.run_nightly_weather_report(enc_status=enc_status)
             else:
                 self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
-            self.weather_report_is_acceptable_to_observe = True
-            self.weather_report_open_during_evening = False
+            #self.weather_report_is_acceptable_to_observe = True
+            #self.weather_report_open_during_evening = False
 
 
     def create_devices(self, config: dict):
@@ -511,9 +511,9 @@ class WxEncAgent:
                     if ocn_status is not None:  #NB NB ocn status has never been established first time this is envoked after startup -WER
                         if ocn_status['observing_conditions']['observing_conditions1']['wx_ok'] == 'Unknown':
                             enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = False
-                        elif ocn_status['observing_conditions']['observing_conditions1']['wx_ok'] == 'No' or not self.weather_report_is_acceptable_to_observe:
+                        elif ocn_status['observing_conditions']['observing_conditions1']['wx_ok'] == 'No' or not self.weather_report_open_at_start:
                             enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = True
-                    elif not self.weather_report_is_acceptable_to_observe:
+                    elif not self.weather_report_open_at_start:
                         enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = True
                     else:
                         enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = False
@@ -563,7 +563,7 @@ class WxEncAgent:
                                                                                        hold_duration=0)
 
 
-            ocn_status['observing_conditions']['observing_conditions1']['weather_report_good'] = self.weather_report_is_acceptable_to_observe
+            ocn_status['observing_conditions']['observing_conditions1']['weather_report_good'] = self.weather_report_open_at_start
             try:
                 ocn_status['observing_conditions']['observing_conditions1']['fitzgerald_number'] = self.night_fitzgerald_number
             except:
@@ -733,7 +733,7 @@ class WxEncAgent:
             if enc_status['enclosure_mode'] == 'Manual':
                 plog ("Weather Considerations overriden due to being in Manual or debug mode: ")
             
-            plog("Weather Report Good to Observe: " + str(self.weather_report_is_acceptable_to_observe))
+            plog("Weather Report Good to Observe: " + str(self.weather_report_open_at_start))
             plog("Time until Cool and Open      : " + str(round(( g_dev['events']['Cool Down, Open'] - ephem_now) * 24,2)) + " hours")
             plog("Time until Close and Park     : "+ str(round(( g_dev['events']['Close and Park'] - ephem_now) * 24,2)) + " hours")
             plog("Time until Nightly Reset      : " + str(round((g_dev['events']['Nightly Reset'] - ephem_now) * 24, 2)) + " hours")
@@ -879,7 +879,7 @@ class WxEncAgent:
 
                 self.cool_down_latch = True
 
-                if not self.open_and_enabled_to_observe and (self.weather_report_is_acceptable_to_observe or not self.owm_active): # and (self.weather_report_open_during_evening == False or self.local_weather_always_overrides_OWM):
+                if not self.open_and_enabled_to_observe and (self.weather_report_open_at_start or not self.owm_active): # and (self.weather_report_open_during_evening == False or self.local_weather_always_overrides_OWM):
 
                     if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config['maximum_roof_opens_per_evening']:
                         self.nightly_reset_complete = False
@@ -905,7 +905,7 @@ class WxEncAgent:
 
         #self.nightly_weather_report_complete=False
         # Set weather report to false because it is daytime anyways.
-        self.weather_report_is_acceptable_to_observe=False
+        self.weather_report_open_at_start=False
         
         events = g_dev['events']
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
@@ -934,11 +934,11 @@ class WxEncAgent:
         
         # Set weather report back to False until ready to check the weather again. 
         #self.nightly_weather_report_complete=False
-        self.weather_report_is_acceptable_to_observe=False
-        self.weather_report_open_during_evening=False
-        self.weather_report_open_during_evening_time=ephem_now
-        self.weather_report_close_during_evening=False
-        self.weather_report_close_during_evening_time=ephem_now + 86400
+        #self.weather_report_is_acceptable_to_observe=False
+        #self.weather_report_open_during_evening=False
+        #self.weather_report_open_during_evening_time=ephem_now
+        #self.weather_report_close_during_evening=False
+        #self.weather_report_close_during_evening_time=ephem_now + 86400
         #self.nightly_weather_report_complete=False
         
         self.keep_open_all_night = False
@@ -994,7 +994,7 @@ class WxEncAgent:
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
 
         # Only send an enclosure open command if the weather
-        if (self.weather_report_is_acceptable_to_observe or not self.owm_active):
+        if (self.weather_report_open_at_start or not self.owm_active):
 
             if not g_dev['debug'] and not enc_status['enclosure_mode'] in ['Manual'] and (
                     ephem_now < g_dev['events']['Cool Down, Open']) or \
@@ -1020,7 +1020,7 @@ class WxEncAgent:
 
                     elif  not enc_status['shutter_status'] in ['Open', 'open','Opening','opening'] and \
                             enc_status['enclosure_mode'] == 'Automatic' \
-                            and time.time() > self.enclosure_next_open_time:#  and self.weather_report_is_acceptable_to_observe:  # NB
+                            and time.time() > self.enclosure_next_open_time and self.weather_report_open_at_start:#  and self.weather_report_is_acceptable_to_observe:  # NB
 
                         self.opens_this_evening = self.opens_this_evening + 1
 
@@ -1243,7 +1243,7 @@ class WxEncAgent:
 
             if average_fitzn_for_rest_of_night < 10:
                 plog ("This is a good observing night!")
-                self.weather_report_is_acceptable_to_observe=True
+                #self.weather_report_is_acceptable_to_observe=True
                 self.weather_report_open_at_start=True
                 #self.weather_report_open_during_evening=True
                 #self.weather_report_open_during_evening_time=ephem_now
@@ -1259,7 +1259,7 @@ class WxEncAgent:
                 #self.weather_report_close_during_evening_time=ephem_now
             elif average_fitzn_for_rest_of_night < 18:
                 plog ("This is perhaps not the best night, but we will give it a shot!")
-                self.weather_report_is_acceptable_to_observe=True
+                #self.weather_report_is_acceptable_to_observe=True
                 self.weather_report_open_at_start = True
                 #self.weather_report_open_during_evening=True
                 #self.weather_report_open_during_evening_time=ephem_now
@@ -1408,9 +1408,9 @@ class WxEncAgent:
             enc_status = get_enc_status_custom()
         
         #try:
-        if enc_status is not None:
-            if enc_status['enclosure_mode'] == 'Manual':
-                self.weather_report_is_acceptable_to_observe=True
+        #if enc_status is not None:
+        #    if enc_status['enclosure_mode'] == 'Manual':
+        #        self.weather_report_is_acceptable_to_observe=True
         #except:
 
             #self.weather_report_is_acceptable_to_observe=True
