@@ -161,6 +161,37 @@ class ObservingConditions:
         #    self.obsid_is_generic = False
         #    self.obsid_is_custom = True
         
+        self.rain_limit_setting=self.config['rain_limit']
+        self.humidity_limit_setting=self.config['humidity_limit']
+        self.windspeed_limit_setting=self.config['windspeed_limit']
+        self.lightning_limit_setting=self.config['lightning_limit']
+        self.temp_minus_dew_setting=self.config['temperature_minus_dewpoint_limit']
+        self.sky_temp_limit_setting=self.config['sky_temperature_limit']
+        self.cloud_cover_limit_setting=self.config['cloud_cover_limit']
+        self.lowest_temperature_setting=self.config['lowest_ambient_temperature']
+        self.highest_temperature_setting=self.config['highest_ambient_temperature']
+
+        self.warning_rain_limit_setting=self.config['warning_rain_limit']
+        self.warning_humidity_limit_setting=self.config['warning_humidity_limit']
+        self.warning_windspeed_limit_setting=self.config['warning_windspeed_limit']
+        self.warning_lightning_limit_setting=self.config['warning_lightning_limit']
+        self.warning_temp_minus_dew_setting=self.config['warning_temperature_minus_dewpoint_limit']
+        self.warning_sky_temp_limit_setting=self.config['warning_sky_temperature_limit']
+        self.warning_cloud_cover_limit_setting=self.config['warning_cloud_cover_limit']
+        self.warning_lowest_temperature_setting=self.config['warning_lowest_ambient_temperature']
+        self.warning_highest_temperature_setting=self.config['warning_highest_ambient_temperature']
+        
+        
+        self.rain_limit_on=self.config['rain_limit_on']
+        self.humidity_limit_on=self.config['humidity_limit_on']
+        self.windspeed_limit_on=self.config['windspeed_limit_on']
+        self.lightning_limit_on=self.config['lightning_limit_on']
+        self.temp_minus_dew_on=self.config['temperature_minus_dewpoint_limit_on']
+        self.sky_temperature_limit_on=self.config['sky_temperature_limit_on']
+        self.cloud_cover_limit_on=self.config['cloud_cover_limit_on']
+        self.lowest_temperature_on=self.config['lowest_ambient_temperature_on']
+        self.highest_temperature_on=self.config['highest_ambient_temperature_on']
+        
         self.last_wx = None
 
 
@@ -551,64 +582,60 @@ class ObservingConditions:
                     #"wx_hold": None,
                     #"hold_duration": 0,
                 }
-            rain_limit_setting=self.config['rain_limit']
-            humidity_limit_setting=self.config['humidity_limit']
-            windspeed_limit_setting=self.config['windspeed_limit']
-            temp_minus_dew_setting=self.config['temperature_minus_dewpoint_limit']
-            sky_temp_limit_setting=self.config['sky_temperature_limit']
-            cloud_cover_limit_setting=self.config['cloud_cover_limit']
-            lowest_temperature_setting=self.config['lowest_ambient_temperature']
-            highest_temperature_setting=self.config['highest_ambient_temperature']
+                
+            
+            
+
 
             wx_reasons =[]
 
-            rain_limit = self.sky_monitor.RainRate > rain_limit_setting
+            rain_limit = self.sky_monitor.RainRate > self.rain_limit_setting
             if  rain_limit:
                 plog("Reported rain rate in mm/hr:  ", self.sky_monitor.RainRate)
-                wx_reasons.append('Rain > ' + str(rain_limit_setting))
-            humidity_limit = self.sky_monitor.Humidity < humidity_limit_setting
+                wx_reasons.append('Rain > ' + str(self.rain_limit_setting))
+            humidity_limit = self.sky_monitor.Humidity < self.humidity_limit_setting
             if not humidity_limit:
-                wx_reasons.append('Humidity >= '+ str(humidity_limit_setting) +'%')
+                wx_reasons.append('Humidity >= '+ str(self.humidity_limit_setting) +'%')
             wind_limit = (
-                self.sky_monitor.WindSpeed < windspeed_limit_setting
+                self.sky_monitor.WindSpeed < self.windspeed_limit_setting
             )  # sky_monitor reports km/h, Clarity may report in MPH
             if not wind_limit:
-                wx_reasons.append('Wind > '+str(windspeed_limit_setting) +' km/h')
+                wx_reasons.append('Wind > '+str(self.windspeed_limit_setting) +' km/h')
             dewpoint_gap = (
-                not (self.sky_monitor.Temperature - self.sky_monitor.DewPoint) < temp_minus_dew_setting
+                not (self.sky_monitor.Temperature - self.sky_monitor.DewPoint) < self.temp_minus_dew_setting
             )
             if not dewpoint_gap:
-                wx_reasons.append('Ambient - Dewpoint < ' + str(temp_minus_dew_setting) + 'C')
+                wx_reasons.append('Ambient - Dewpoint < ' + str(self.temp_minus_dew_setting) + 'C')
             sky_amb_limit = (
                 self.sky_monitor.SkyTemperature - self.sky_monitor.Temperature 
-            ) < sky_temp_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
+            ) < self.sky_temp_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
             if not sky_amb_limit:
-                wx_reasons.append('(sky - amb) > '+str(sky_temp_limit_setting) +'C')
+                wx_reasons.append('(sky - amb) > '+str(self.sky_temp_limit_setting) +'C')
             try:
                 cloud_cover_value = float(self.sky_monitor.CloudCover)
                 status['cloud_cover_%'] = round(cloud_cover_value, 0)
-                if cloud_cover_value <= cloud_cover_limit_setting:
+                if cloud_cover_value <= self.cloud_cover_limit_setting:
                     cloud_cover = False
                 else:
                     cloud_cover = True
-                    wx_reasons.append('>='+str(cloud_cover_limit_setting)+'% Cloudy')
+                    wx_reasons.append('>='+str(self.cloud_cover_limit_setting)+'% Cloudy')
             except:
                 status['cloud_cover_%'] = "no report"
                 cloud_cover = True    #  We cannot use this signal to force a wX hold or close
             self.current_ambient = round(self.temperature, 2)
-            temp_bounds = lowest_temperature_setting < self.sky_monitor.Temperature < highest_temperature_setting
+            temp_bounds = self.lowest_temperature_setting < self.sky_monitor.Temperature < self.highest_temperature_setting
 
             if not temp_bounds:
                 wx_reasons.append('amb temp out of range')
 
             self.wx_is_ok = (
-                dewpoint_gap
-                and temp_bounds
-                and wind_limit
-                and sky_amb_limit
-                and humidity_limit
-                #and not rain_limit
-                #and not cloud_cover
+                (dewpoint_gap and self.temp_minus_dew_on)
+                and (temp_bounds and (self.lowest_temperature_on or self.highest_temperature_on ))
+                and (wind_limit and self.windspeed_limit_on)
+                and (sky_amb_limit and self.sky_temperature_limit_on)
+                and (humidity_limit and self.humidity_limit_on)
+                and not (rain_limit and self.rain_limit_on)
+                and not (cloud_cover and self.cloud_cover_limit_on)
             )
             #  NB wx_is_ok does not include ambient light or altitude of the Sun
             #the notion of Obs OK should bring in Sun Elevation and or ambient light.
@@ -655,8 +682,9 @@ class ObservingConditions:
 
 
             # Only write when around dark, put in CSV format, used to calibrate Unihedron.
+            #breakpoint()
             sunZ88Op, sunZ88Cl, sunrise, ephemNow = g_dev[
-                "obs"
+                "wema"
             ].astro_events.getSunEvents()
             two_hours = (
                 2 / 24

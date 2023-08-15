@@ -40,7 +40,9 @@ wema_config = {
     'debug_mode': False,
     'debug_duration_sec': 3600,
 
-    'local_weather_always_overrides_OWM': False,
+    # These are just the bootup default values.
+    'OWM_active': True,
+    'local_weather_active': True,
 
     'enclosure_status_check_period': 30,
     'weather_status_check_period': 30,
@@ -119,10 +121,23 @@ wema_config = {
     #'auto_morn_sky_flat': True,
     #auto_morn_bias_dark': True,
 
+
+    # Whether these limits are on by default
+    'rain_limit_on': False,
+    'humidity_limit_on': True,
+    'windspeed_limit_on': True,
+    'lightning_limit_on': True,
+    'temperature_minus_dewpoint_limit_on': True,
+    'sky_temperature_limit_on': True,
+    'cloud_cover_limit_on': False,
+    'lowest_ambient_temperature_on': True,
+    'highest_ambient_temperature_on': True,
+
     # Local weather DANGER limits - will cause the roof to shut
     'rain_limit': 0,
     'humidity_limit': 80,
     'windspeed_limit': 25,
+    'lightning_limit' : 15,
     'temperature_minus_dewpoint_limit': 2,
     'sky_temperature_limit': -12,
     'cloud_cover_limit': 50,
@@ -133,6 +148,7 @@ wema_config = {
     'warning_rain_limit': 0,
     'warning_humidity_limit': 75,
     'warning_windspeed_limit': 15,
+    'warning_lightning_limit' : 10,
     'warning_temperature_minus_dewpoint_limit': 2,
     'warning_sky_temperature_limit': -17,
     'warning_cloud_cover_limit': 25,

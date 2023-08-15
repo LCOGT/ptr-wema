@@ -93,7 +93,7 @@ class WxEncAgent:
         self.command_interval = 30
         self.status_interval = 30
         self.config = config
-        #g_dev["obs"] = self
+        g_dev["wema"] = self
         #g_dev['debug'] = False
        
         # self.debug_flag = self.config['debug_mode']
@@ -225,8 +225,11 @@ class WxEncAgent:
 
         self.open_and_enabled_to_observe = False
 
-        self.local_weather_always_overrides_OWM=config['local_weather_always_overrides_OWM']
+        #self.local_weather_always_overrides_OWM=config['local_weather_always_overrides_OWM']
 
+        self.owm_active=config['OWM_active']
+        self.local_weather_active=config['local_weather_active']
+        
         self.enclosure_status_check_period=config['enclosure_status_check_period']
         self.weather_status_check_period = config['weather_status_check_period']
         self.safety_status_check_period = config['safety_status_check_period']
@@ -239,6 +242,17 @@ class WxEncAgent:
         self.safety_check_timer=time.time() - 2*self.safety_status_check_period
         self.scan_requests_timer=time.time() -2 * self.scan_requests_check_period
         self.wema_settings_upload_timer=time.time() -2 * self.wema_settings_upload_period
+
+
+        self.rain_limit_quiet=False
+        self.cloud_limit_quiet=False
+        self.humidity_limit_quiet=False
+        self.windspeed_limit_quiet=False
+        self.lightning_limit_quiet=False
+        self.temp_minus_dew_quiet=False
+        self.skytemp_limit_quiet=False
+        self.hightemp_limit_quiet=False
+        self.lowtemp_limit_quiet=False
 
         if self.config['observing_conditions']['observing_conditions1']['driver'] == None:
             self.ocn_exists=False
@@ -271,9 +285,28 @@ class WxEncAgent:
         self.weather_report_open_at_start = False
         self.nightly_reset_complete = False
       
-        
-        
+        self.keep_open_all_night = False
+        self.keep_closed_all_night   = False          
+        self.open_at_specific_utc = False
+        self.specific_utc_when_to_open = -1.0  
+        self.manual_weather_hold_set = False
+        self.manual_weather_hold_duration = -1.0
+    
         self.wema_has_roof_control=config['wema_has_control_of_roof']
+
+
+
+        # This prevents commands from previous nights/runs suddenly running
+        # when wema.py is booted (has happened a bit!)
+        url_job = "https://jobs.photonranch.org/jobs/getnewjobs"
+        body = {"site": self.config['wema_name']}
+        #cmd = {}
+        # Get a list of new jobs to complete (this request
+        # marks the commands as "RECEIVED")
+        requests.request(
+            "POST", url_job, data=json.dumps(body), timeout=30
+        ).json()
+
 
         #self.update_status()
         #breakpoint()
@@ -422,7 +455,7 @@ class WxEncAgent:
         
         enc_status = None
         ocn_status = None
-        device_status = None
+        #device_status = None
         obsy = self.config['wema_name']   #  This is meant to be for the wema, not an OBSP.
 
 
@@ -438,10 +471,9 @@ class WxEncAgent:
             else:
                 self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
         
-        # WEMA Settings
-        if time.time() > self.wema_settings_upload_timer + self.wema_settings_upload_period:
-            self.wema_settings_upload_timer = time.time()
-            plog("wema settings upload")
+        
+            
+            
 
 
         # Enclosure Status
@@ -556,6 +588,83 @@ class WxEncAgent:
             if loud:
                 print("\n\n > Status Sent:  \n", ocn_status)
 
+        # WEMA Settings
+        if time.time() > self.wema_settings_upload_timer + self.wema_settings_upload_period:
+            self.wema_settings_upload_timer = time.time()
+            plog("wema settings upload")
+            status = {}
+            status["timestamp"] = round(time.time(), 1)
+            status['wema_settings']={}
+            
+            
+            status['wema_settings']['OWM_active']=self.owm_active
+            status['wema_settings']['local_weather_active']=self.local_weather_active
+            status['wema_settings']['keep_roof_open_all_night'] = self.keep_open_all_night
+            status['wema_settings']['keep_roof_closed_all_night']  = self.keep_closed_all_night
+            
+            status['wema_settings']['open_at_specific_utc'] = self.open_at_specific_utc
+            status['wema_settings']['specific_utc_when_to_open'] = self.specific_utc_when_to_open
+            
+            status['wema_settings']['manual_weather_hold_set'] = self.manual_weather_hold_set
+            status['wema_settings']['manual_weather_hold_duration'] = self.manual_weather_hold_duration
+            
+                    
+            if self.ocn_exists:
+                # Local Weather Limits
+                status['wema_settings']['rain_limit_on'] = g_dev['ocn'].rain_limit_on
+                status['wema_settings']['rain_limit_quiet'] = self.rain_limit_quiet
+                status['wema_settings']['rain_limit_warning_level'] = g_dev['ocn'].warning_rain_limit_setting
+                status['wema_settings']['rain_limit_danger_level'] = g_dev['ocn'].rain_limit_setting
+                
+                status['wema_settings']['cloud_limit_on'] = g_dev['ocn'].cloud_cover_limit_on
+                status['wema_settings']['cloud_limit_quiet'] = self.cloud_limit_quiet
+                status['wema_settings']['cloud_limit_warning_level'] = g_dev['ocn'].warning_cloud_cover_limit_setting
+                status['wema_settings']['cloud_limit_danger_level'] = g_dev['ocn'].cloud_cover_limit_setting
+                
+                status['wema_settings']['humidity_limit_on']  = g_dev['ocn'].humidity_limit_on
+                status['wema_settings']['humidity_limit_quiet'] = self.humidity_limit_quiet
+                status['wema_settings']['humidity_limit_warning_level'] = g_dev['ocn'].warning_humidity_limit_setting
+                status['wema_settings']['humidity_limit_danger_level'] = g_dev['ocn'].humidity_limit_setting
+                
+                status['wema_settings']['windspeed_limit_on']  = g_dev['ocn'].windspeed_limit_on
+                status['wema_settings']['windspeed_limit_quiet'] = self.windspeed_limit_quiet
+                status['wema_settings']['windspeed_limit_warning_level'] = g_dev['ocn'].warning_windspeed_limit_setting
+                status['wema_settings']['windspeed_limit_danger_level'] = g_dev['ocn'].windspeed_limit_setting
+                
+                status['wema_settings']['lightning_limit_on']  = g_dev['ocn'].lightning_limit_on
+                status['wema_settings']['lightning_limit_quiet'] = self.lightning_limit_quiet
+                status['wema_settings']['lightning_limit_warning_level'] = g_dev['ocn'].warning_lightning_limit_setting
+                status['wema_settings']['lightning_limit_danger_level'] =  g_dev['ocn'].lightning_limit_setting
+                
+                status['wema_settings']['tempminusdew_limit_on']  = g_dev['ocn'].temp_minus_dew_on
+                status['wema_settings']['tempminusdew_limit_quiet'] = self.temp_minus_dew_quiet
+                status['wema_settings']['tempminusdew_limit_warning_level'] = g_dev['ocn'].warning_temp_minus_dew_setting
+                status['wema_settings']['tempminusdew_limit_danger_level'] = g_dev['ocn'].temp_minus_dew_setting
+                
+                status['wema_settings']['skytemp_limit_on']  = g_dev['ocn'].sky_temperature_limit_on
+                status['wema_settings']['skytemp_limit_quiet'] = self.skytemp_limit_quiet
+                status['wema_settings']['skytemp_limit_warning_level'] = g_dev['ocn'].warning_sky_temp_limit_setting
+                status['wema_settings']['skytemp_limit_danger_level'] = g_dev['ocn'].sky_temp_limit_setting
+                
+                status['wema_settings']['hightemperature_limit_on']  = g_dev['ocn'].highest_temperature_on
+                status['wema_settings']['hightemperature_limit_quiet'] = self.hightemp_limit_quiet
+                status['wema_settings']['hightemperature_limit_warning_level'] = g_dev['ocn'].warning_highest_temperature_setting
+                status['wema_settings']['hightemperature_limit_danger_level'] = g_dev['ocn'].highest_temperature_setting
+                
+                status['wema_settings']['lowtemperature_limit_on']  = g_dev['ocn'].lowest_temperature_on
+                status['wema_settings']['lowtemperature_limit_quiet'] = self.lowtemp_limit_quiet
+                status['wema_settings']['lowtemperature_limit_warning_level'] = g_dev['ocn'].warning_lowest_temperature_setting
+                status['wema_settings']['lowtemperature_limit_danger_level'] = g_dev['ocn'].lowest_temperature_setting
+                
+            lane = "wema_settings"
+            try:
+                # time.sleep(2)
+                send_status(obsy, lane, status)
+            except:
+                plog('could not send wema_settings status') 
+            
+            
+            #plog(status)
 
     def update(self):     ## NB NB NB This is essentially the sequencer for the WEMA.
         self.update_status()
@@ -615,9 +724,11 @@ class WxEncAgent:
                 plog("No information on local weather available.")
             else:
                 plog("Local Weather Ok to Observe  : " +str(self.local_weather_ok))
+                if not self.local_weather_active:
+                    plog ("However, Local Weather control is set off")
             
             if enc_status['enclosure_mode'] == 'Manual':
-                plog ("Weather Report overriden due to being in Manual or debug mode: ")
+                plog ("Weather Considerations overriden due to being in Manual or debug mode: ")
             
             plog("Weather Report Good to Observe: " + str(self.weather_report_is_acceptable_to_observe))
             plog("Time until Cool and Open      : " + str(round(( g_dev['events']['Cool Down, Open'] - ephem_now) * 24,2)) + " hours")
@@ -680,11 +791,14 @@ class WxEncAgent:
             # elif self.weather_report_close_during_evening:
             #     plog("OWN reports that it thinks it should close later on in " + str(round(float(self.weather_report_close_during_evening_time - ephem_now) * 24,2)) + " hours.")
 
-            if (self.weather_report_close_during_evening or self.weather_report_open_during_evening) and self.local_weather_always_overrides_OWM:
-                plog ("The local weather system is in control of this. OWM information is advisory only.")
+            if (self.weather_report_close_during_evening or self.weather_report_open_during_evening) and not self.owm_active:
+                plog ("OWM information is advisory only, it is currently inactive.")
             
-            if (self.weather_report_close_during_evening or self.weather_report_open_during_evening) and not self.local_weather_always_overrides_OWM:
-                plog ("OWM is currently set to open/close the roof at these times because the local weather isn't in override mode.")
+            
+            
+            
+            if (self.weather_report_close_during_evening or self.weather_report_open_during_evening) and self.owm_active:
+                plog ("OWM predicts it will set to open/close the roof at these times .")
             
             plog("**************************************************************")
 
@@ -738,7 +852,7 @@ class WxEncAgent:
                     self.park_enclosure_and_close()
                 
                 if not (self.local_weather_ok == None) and enc_status['enclosure_mode'] == 'Automatic':
-                    if not self.local_weather_ok:
+                    if (not self.local_weather_ok and self.local_weather_active):
                         plog("Safety check notices that the local weather is not ok. Shutting the roof.")
                         self.park_enclosure_and_close()
                 
@@ -749,50 +863,50 @@ class WxEncAgent:
                 plog("minutes until next open attempt ALLOWED: " +
                      str((self.enclosure_next_open_time - time.time()) / 60))
 
-            # If OWM wants to open the roof later, this is where it checks if it is past that time. 
-            if self.weather_report_open_during_evening and not self.cool_down_latch and enc_status['enclosure_mode'] == 'Automatic':
-                if ephem_now > self.weather_report_open_during_evening_time :
+            # # If OWM wants to open the roof later, this is where it checks if it is past that time. 
+            # if self.weather_report_open_during_evening and not self.cool_down_latch and enc_status['enclosure_mode'] == 'Automatic':
+            #     if ephem_now > self.weather_report_open_during_evening_time :
 
-                    self.cool_down_latch = True
-                    self.weather_report_open_during_evening == False
-                    # Things may have changed! So re-checking the weather and such
+            #         self.cool_down_latch = True
+            #         self.weather_report_open_during_evening == False
+            #         # Things may have changed! So re-checking the weather and such
 
-                    # Reopening config and resetting all the things.
-                    # This is necessary just in case a previous weather report was done today
-                    # That can sometimes change the timing.
-                    self.astro_events.compute_day_directory()
-                    self.astro_events.calculate_events()
+            #         # Reopening config and resetting all the things.
+            #         # This is necessary just in case a previous weather report was done today
+            #         # That can sometimes change the timing.
+            #         self.astro_events.compute_day_directory()
+            #         self.astro_events.calculate_events()
 
-                    # Run nightly weather report
-                    #self.run_nightly_weather_report()
+            #         # Run nightly weather report
+            #         #self.run_nightly_weather_report()
 
-                    if not self.open_and_enabled_to_observe and self.weather_report_is_acceptable_to_observe == True:
-                        if (g_dev['events']['Cool Down, Open'] < ephem_now < g_dev['events']['Observing Ends']):
-                            if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config[
-                                'maximum_roof_opens_per_evening']:
-                                self.nightly_reset_complete = False
-                                self.open_enclosure(enc_status, ocn_status)
+            #         if not self.open_and_enabled_to_observe and self.weather_report_is_acceptable_to_observe == True:
+            #             if (g_dev['events']['Cool Down, Open'] < ephem_now < g_dev['events']['Observing Ends']):
+            #                 if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config[
+            #                     'maximum_roof_opens_per_evening']:
+            #                     self.nightly_reset_complete = False
+            #                     self.open_enclosure(enc_status, ocn_status)
 
-                                if self.open_and_enabled_to_observe:
-                                    self.weather_report_open_during_evening = False
-                                    self.weather_report_is_acceptable_to_observe = True
+            #                     if self.open_and_enabled_to_observe:
+            #                         self.weather_report_open_during_evening = False
+            #                         self.weather_report_is_acceptable_to_observe = True
 
-                    self.cool_down_latch = False
+            #         self.cool_down_latch = False
 
-            # If the enclosure is meant to shut during the evening
-            obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
-            if self.weather_report_close_during_evening == True and enc_status['enclosure_mode'] == 'Automatic' and not (self.local_weather_ok == True and self.local_weather_always_overrides_OWM):
-                if ephem_now > self.weather_report_close_during_evening_time and ephem_now < g_dev['events'][
-                    'Close and Park']:
-                    if enc_status['enclosure_mode'] == 'Automatic':
-                        self.nightly_reset_complete = False
-                        self.weather_report_is_acceptable_to_observe = False
-                        plog("End of Observing Period due to weather. Closing up enclosure early.")
+            # # If the enclosure is meant to shut during the evening
+            # obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
+            # if self.weather_report_close_during_evening == True and enc_status['enclosure_mode'] == 'Automatic' and not (self.local_weather_ok == True and self.local_weather_always_overrides_OWM):
+            #     if ephem_now > self.weather_report_close_during_evening_time and ephem_now < g_dev['events'][
+            #         'Close and Park']:
+            #         if enc_status['enclosure_mode'] == 'Automatic':
+            #             self.nightly_reset_complete = False
+            #             self.weather_report_is_acceptable_to_observe = False
+            #             plog("End of Observing Period due to weather. Closing up enclosure early.")
 
-                        self.open_and_enabled_to_observe = False
-                        self.park_enclosure_and_close()
+            #             self.open_and_enabled_to_observe = False
+            #             self.park_enclosure_and_close()
 
-                        self.weather_report_close_during_evening = False
+            #             self.weather_report_close_during_evening = False
 
             # Do nightly weather report at cool down open
             #if (g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events'][
@@ -808,18 +922,18 @@ class WxEncAgent:
             # Ordinary opening routine.
             # Do some checks that it isn't meant to be shut.
 
-            temp_meant_to_be_shut= False
-            if self.weather_report_open_during_evening and self.weather_report_close_during_evening:
-                if self.weather_report_close_during_evening_time < ephem_now < self.weather_report_open_during_evening_time:
-                    temp_meant_to_be_shut=True
+            #temp_meant_to_be_shut= False
+            # if self.weather_report_open_during_evening and self.weather_report_close_during_evening:
+            #     if self.weather_report_close_during_evening_time < ephem_now < self.weather_report_open_during_evening_time:
+            #         temp_meant_to_be_shut=True
 
-            if ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends']) and (self.weather_report_open_at_start==True or self.local_weather_always_overrides_OWM) and \
-                enc_status['enclosure_mode'] == 'Automatic') and not self.cool_down_latch and (self.local_weather_ok == True or (not self.ocn_exists)) and not \
-                enc_status['shutter_status'] in ['Software Fault', 'Opening', 'Closing', 'Error'] and not temp_meant_to_be_shut:
+            if ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends']) and (self.weather_report_open_at_start==True or not self.owm_active) and \
+                enc_status['enclosure_mode'] == 'Automatic') and not self.cool_down_latch and (self.local_weather_ok == True or (not self.ocn_exists) or (not self.local_weather_active)) and not \
+                enc_status['shutter_status'] in ['Software Fault', 'Opening', 'Closing', 'Error']:# and not temp_meant_to_be_shut:
 
                 self.cool_down_latch = True
 
-                if not self.open_and_enabled_to_observe and (self.weather_report_is_acceptable_to_observe or self.local_weather_always_overrides_OWM): # and (self.weather_report_open_during_evening == False or self.local_weather_always_overrides_OWM):
+                if not self.open_and_enabled_to_observe and (self.weather_report_is_acceptable_to_observe or not self.owm_active): # and (self.weather_report_open_during_evening == False or self.local_weather_always_overrides_OWM):
 
                     if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config['maximum_roof_opens_per_evening']:
                         self.nightly_reset_complete = False
@@ -881,6 +995,13 @@ class WxEncAgent:
         self.weather_report_close_during_evening_time=ephem_now + 86400
         #self.nightly_weather_report_complete=False
         
+        self.keep_open_all_night = False
+        self.keep_closed_all_night   = False          
+        self.open_at_specific_utc = False
+        self.specific_utc_when_to_open = -1.0  
+        self.manual_weather_hold_set = False
+        self.manual_weather_hold_duration = -1.0
+        
         return
 
 
@@ -927,7 +1048,7 @@ class WxEncAgent:
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
 
         # Only send an enclosure open command if the weather
-        if self.weather_report_is_acceptable_to_observe:
+        if (self.weather_report_is_acceptable_to_observe or not self.owm_active):
 
             if not g_dev['debug'] and not enc_status['enclosure_mode'] in ['Manual'] and (
                     ephem_now < g_dev['events']['Cool Down, Open']) or \
@@ -943,8 +1064,8 @@ class WxEncAgent:
 
                     if ocn_status == None:
                         if not enc_status['shutter_status'] in ['Open', 'open','Opening','opening'] and \
-                                enc_status['enclosure_mode'] == 'Automatic' \
-                                and self.weather_report_is_acceptable_to_observe:
+                                enc_status['enclosure_mode'] == 'Automatic':# \
+                                #and self.weather_report_is_acceptable_to_observe:
                             self.opens_this_evening = self.opens_this_evening + 1
 
                             g_dev['enc'].open_roof_directly({}, {})
@@ -953,7 +1074,7 @@ class WxEncAgent:
 
                     elif  not enc_status['shutter_status'] in ['Open', 'open','Opening','opening'] and \
                             enc_status['enclosure_mode'] == 'Automatic' \
-                            and time.time() > self.enclosure_next_open_time  and self.weather_report_is_acceptable_to_observe:  # NB
+                            and time.time() > self.enclosure_next_open_time:#  and self.weather_report_is_acceptable_to_observe:  # NB
 
                         self.opens_this_evening = self.opens_this_evening + 1
 
@@ -1044,7 +1165,7 @@ class WxEncAgent:
                 elif 85 < hourly_report.humidity <= 90:
                     tempFn=tempFn+20
                 elif 90 < hourly_report.humidity <= 100:
-                    tempFn=tempFn+100
+                    tempFn=tempFn+101
 
                 # Add cloud score up
                 if 20 < hourly_report.clouds <= 40:
@@ -1054,7 +1175,7 @@ class WxEncAgent:
                 elif 60 < hourly_report.clouds <= 80:
                     tempFn=tempFn+60
                 elif 80 < hourly_report.clouds <= 100:
-                    tempFn=tempFn+100
+                    tempFn=tempFn+101
 
                 # Add wind score up
                 if 8 < hourly_report.wind()['speed'] <=12:
@@ -1064,10 +1185,10 @@ class WxEncAgent:
                 elif 15 < hourly_report.wind()['speed'] <= 20:
                     tempFn=tempFn+40
                 elif 20 < hourly_report.wind()['speed'] :
-                    tempFn=tempFn+100
+                    tempFn=tempFn+101
 
                 if 'rain'  in hourly_report.detailed_status or 'storm'  in hourly_report.detailed_status:
-                    tempFn=tempFn+100
+                    tempFn=tempFn+101
 
                 #breakpoint()
                 #
@@ -1254,7 +1375,7 @@ class WxEncAgent:
                 if clear_until_hour > 3:
                     plog ("Looks like it is clear enough to open the observatory from the beginning.")
                     self.weather_report_open_at_start = True
-                elif hourly_fitzgerald_number[0] > 40 and enc_status['enclosure_mode'] == 'Automatic' and not enc_status['shutter_status'] in ['Closed', 'closed'] and not self.local_weather_always_overrides_OWM:
+                elif hourly_fitzgerald_number[0] > 40 and enc_status['enclosure_mode'] == 'Automatic' and not enc_status['shutter_status'] in ['Closed', 'closed'] and self.owm_active:
                     plog ("Looks like the weather gets rough in the first hour, shutting up observatory.")
                     self.park_enclosure_and_close()
 
