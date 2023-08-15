@@ -29,7 +29,9 @@ wema_config = {
     #'obs_id': None,  # a WEMA is not a telescope aka Observatory
     #'observatory_location': site_name.lower(),  # in LCO case, an airport code such as OGG
 
-
+    # These are just the bootup default values.
+    'OWM_active': True,
+    'local_weather_active': False,
     #'debug_site_mode': False,
 
     'debug_mode': False,
@@ -165,6 +167,40 @@ wema_config = {
     #'solve_nth_image': 1,  # Only solve every nth image
     #'solve_timer': 0.05,  # Only solve every X minutes
     #'threshold_mount_update': 100,  # only update mount when X arcseconds away
+
+    # Whether these limits are on by default
+    'rain_limit_on': False,
+    'humidity_limit_on': True,
+    'windspeed_limit_on': True,
+    'lightning_limit_on': True,
+    'temperature_minus_dewpoint_limit_on': True,
+    'sky_temperature_limit_on': True,
+    'cloud_cover_limit_on': False,
+    'lowest_ambient_temperature_on': True,
+    'highest_ambient_temperature_on': True,
+
+    # Local weather DANGER limits - will cause the roof to shut
+    'rain_limit': 0,
+    'humidity_limit': 80,
+    'windspeed_limit': 25,
+    'lightning_limit': 15,
+    'temperature_minus_dewpoint_limit': 2,
+    'sky_temperature_limit': -12,
+    'cloud_cover_limit': 50,
+    'lowest_ambient_temperature': 1,
+    'highest_ambient_temperature': 40,
+
+    # Local weather warning limits, will send a warning, but leave the roof alone
+    'warning_rain_limit': 0,
+    'warning_humidity_limit': 75,
+    'warning_windspeed_limit': 15,
+    'warning_lightning_limit': 10,
+    'warning_temperature_minus_dewpoint_limit': 2,
+    'warning_sky_temperature_limit': -17,
+    'warning_cloud_cover_limit': 25,
+    'warning_lowest_ambient_temperature': 5,
+    'warning_highest_ambient_temperature': 35,
+
 
     'defaults': {
         'observing_conditions': 'observing_conditions1',
