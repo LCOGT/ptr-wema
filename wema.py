@@ -1248,144 +1248,145 @@ class WxEncAgent:
             plog("Night's average fitzgerald number: " + str(average_fitzn_for_rest_of_night))
             #plog(sum(hourly_fitzgerald_number))
 
-            if average_fitzn_for_rest_of_night < 10:
-                plog ("This is a good observing night!")
-                #self.weather_report_is_acceptable_to_observe=True
-                self.weather_report_open_at_start=True
-                #self.weather_report_open_during_evening=True
-                #self.weather_report_open_during_evening_time=ephem_now
-                #self.weather_report_close_during_evening=False
-                #self.weather_report_close_during_evening_time=ephem_now
-            #elif average_fitzn_for_rest_of_night > 40:
-            #    plog ("This is a horrible observing night!")
-            #    self.weather_report_is_acceptable_to_observe=False
-            #    self.weather_report_open_at_start = False
-                #self.weather_report_open_during_evening=False
-                #self.weather_report_open_during_evening_time=ephem_now
-                #self.weather_report_close_during_evening=False
-                #self.weather_report_close_during_evening_time=ephem_now
-            elif average_fitzn_for_rest_of_night < 18:
-                plog ("This is perhaps not the best night, but we will give it a shot!")
-                #self.weather_report_is_acceptable_to_observe=True
+            # if average_fitzn_for_rest_of_night < 10:
+            #     plog ("This is a good observing night!")
+            #     #self.weather_report_is_acceptable_to_observe=True
+            #     self.weather_report_open_at_start=True
+            #     #self.weather_report_open_during_evening=True
+            #     #self.weather_report_open_during_evening_time=ephem_now
+            #     #self.weather_report_close_during_evening=False
+            #     #self.weather_report_close_during_evening_time=ephem_now
+            # #elif average_fitzn_for_rest_of_night > 40:
+            # #    plog ("This is a horrible observing night!")
+            # #    self.weather_report_is_acceptable_to_observe=False
+            # #    self.weather_report_open_at_start = False
+            #     #self.weather_report_open_during_evening=False
+            #     #self.weather_report_open_during_evening_time=ephem_now
+            #     #self.weather_report_close_during_evening=False
+            #     #self.weather_report_close_during_evening_time=ephem_now
+            # elif average_fitzn_for_rest_of_night < 18:
+            #     plog ("This is perhaps not the best night, but we will give it a shot!")
+            #     #self.weather_report_is_acceptable_to_observe=True
+            #     self.weather_report_open_at_start = True
+            #     #self.weather_report_open_during_evening=True
+            #     #self.weather_report_open_during_evening_time=ephem_now
+            #     #self.weather_report_close_during_evening=False
+            #     #self.weather_report_close_during_evening_time=ephem_now
+            # else:
+                #plog ("This is a problematic night, lets check if one part of the night is clearer than the other.")
+
+
+            print (hourly_fitzgerald_number_by_hour)
+            #breakpoint()
+
+            # Simplify decision array
+            hours_bad_or_good=[]
+            for entry in hourly_fitzgerald_number_by_hour:
+                if entry[1] > 41:
+                    hours_bad_or_good.append([entry[0],0])
+                else:
+                    hours_bad_or_good.append([entry[0],1])
+
+            # If the first three hours are good, then open from the start
+            self.weather_report_open_at_start = False
+            if (hours_bad_or_good[0][1] + hours_bad_or_good[1][1] +hours_bad_or_good[2][1] ) == 3:
+                plog("Looks like it is clear enough to open the observatory from the beginning.")
                 self.weather_report_open_at_start = True
-                #self.weather_report_open_during_evening=True
-                #self.weather_report_open_during_evening_time=ephem_now
-                #self.weather_report_close_during_evening=False
-                #self.weather_report_close_during_evening_time=ephem_now
-            else:
-                plog ("This is a problematic night, lets check if one part of the night is clearer than the other.")
+            elif (hours_bad_or_good[0][1]) == 0 and enc_status['enclosure_mode'] == 'Automatic' and not \
+            enc_status['shutter_status'] in ['Closed', 'closed'] and self.owm_active:
+                plog("Looks like the weather gets rough in the first hour, shutting up observatory.")
+                self.park_enclosure_and_close()
+
+            # Look for three hour gaps in the weather throughout the night
+            self.times_to_open=[]
+            self.times_to_close=[]
+            for counter in range(len(hours_bad_or_good)):
+                #print (counter)
+                #print (hours_bad_or_good[counter])
+
+                # A three hour gap after a bad hour is a good time to open.
+                #print (counter - len(hours_bad_or_good))
+                if (counter - len(hours_bad_or_good)) == -1:
+                    #sum_of_next_three_hours = int(hours_bad_or_good[counter][1] * 3)
+                    #plog("The roof can open in the final hour but that isn't worth it")
+                    pass
+                elif (counter - len(hours_bad_or_good)) == -2:
+                    sum_of_next_three_hours=int((hours_bad_or_good[counter][1]+hours_bad_or_good[counter+1][1])*1.5)
+                else:
+                    sum_of_next_three_hours = hours_bad_or_good[counter][1] + hours_bad_or_good[counter + 1][1] + \
+                                          hours_bad_or_good[counter + 2][1]
+
+                #print (sum_of_next_three_hours)
+                if sum_of_next_three_hours == 3 and hours_bad_or_good[counter-1][1] == 0:
+                    plog ("good time to open")
+                    self.times_to_open.append([hours_bad_or_good[counter][0]])
+
+                # Simply a bad hour is a good time to close.
+                if len(hours_bad_or_good) == counter + 1:
+                    #if hours_bad_or_good[counter][1] == 0:
+                    #    plog("good time to close")
+                    #    self.times_to_close.append([hours_bad_or_good[counter][0]])
+                    # going to close and park anyway
+                    pass
+                elif hours_bad_or_good[counter][1] == 1 and hours_bad_or_good[counter+1][1] == 0:
+                    plog ("good time to close")
+                    self.times_to_close.append([hours_bad_or_good[counter][0]])
 
 
-                print (hourly_fitzgerald_number_by_hour)
-                #breakpoint()
+            plog ("times to close")
+            plog (self.times_to_close)
+            plog("times to open")
+            plog(self.times_to_open)
 
-                # Simplify decision array
-                hours_bad_or_good=[]
-                for entry in hourly_fitzgerald_number_by_hour:
-                    if entry[1] > 41:
-                        hours_bad_or_good.append([entry[0],0])
-                    else:
-                        hours_bad_or_good.append([entry[0],1])
+            self.weather_text_report=[]
+            # Construct the text!
+            #breakpoint()
+            if len(self.hourly_report_holder) > 0:
+                pasttitle = False
+                firstentry = True
+                for line in self.hourly_report_holder:
+                    self.weather_text_report.append(str(line))
 
-                # If the first three hours are good, then open from the start
-                self.weather_report_open_at_start = False
-                if (hours_bad_or_good[0][1] + hours_bad_or_good[1][1] +hours_bad_or_good[2][1] ) == 3:
-                    plog("Looks like it is clear enough to open the observatory from the beginning.")
-                    self.weather_report_open_at_start = True
-                elif (hours_bad_or_good[0][1]) == 0 and enc_status['enclosure_mode'] == 'Automatic' and not \
-                enc_status['shutter_status'] in ['Closed', 'closed'] and self.owm_active:
-                    plog("Looks like the weather gets rough in the first hour, shutting up observatory.")
-                    self.park_enclosure_and_close()
+                    if pasttitle == True:
+                        current_utc_hour = float(line.split(' ')[0])
+                        # breakpoint()
+                        if len(self.times_to_open) > 0:
+                            for entry in self.times_to_open:
+                                # print (entry)
+                                if int(current_utc_hour) == int(entry[0]) and not firstentry:
+                                    self.weather_text_report.append("OWM would plan to open the roof")
 
-                # Look for three hour gaps in the weather throughout the night
-                self.times_to_open=[]
-                self.times_to_close=[]
-                for counter in range(len(hours_bad_or_good)):
-                    #print (counter)
-                    #print (hours_bad_or_good[counter])
-
-                    # A three hour gap after a bad hour is a good time to open.
-                    #print (counter - len(hours_bad_or_good))
-                    if (counter - len(hours_bad_or_good)) == -1:
-                        #sum_of_next_three_hours = int(hours_bad_or_good[counter][1] * 3)
-                        #plog("The roof can open in the final hour but that isn't worth it")
-                        pass
-                    elif (counter - len(hours_bad_or_good)) == -2:
-                        sum_of_next_three_hours=int((hours_bad_or_good[counter][1]+hours_bad_or_good[counter+1][1])*1.5)
-                    else:
-                        sum_of_next_three_hours = hours_bad_or_good[counter][1] + hours_bad_or_good[counter + 1][1] + \
-                                              hours_bad_or_good[counter + 2][1]
-
-                    #print (sum_of_next_three_hours)
-                    if sum_of_next_three_hours == 3 and hours_bad_or_good[counter-1][1] == 0:
-                        plog ("good time to open")
-                        self.times_to_open.append([hours_bad_or_good[counter][0]])
-
-                    # Simply a bad hour is a good time to close.
-                    if len(hours_bad_or_good) == counter + 1:
-                        #if hours_bad_or_good[counter][1] == 0:
-                        #    plog("good time to close")
-                        #    self.times_to_close.append([hours_bad_or_good[counter][0]])
-                        # going to close and park anyway
-                        pass
-                    elif hours_bad_or_good[counter][1] == 1 and hours_bad_or_good[counter+1][1] == 0:
-                        plog ("good time to close")
-                        self.times_to_close.append([hours_bad_or_good[counter][0]])
-
-
-                plog ("times to close")
-                plog (self.times_to_close)
-                plog("times to open")
-                plog(self.times_to_open)
-
-                self.weather_text_report=[]
-                # Construct the text!
-                if len(self.hourly_report_holder) > 0:
-                    pasttitle = False
-                    firstentry = True
-                    for line in self.hourly_report_holder:
-                        self.weather_text_report.append(str(line))
-
-                        if pasttitle == True:
-                            current_utc_hour = float(line.split(' ')[0])
                             # breakpoint()
-                            if len(self.times_to_open) > 0:
-                                for entry in self.times_to_open:
-                                    # print (entry)
-                                    if int(current_utc_hour) == int(entry[0]) and not firstentry:
-                                        self.weather_text_report.append("OWM would plan to open the roof")
+                            # if current_utc_hour <= (ephem.Date(self.weather_report_open_during_evening_time).datetime().hour) < (current_utc_hour + 1):
+                        if len(self.times_to_close) > 0:
+                            for entry in self.times_to_close:
+                                # print (entry)
+                                if int(current_utc_hour) == int(entry[0]):
+                                    self.weather_text_report.append("OWM would plan to close the roof")
+                        firstentry = False
+                        # if self.weather_report_close_during_evening:
+                        #    if current_utc_hour <= (ephem.Date(self.weather_report_close_during_evening_time).datetime().hour) < (
+                        #            current_utc_hour + 1):
+                        #        plog("OWM would plan to close the roof")
 
-                                # breakpoint()
-                                # if current_utc_hour <= (ephem.Date(self.weather_report_open_during_evening_time).datetime().hour) < (current_utc_hour + 1):
-                            if len(self.times_to_close) > 0:
-                                for entry in self.times_to_close:
-                                    # print (entry)
-                                    if int(current_utc_hour) == int(entry[0]):
-                                        self.weather_text_report.append("OWM would plan to close the roof")
-                            firstentry = False
-                            # if self.weather_report_close_during_evening:
-                            #    if current_utc_hour <= (ephem.Date(self.weather_report_close_during_evening_time).datetime().hour) < (
-                            #            current_utc_hour + 1):
-                            #        plog("OWM would plan to close the roof")
+                    if 'Hour(UTC)' in line:
+                        pasttitle = True
+                        self.weather_text_report.append("-----------------------------")
+                        if g_dev['events']['Cool Down, Open'] > ephem_now:
+                            self.weather_text_report.append("Cool Down Open")
+                        if self.weather_report_open_at_start:
+                            self.weather_text_report.append("OWM would plan to open at this point.")
+                        else:
+                            self.weather_text_report.append("OWM would keep the roof shut at this point.")
+                if g_dev['events']['Close and Park'] > ephem_now:
+                    self.weather_text_report.append("Close and Park")
+                self.weather_text_report.append("-----------------------------")
 
-                        if 'Hour(UTC)' in line:
-                            pasttitle = True
-                            self.weather_text_report.append("-----------------------------")
-                            if g_dev['events']['Cool Down, Open'] > ephem_now:
-                                self.weather_text_report.append("Cool Down Open")
-                            if self.weather_report_open_at_start:
-                                self.weather_text_report.append("OWM would plan to open at this point.")
-                            else:
-                                self.weather_text_report.append("OWM would keep the roof shut at this point.")
-                    if g_dev['events']['Close and Park'] > ephem_now:
-                        self.weather_text_report.append("Close and Park")
-                    self.weather_text_report.append("-----------------------------")
+            if not self.owm_active:
+                self.weather_text_report.append("OWM information is advisory only, it is currently inactive.")
 
-                if not self.owm_active:
-                    self.weather_text_report.append("OWM information is advisory only, it is currently inactive.")
-
-                if self.owm_active:
-                    self.weather_text_report.append("OWM predicts it will set to open/close the roof at these times .")
+            if self.owm_active:
+                self.weather_text_report.append("OWM predicts it will set to open/close the roof at these times .")
 
             status = {}
             status["timestamp"] = round(time.time(), 1)
