@@ -1401,7 +1401,7 @@ class WxEncAgent:
             except:
                 plog('could not send owm_report status')
                 plog(traceback.format_exc())
-                breakpoint()
+                #breakpoint()
 
         except Exception as e:
             plog ("OWN failed", e)
