@@ -596,7 +596,7 @@ class WxEncAgent:
             self.wema_settings_upload_timer = time.time()
             #plog("wema settings upload")
             status = {}
-            status["timestamp"] = round(time.time(), 1)
+            #status["timestamp"] = round(time.time(), 1)
             status['wema_settings']={}
             
             
@@ -1389,7 +1389,7 @@ class WxEncAgent:
                 self.weather_text_report.append("OWM predicts it will set to open/close the roof at these times .")
 
             status = {}
-            status["timestamp"] = round(time.time(), 1)
+            #status["timestamp"] = round(time.time(), 1)
             status['owm_report'] = json.dumps(self.weather_text_report)
             lane = "owm_report"
 
