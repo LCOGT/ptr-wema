@@ -231,15 +231,14 @@ class WxEncAgent:
         self.weather_status_check_period = config['weather_status_check_period']
         self.safety_status_check_period = config['safety_status_check_period']
         self.scan_requests_check_period = 4
+        self.wema_settings_upload_period = 10
 
         # Timers rather than time.sleeps
         self.enclosure_status_check_timer=time.time() - 2*self.enclosure_status_check_period
         self.weather_status_check_timer = time.time() - 2*self.weather_status_check_period
         self.safety_check_timer=time.time() - 2*self.safety_status_check_period
         self.scan_requests_timer=time.time() -2 * self.scan_requests_check_period
-
-
-
+        self.wema_settings_upload_timer=time.time() -2 * self.wema_settings_upload_period
 
         if self.config['observing_conditions']['observing_conditions1']['driver'] == None:
             self.ocn_exists=False
@@ -439,7 +438,10 @@ class WxEncAgent:
             else:
                 self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
         
-        
+        # WEMA Settings
+        if time.time() > self.wema_settings_upload_timer + self.wema_settings_upload_period:
+            self.wema_settings_upload_timer = time.time()
+            plog("wema settings upload")
 
 
         # Enclosure Status
