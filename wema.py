@@ -213,10 +213,10 @@ class WxEncAgent:
         self.cool_down_latch = False
 
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
-        self.weather_report_open_during_evening = False
-        self.weather_report_open_during_evening_time = ephem_now
-        self.weather_report_close_during_evening = False
-        self.weather_report_close_during_evening_time = ephem_now + 86400
+        #self.weather_report_open_during_evening = False
+        #self.weather_report_open_during_evening_time = ephem_now
+        #self.weather_report_close_during_evening = False
+        #self.weather_report_close_during_evening_time = ephem_now + 86400
         self.nightly_weather_report_complete = False
 
         self.weather_report_run_timer=time.time()-3600
@@ -277,10 +277,13 @@ class WxEncAgent:
         # If the night is patchy, the weather report can identify a later time to open
         # or to close the enclosure early during the night.
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
-        self.weather_report_open_during_evening=False
-        self.weather_report_open_during_evening_time=ephem_now
-        self.weather_report_close_during_evening=False
-        self.weather_report_close_during_evening_time=ephem_now
+        #self.weather_report_open_during_evening=False
+        #self.weather_report_open_during_evening_time=ephem_now
+        #self.weather_report_close_during_evening=False
+        #self.weather_report_close_during_evening_time=ephem_now
+
+        self.times_to_open = []
+        self.times_to_close = []
         self.hourly_report_holder=[]
         self.weather_report_open_at_start = False
         self.nightly_reset_complete = False
@@ -741,19 +744,31 @@ class WxEncAgent:
 
             if len(self.hourly_report_holder) > 0:
                 pasttitle=False
+                firstentry=True
                 for line in self.hourly_report_holder:
                     plog(str(line))
 
                     if pasttitle==True:
                         current_utc_hour= float(line.split(' ')[0])
-                        if self.weather_report_open_during_evening:
+                        #breakpoint()
+                        if len(self.times_to_open) > 0:
+                            for entry in self.times_to_open:
+                                #print (entry)
+                                if int(current_utc_hour) == int(entry[0]) and not firstentry:
+                                    plog("OWM would plan to open the roof")
+
                             #breakpoint()
-                            if current_utc_hour <= (ephem.Date(self.weather_report_open_during_evening_time).datetime().hour) < (current_utc_hour + 1):
-                                plog ("OWM would plan to open the roof")
-                        if self.weather_report_close_during_evening:
-                            if current_utc_hour <= (ephem.Date(self.weather_report_close_during_evening_time).datetime().hour) < (
-                                    current_utc_hour + 1):
-                                plog("OWM would plan to close the roof")
+                            #if current_utc_hour <= (ephem.Date(self.weather_report_open_during_evening_time).datetime().hour) < (current_utc_hour + 1):
+                        if len(self.times_to_close) > 0:
+                            for entry in self.times_to_close:
+                                #print (entry)
+                                if int(current_utc_hour) == int(entry[0]):
+                                    plog("OWM would plan to close the roof")
+                        firstentry=False
+                        #if self.weather_report_close_during_evening:
+                        #    if current_utc_hour <= (ephem.Date(self.weather_report_close_during_evening_time).datetime().hour) < (
+                        #            current_utc_hour + 1):
+                        #        plog("OWM would plan to close the roof")
                                 
 
                     if 'Hour(UTC)' in line:
@@ -791,13 +806,13 @@ class WxEncAgent:
             # elif self.weather_report_close_during_evening:
             #     plog("OWN reports that it thinks it should close later on in " + str(round(float(self.weather_report_close_during_evening_time - ephem_now) * 24,2)) + " hours.")
 
-            if (self.weather_report_close_during_evening or self.weather_report_open_during_evening) and not self.owm_active:
+            if not self.owm_active:
                 plog ("OWM information is advisory only, it is currently inactive.")
             
             
             
             
-            if (self.weather_report_close_during_evening or self.weather_report_open_during_evening) and self.owm_active:
+            if self.owm_active:
                 plog ("OWM predicts it will set to open/close the roof at these times .")
             
             plog("**************************************************************")
@@ -1321,114 +1336,167 @@ class WxEncAgent:
                 #self.weather_report_close_during_evening_time=ephem_now
             else:
                 plog ("This is a problematic night, lets check if one part of the night is clearer than the other.")
-                TEMPhourly_restofnight_fitzgerald_number=hourly_fitzgerald_number.copy()
-                TEMPhourly_nightuptothen_fitzgerald_number=hourly_fitzgerald_number.copy()
-                hourly_restofnight_fitzgerald_number=[]   
-                hourly_restofnight_fitzgerald_number_averages=[]
-                
-                for entry in range(len(TEMPhourly_restofnight_fitzgerald_number)):
-                    hourly_restofnight_fitzgerald_number.append(sum(TEMPhourly_restofnight_fitzgerald_number))
-                    hourly_restofnight_fitzgerald_number_averages.append(sum(TEMPhourly_restofnight_fitzgerald_number)/len(TEMPhourly_restofnight_fitzgerald_number))
-                    
-                    TEMPhourly_restofnight_fitzgerald_number.pop(0)
-                
-                plog ("Hourly Fitzgerald Number for the Rest of the Night")
-                plog (hourly_restofnight_fitzgerald_number)
-                
-                                
-                
-                hourly_nightuptothen_fitzgerald_number=[]
-                counter=0
-                for entry in TEMPhourly_nightuptothen_fitzgerald_number:
-                    temp_value=0        
-                    for q in range(len(TEMPhourly_nightuptothen_fitzgerald_number)):
-                        if q < counter:
-                            temp_value = temp_value + TEMPhourly_nightuptothen_fitzgerald_number[q]
-                    counter=counter+1
-                    
-                    hourly_nightuptothen_fitzgerald_number.append(temp_value)
-                
-                plog ("Hourly Fitzgerald Number up until that point in the night")
-                plog (hourly_nightuptothen_fitzgerald_number)
-                
-                clear_until_hour=99
-                for q in range(len(hourly_nightuptothen_fitzgerald_number)):
-                    if hourly_nightuptothen_fitzgerald_number[q] < 100:
-                        #plog ("looks like it is clear until hour " + str(q+1) )
-                        clear_until_hour=q+1            
-                            
-                if clear_until_hour != 99:
-                    if clear_until_hour > 2:                        
-                        plog ("looks like it is clear until hour " + str(clear_until_hour) )
-                        plog ("Will observe until then then close down enclosure")
-                        self.weather_report_is_acceptable_to_observe=True
-                        self.weather_report_close_during_evening=True
-                        self.weather_report_close_during_evening_time=ephem_now + (clear_until_hour/24)
-                        g_dev['events']['Observing Ends'] = ephem_now + (clear_until_hour/24)
-                    else:
-                        plog ("looks like it is clear until hour " + str(clear_until_hour) )
-                        plog ("But that isn't really long enough to rationalise opening the enclosure")
-                        self.weather_report_is_acceptable_to_observe=False
-                        self.weather_report_close_during_evening=False
 
-                self.weather_report_open_at_start = False
-                if clear_until_hour > 3:
-                    plog ("Looks like it is clear enough to open the observatory from the beginning.")
-                    self.weather_report_open_at_start = True
-                elif hourly_fitzgerald_number[0] > 40 and enc_status['enclosure_mode'] == 'Automatic' and not enc_status['shutter_status'] in ['Closed', 'closed'] and self.owm_active:
-                    plog ("Looks like the weather gets rough in the first hour, shutting up observatory.")
-                    self.park_enclosure_and_close()
 
+                print (hourly_fitzgerald_number_by_hour)
                 #breakpoint()
 
-                later_clearing_hour=99
-                for q in range(len(hourly_restofnight_fitzgerald_number)):
-                    #breakpoint()
-                    if self.weather_report_open_at_start and self.weather_report_close_during_evening and q < clear_until_hour:
-                        pass
-                    elif hourly_restofnight_fitzgerald_number[q] < 100 or hourly_restofnight_fitzgerald_number_averages[q] < 40 :
-                        #breakpoint()
-                        if q > 2:
-                            if hourly_fitzgerald_number[q-1] < 41:
-                                # Then step backwards until it is a good number
-                                #breakpoint()
-                                #even_earlier=0
-
-
-                                plog ("looks like it is clears up after hour " + str(q) )
-                                later_clearing_hour=q
-
-                                #plog ("looks like it is clears up after hour " + str(q+1) )
-                                #later_clearing_hour=q+1
-                                # Just test if there isn't a couple of "bad" hours at the start
-                                #breakpoint()
-                                number_of_hours_left_after_later_clearing_hour= len(hourly_restofnight_fitzgerald_number) - q
-                                break
-
-                if later_clearing_hour != 99:
-                    if number_of_hours_left_after_later_clearing_hour > 2:
-                        plog ("looks like clears up at hour " + str(later_clearing_hour) )
-                        plog ("Will attempt to open/re-open enclosure then.")
-                        self.weather_report_open_during_evening=True
-                        self.weather_report_open_during_evening_time=ephem_now + (later_clearing_hour/24) 
+                # Simplify decision array
+                hours_bad_or_good=[]
+                for entry in hourly_fitzgerald_number_by_hour:
+                    if entry[1] > 41:
+                        hours_bad_or_good.append([entry[0],0])
                     else:
-                        plog ("looks like it clears up at hour " + str(later_clearing_hour) )
-                        plog ("But there isn't much time after then, so not going to open then. ")
-                        self.weather_report_open_during_evening=False
-                        
-                # if self.weather_report_close_during_evening==True or self.weather_report_open_during_evening==True:
-                #     self.weather_report_is_acceptable_to_observe=True
-                # else:
+                        hours_bad_or_good.append([entry[0],1])
+
+                # If the first three hours are good, then open from the start
+                self.weather_report_open_at_start = False
+                if (hours_bad_or_good[0][1] + hours_bad_or_good[1][1] +hours_bad_or_good[2][1] ) == 3:
+                    plog("Looks like it is clear enough to open the observatory from the beginning.")
+                    self.weather_report_open_at_start = True
+                elif (hours_bad_or_good[0][1]) == 0 and enc_status['enclosure_mode'] == 'Automatic' and not \
+                enc_status['shutter_status'] in ['Closed', 'closed'] and self.owm_active:
+                    plog("Looks like the weather gets rough in the first hour, shutting up observatory.")
+                    self.park_enclosure_and_close()
+
+                # Look for three hour gaps in the weather throughout the night
+                self.times_to_open=[]
+                self.times_to_close=[]
+                for counter in range(len(hours_bad_or_good)):
+                    #print (counter)
+                    #print (hours_bad_or_good[counter])
+
+                    # A three hour gap after a bad hour is a good time to open.
+                    #print (counter - len(hours_bad_or_good))
+                    if (counter - len(hours_bad_or_good)) == -1:
+                        sum_of_next_three_hours = hours_bad_or_good[counter][1]
+                    elif (counter - len(hours_bad_or_good)) == -2:
+                        sum_of_next_three_hours=hours_bad_or_good[counter][1]+hours_bad_or_good[counter+1][1]
+                    else:
+                        sum_of_next_three_hours = hours_bad_or_good[counter][1] + hours_bad_or_good[counter + 1][1] + \
+                                              hours_bad_or_good[counter + 2][1]
+
+                    #print (sum_of_next_three_hours)
+                    if sum_of_next_three_hours == 3 and hours_bad_or_good[counter-1][1] == 0:
+                        plog ("good time to open")
+                        self.times_to_open.append([hours_bad_or_good[counter][0]])
+
+                    # Simply a bad hour is a good time to close.
+                    if hours_bad_or_good[counter][1] == 1 and hours_bad_or_good[counter+1][1] == 0:
+                        plog ("good time to close")
+                        self.times_to_close.append([hours_bad_or_good[counter][0]])
+
+
+                plog ("times to close")
+                plog (self.times_to_close)
+                plog("times to open")
+                plog(self.times_to_open)
+                #breakpoint()
+
+                # #3 hour gap finder
+                #
+                # TEMPhourly_restofnight_fitzgerald_number=hourly_fitzgerald_number.copy()
+                # TEMPhourly_nightuptothen_fitzgerald_number=hourly_fitzgerald_number.copy()
+                # hourly_restofnight_fitzgerald_number=[]
+                # hourly_restofnight_fitzgerald_number_averages=[]
+                #
+                # for entry in range(len(TEMPhourly_restofnight_fitzgerald_number)):
+                #     hourly_restofnight_fitzgerald_number.append(sum(TEMPhourly_restofnight_fitzgerald_number))
+                #     hourly_restofnight_fitzgerald_number_averages.append(sum(TEMPhourly_restofnight_fitzgerald_number)/len(TEMPhourly_restofnight_fitzgerald_number))
+                #
+                #     TEMPhourly_restofnight_fitzgerald_number.pop(0)
+                #
+                # plog ("Hourly Fitzgerald Number for the Rest of the Night")
+                # plog (hourly_restofnight_fitzgerald_number)
+                #
+                #
+                #
+                # hourly_nightuptothen_fitzgerald_number=[]
+                # counter=0
+                # for entry in TEMPhourly_nightuptothen_fitzgerald_number:
+                #     temp_value=0
+                #     for q in range(len(TEMPhourly_nightuptothen_fitzgerald_number)):
+                #         if q < counter:
+                #             temp_value = temp_value + TEMPhourly_nightuptothen_fitzgerald_number[q]
+                #     counter=counter+1
+                #
+                #     hourly_nightuptothen_fitzgerald_number.append(temp_value)
+                #
+                # plog ("Hourly Fitzgerald Number up until that point in the night")
+                # plog (hourly_nightuptothen_fitzgerald_number)
+                #
+                # clear_until_hour=99
+                # for q in range(len(hourly_nightuptothen_fitzgerald_number)):
+                #     if hourly_nightuptothen_fitzgerald_number[q] < 100:
+                #         #plog ("looks like it is clear until hour " + str(q+1) )
+                #         clear_until_hour=q+1
+                #
+                # if clear_until_hour != 99:
+                #     if clear_until_hour > 2:
+                #         plog ("looks like it is clear until hour " + str(clear_until_hour) )
+                #         plog ("Will observe until then then close down enclosure")
+                #         self.weather_report_is_acceptable_to_observe=True
+                #         self.weather_report_close_during_evening=True
+                #         self.weather_report_close_during_evening_time=ephem_now + (clear_until_hour/24)
+                #         g_dev['events']['Observing Ends'] = ephem_now + (clear_until_hour/24)
+                #     else:
+                #         plog ("looks like it is clear until hour " + str(clear_until_hour) )
+                #         plog ("But that isn't really long enough to rationalise opening the enclosure")
+                #         self.weather_report_is_acceptable_to_observe=False
+                #         self.weather_report_close_during_evening=False
+                #
+                #
+                #
+                # #breakpoint()
+                #
+                # later_clearing_hour=99
+                # for q in range(len(hourly_restofnight_fitzgerald_number)):
+                #     #breakpoint()
+                #     if self.weather_report_open_at_start and self.weather_report_close_during_evening and q < clear_until_hour:
+                #         pass
+                #     elif hourly_restofnight_fitzgerald_number[q] < 100 or hourly_restofnight_fitzgerald_number_averages[q] < 40 :
+                #         #breakpoint()
+                #         if q > 2:
+                #             if hourly_fitzgerald_number[q-1] < 41:
+                #                 # Then step backwards until it is a good number
+                #                 #breakpoint()
+                #                 #even_earlier=0
+                #
+                #
+                #                 plog ("looks like it is clears up after hour " + str(q) )
+                #                 later_clearing_hour=q
+                #
+                #                 #plog ("looks like it is clears up after hour " + str(q+1) )
+                #                 #later_clearing_hour=q+1
+                #                 # Just test if there isn't a couple of "bad" hours at the start
+                #                 #breakpoint()
+                #                 number_of_hours_left_after_later_clearing_hour= len(hourly_restofnight_fitzgerald_number) - q
+                #                 break
+                #
+                # if later_clearing_hour != 99:
+                #     if number_of_hours_left_after_later_clearing_hour > 2:
+                #         plog ("looks like clears up at hour " + str(later_clearing_hour) )
+                #         plog ("Will attempt to open/re-open enclosure then.")
+                #         self.weather_report_open_during_evening=True
+                #         self.weather_report_open_during_evening_time=ephem_now + (later_clearing_hour/24)
+                #     else:
+                #         plog ("looks like it clears up at hour " + str(later_clearing_hour) )
+                #         plog ("But there isn't much time after then, so not going to open then. ")
+                #         self.weather_report_open_during_evening=False
+                #
+                # # if self.weather_report_close_during_evening==True or self.weather_report_open_during_evening==True:
+                # #     self.weather_report_is_acceptable_to_observe=True
+                # # else:
+                # #     self.weather_report_is_acceptable_to_observe=False
+                #
+                # if clear_until_hour==99 and later_clearing_hour ==99:
+                #     plog ("It doesn't look like there is a clear enough patch to observe tonight")
                 #     self.weather_report_is_acceptable_to_observe=False
-                    
-                if clear_until_hour==99 and later_clearing_hour ==99:
-                    plog ("It doesn't look like there is a clear enough patch to observe tonight")
-                    self.weather_report_is_acceptable_to_observe=False
         except Exception as e:
             plog ("OWN failed", e)
             plog ("Usually a connection glitch")
-            #plog(traceback.format_exc())
-            #breakpoint()
+            plog(traceback.format_exc())
+            breakpoint()
 
         # However, if the enclosure is under manual control, leave this switch on.
         if self.enc_status_custom==False:
