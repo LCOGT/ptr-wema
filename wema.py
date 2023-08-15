@@ -594,7 +594,7 @@ class WxEncAgent:
         # WEMA Settings
         if time.time() > self.wema_settings_upload_timer + self.wema_settings_upload_period:
             self.wema_settings_upload_timer = time.time()
-            plog("wema settings upload")
+            #plog("wema settings upload")
             status = {}
             status["timestamp"] = round(time.time(), 1)
             status['wema_settings']={}
