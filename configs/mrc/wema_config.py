@@ -134,7 +134,7 @@ wema_config = {
     'highest_ambient_temperature_on': True,
 
     # Local weather DANGER limits - will cause the roof to shut
-    'rain_limit': 0,
+    'rain_limit': 3,
     'humidity_limit': 80,
     'windspeed_limit': 25,
     'lightning_limit' : 15,
@@ -145,7 +145,7 @@ wema_config = {
     'highest_ambient_temperature': 40,
     
     # Local weather warning limits, will send a warning, but leave the roof alone
-    'warning_rain_limit': 0,
+    'warning_rain_limit': 3,
     'warning_humidity_limit': 75,
     'warning_windspeed_limit': 15,
     'warning_lightning_limit' : 10,
