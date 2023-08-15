@@ -1069,7 +1069,7 @@ class WxEncAgent:
     def run_nightly_weather_report(self,enc_status=None):
        
         events = g_dev['events']
-        self.weather_report_run_timer=time.time()
+
         obs_win_begin, sunset, sunrise, ephem_now = self.astro_events.getSunEvents()
         #if self.nightly_weather_report_complete==False:
         self.update_status()
@@ -1078,8 +1078,15 @@ class WxEncAgent:
         try: 
             plog("Applsing quality of evening from Open Weather Map.")
             owm = OWM('d5c3eae1b48bf7df3f240b8474af3ed0')
-            mgr = owm.weather_manager()            
-            one_call = mgr.one_call(lat=self.config["latitude"], lon=self.config["longitude"])
+            mgr = owm.weather_manager()
+            try:
+                one_call = mgr.one_call(lat=self.config["latitude"], lon=self.config["longitude"])
+            except:
+                plog ("Connection glitch probably. Bailing out, will try again soon")
+                plog(traceback.format_exc())
+                time.sleep(10)
+                return
+            self.weather_report_run_timer = time.time()
             #self.nightly_weather_report_complete=True
             #breakpoint()
             # Collect relevant info for fitzgerald weather number calculation
@@ -1399,7 +1406,7 @@ class WxEncAgent:
             plog ("OWN failed", e)
             plog ("Usually a connection glitch")
             plog(traceback.format_exc())
-            breakpoint()
+            #breakpoint()
 
         # However, if the enclosure is under manual control, leave this switch on.
         if self.enc_status_custom==False:
