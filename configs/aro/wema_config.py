@@ -36,6 +36,10 @@ wema_config = {
     'instance_type': 'wema',
     'obsp_ids': ['aro1'], #, 'aro2','aro3'],    #Possible hint to site about who are its children.
     
+    # These are just the bootup default values.
+    'OWM_active': True,
+    'local_weather_active': True,
+    
     
     'debug_mode': False,
     #'debug_obsy_mode': False,   #not needed for a WEMA instance 
@@ -146,17 +150,38 @@ wema_config = {
     'morn_close_and_park': 32.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowband flats
     #'eve_sky_flat_sunset_offset': -60.0,  # Minutes  neg means before, + after.
 
-
+    # Whether these limits are on by default
+    'rain_limit_on': False,
+    'humidity_limit_on': True,
+    'windspeed_limit_on': True,
+    'lightning_limit_on': True,
+    'temperature_minus_dewpoint_limit_on': True,
+    'sky_temperature_limit_on': True,
+    'cloud_cover_limit_on': False,
+    'lowest_ambient_temperature_on': True,
+    'highest_ambient_temperature_on': True,
+    
     # Local weather limits   #NB we should move these into OCN config section
     'rain_limit': 1.0,         # NO we shouldn't because it will be different per site
     'humidity_limit': 75,   # With multiple elements etc. I think.
     'windspeed_limit': 25,  # Some of this could be OWM stuff e.g.
+    'lightning_limit' : 15,
     'temperature_minus_dewpoint_limit': 2,
     'sky_temperature_limit': -1,
     'cloud_cover_limit': 51,
     'lowest_ambient_temperature': 1,
     'highest_ambient_temperature': 45,
 
+    # Local weather warning limits, will send a warning, but leave the roof alone
+    'warning_rain_limit': 3,
+    'warning_humidity_limit': 75,
+    'warning_windspeed_limit': 15,
+    'warning_lightning_limit' : 10,
+    'warning_temperature_minus_dewpoint_limit': 2,
+    'warning_sky_temperature_limit': -17,
+    'warning_cloud_cover_limit': 25,
+    'warning_lowest_ambient_temperature': 5,
+    'warning_highest_ambient_temperature': 35,
     
     #'auto_morn_sky_flat': True,
     #'auto_morn_bias_dark': True,

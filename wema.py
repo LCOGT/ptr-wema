@@ -1140,7 +1140,7 @@ class WxEncAgent:
                 elif 20 < hourly_report.wind()['speed'] :
                     tempFn=tempFn+101
 
-                if 'rain'  in hourly_report.detailed_status or 'storm'  in hourly_report.detailed_status:
+                if 'rain'  in hourly_report.detailed_status or 'storm'  in hourly_report.detailed_status or hourly_report.rain != {}:
                     tempFn=tempFn+101
 
                 #breakpoint()
