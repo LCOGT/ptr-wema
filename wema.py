@@ -244,6 +244,10 @@ class WxEncAgent:
         self.wema_settings_upload_timer=time.time() -2 * self.wema_settings_upload_period
 
 
+        # This is a flag that enables or disables observing for all OBS in the WEMA.
+        self.observing_mode = 'active'
+
+
         self.rain_limit_quiet=False
         self.cloud_limit_quiet=False
         self.humidity_limit_quiet=False
@@ -428,9 +432,95 @@ class WxEncAgent:
                 unread_commands.sort(key=lambda x: x["timestamp_ms"])
                 # Process each job one at a time
                 for cmd in unread_commands:
+                    if 'action' in cmd:
+                        
+                        if cmd['action']=='open':
+                            plog ("open enclosure command received")
+                            self.open_enclosure()
+                        if cmd['action']=='close':
+                            plog ("command enclosure command received")
+                            self.park_enclosure_and_close()
+                        
+                        
+                        if cmd['action']=='simulate_weather_hold':
+                            plog("simulate weather hold button doesn't do anything yet")
+                        
+                        if cmd['action']=='open_no_earlier_than_owm_plan':
+                            plog("open no earlier than owm button doesn't do anything yet")
+                        
+                        # Change in Enclosure mode
+                        if cmd['action']=='set_enclosure_mode':
+                            plog ("set enclosure mode command received")
+                            g_dev['enc'].mode = cmd['required_params']['enclosure_mode']
+                        
+                        if cmd['action']=='set_observing_mode':
+                            plog ("set observing mode command received")
+                            self.observing_mode=cmd['required_params']['observing_mode']
+                            
+                        if cmd['action']=='configure_active_weather_report':
+                            plog ("configure weather settings command received")
+                            if cmd['required_params']["weather_type"] == 'local':
+                                if cmd['required_params']["weather_type_value"] == 'on':
+                                    self.local_weather_active=True
+                                if cmd['required_params']["weather_type_value"] == 'off':
+                                    self.local_weather_active=False
+                             
+                            if cmd['required_params']["weather_type"] == 'owm':
+                                if cmd['required_params']["weather_type_value"] == 'on':
+                                    self.owm_active=True
+                                if cmd['required_params']["weather_type_value"] == 'off':
+                                    self.owm_active=False
+                            
+                        if cmd['action']=='keep_roof_open_all_night':
+                            plog ("keep roof open all night command received")
+                            self.keep_open_all_night = True
+                            
+                        if cmd['action']=='keep_roof_closed_all_night':
+                            plog ("keep roof closed all night command received")
+                            self.keep_closed_all_night= True
+                            
+                        if cmd['action']=='set_weather_values': 
+                            tempval=cmd['required_params']['weather_values']
+                            
+                            g_dev['ocn'].rain_limit_on='on' in tempval['rain']['status']
+                            g_dev['ocn'].warning_rain_limit_setting=tempval['rain']['warning_level']
+                            g_dev['ocn'].rain_limit_setting=tempval['rain']['danger_level']
+                            
+                            g_dev['ocn'].cloud_cover_limit_on='on' in tempval['clouds']['status']
+                            g_dev['ocn'].warning_cloud_cover_limit_setting=tempval['clouds']['warning_level']
+                            g_dev['ocn'].cloud_cover_limit_setting=tempval['clouds']['danger_level']
+                            
+                            g_dev['ocn'].humidity_limit_on='on' in tempval['humidity']['status']
+                            g_dev['ocn'].warning_humidity_limit_setting=tempval['humidity']['warning_level']
+                            g_dev['ocn'].humidity_limit_setting=tempval['humidity']['danger_level']
+                            
+                            g_dev['ocn'].windspeed_limit_on='on' in tempval['windspeed']['status']
+                            g_dev['ocn'].warning_windspeed_limit_setting=tempval['windspeed']['warning_level']
+                            g_dev['ocn'].windspeed_limit_setting=tempval['windspeed']['danger_level']
+                            
+                            g_dev['ocn'].lightning_limit_on='on' in tempval['lightning']['status']
+                            g_dev['ocn'].warning_lightning_limit_setting=tempval['lightning']['warning_level']
+                            g_dev['ocn'].lightning_limit_setting=tempval['lightning']['danger_level']
+                            
+                            g_dev['ocn'].temp_minus_dew_on='on' in tempval['tempDew']['status']
+                            g_dev['ocn'].warning_temp_minus_dew_setting=tempval['tempDew']['warning_level']
+                            g_dev['ocn'].temp_minus_dew_setting=tempval['tempDew']['danger_level']
+                            
+                            g_dev['ocn'].sky_temperature_limit_on='on' in tempval['skyTempLimit']['status']
+                            g_dev['ocn'].warning_sky_temp_limit_setting=tempval['skyTempLimit']['warning_level']
+                            g_dev['ocn'].sky_temp_limit_setting=tempval['skyTempLimit']['danger_level']
+                            
+                            
+                            #breakpoint()
+                            
+                            
+                            
+                            
+                    else:
+                        plog ("orphanned command?")
 
-
-                    plog(cmd)
+                        breakpoint()
+                        plog(cmd)
 
             except:
                 if 'Internal server error' in str(unread_commands):
@@ -610,7 +700,7 @@ class WxEncAgent:
             
             status['wema_settings']['manual_weather_hold_set'] = self.manual_weather_hold_set
             status['wema_settings']['manual_weather_hold_duration'] = self.manual_weather_hold_duration
-            
+            status['wema_settings']['observing_mode'] =self.observing_mode
                     
             if self.ocn_exists:
                 # Local Weather Limits
