@@ -826,7 +826,7 @@ class ObservingConditions:
             #"calc_sky_mpsas": 0.0,  # Provenance of 20.01 is dubious 20200504 WER
             "open_ok": openok, #self.ok_to_open,
             "wx_hold": 'no',
-            "hold_duration": float(0.0),
+            "hold_duration": round(float(0.0),2),
         }
 
         #quick=[]
