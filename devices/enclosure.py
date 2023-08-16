@@ -10,7 +10,7 @@ import os
 #import ptr_config
 
 import urllib
-
+import traceback
 #from site_config import get_enc_status
 
 #from pprint import pprint
@@ -307,7 +307,7 @@ class Enclosure:
         #if not self.is_dome:
             #plog("we got a direct connect status!")
 
-        breakpoint()
+        #breakpoint()
         try:
             shutter_status = self.enclosure.ShutterStatus
         except:
@@ -366,6 +366,8 @@ class Enclosure:
             self.manager()  # There be monsters here. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         except:
             plog("Enclosure Manager faulted.")
+            plog(traceback.format_exc())
+            breakpoint()
         self.status = status
         self.prior_status = status
         g_dev['enc'].status = status
@@ -968,7 +970,7 @@ class Enclosure:
 
         #  NB NB NB Gather some facts:
 
-        breakpoint()
+        #breakpoint()
         ops_window_start, sunset, sunrise, ephem_now = self.astro_events.getSunEvents()
        
         az_opposite_sun = g_dev['evnt'].sun_az_now()
