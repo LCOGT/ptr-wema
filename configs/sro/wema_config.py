@@ -135,14 +135,42 @@ wema_config = {
     
     
         # Local weather limits
+    'OWM_active': False,
+    'local_weather_active': True,
     'rain_limit': 0,
     'humidity_limit': 85,
     'windspeed_limit': 25,
+    'lightning_limit_on': True,
     'temperature_minus_dewpoint_limit': 2,
     'sky_temperature_limit': -17,
     'cloud_cover_limit': 25,
     'lowest_ambient_temperature': 1,
     'highest_ambient_temperature': 40,
+    
+    
+    
+    # Whether these limits are on by default
+    'rain_limit_on': False,
+    'humidity_limit_on': True,
+    'windspeed_limit_on': True,
+    'lightning_limit_on': True,
+    'temperature_minus_dewpoint_limit_on': True,
+    'sky_temperature_limit_on': True,
+    'cloud_cover_limit_on': False,
+    'lowest_ambient_temperature_on': True,
+    'highest_ambient_temperature_on': True,
+    
+     # Local weather warning limits, will send a warning, but leave the roof alone
+    'warning_rain_limit': 3,
+    'warning_humidity_limit': 75,
+    'warning_windspeed_limit': 15,
+    'warning_lightning_limit' : 10,
+    'warning_temperature_minus_dewpoint_limit': 2,
+    'warning_sky_temperature_limit': -17,
+    'warning_cloud_cover_limit': 25,
+    'warning_lowest_ambient_temperature': 5,
+    'warning_highest_ambient_temperature': 35,
+    
 
     'defaults': {
         'observing_conditions': 'observing_conditions1',
