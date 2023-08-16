@@ -43,7 +43,7 @@ def linearize_unihedron(uni_value):  # Need to be coefficients in config.
         uni_corr = 6000
     return uni_corr
 
-
+#  Unused
 def f_to_c(f):
     return round(5 * (f - 32) / 9, 2)
 
@@ -72,7 +72,7 @@ class ObservingConditions:
         self.pressure = self.config["reference_pressure"]  # to be months.
         self.unihedron_connected = True  # NB NB NB His needs improving, drive from config
         self.hostname = socket.gethostname()
-        self.obsid_is_custom = False
+
         # =============================================================================
         #         Note site_in_automatic found in the Enclosure object.
         # =============================================================================
@@ -83,83 +83,74 @@ class ObservingConditions:
             self.is_process = False
         else:
             self.is_wema = False
-
             self.is_process = True
 
-        ## self.site_has_proxy = False # The SRO site has a proxy Wx System  OBSOLETE
         self.site_is_custom = False
 
-        #self.site_has_proxy = False # initializing variable
-        if True:
-            self.site_has_proxy = True  # NB Site is proxy needs a new name.
-        else:
-            self.site_has_proxy = False
-
-        #if self.config["site_is_custom"]:
-        #    self.site_is_custom = True
-            #  Note OCN has no associated commands.
-            #  Here we monkey patch
-        #    from site_config import get_ocn_status
-        #    self.get_status = get_ocn_status
-            # Get current ocn status just as a test.
-        #    self.status = self.get_status(g_dev)
-        
-        if self.is_wema: #or self.config["site_is_custom"]:
-            #  This is meant to be a generic Observing_condition code
-            #  instance that can be accessed by a simple site or by the WEMA,
-            #  assuming the transducers are connected to the WEMA.
-            self.obsid_is_generic = True
-            win32com.client.pythoncom.CoInitialize()
-            self.sky_monitor = win32com.client.Dispatch(driver)
-           # breakpoint()
-            self.sky_monitor.connected = True  
+        if self.config["site_is_custom"]:
+            self.site_is_custom = True   #  Note OCN has no associated commands.
+            #Here we monkey patch
+            from site_config import get_ocn_status
+            self.get_status = get_ocn_status
+            #Get current ocn status just as a test.
             try:
-                driver_2 = config["observing_conditions"]["observing_conditions1"][
-                "driver_2"
-                ]
-                self.sky_monitor_oktoopen = win32com.client.Dispatch(driver_2)
-                self.sky_monitor_oktoopen.Connected = True
-                driver_3 = config["observing_conditions"]["observing_conditions1"][
-                    "driver_3"
-                ]
+                self.status = self.get_status(g_dev)
             except:
-                plog('ocn Drivers 2 or 3 not present.')
-                driver_2 = None
-                driver_3 = None
-            if driver_3 is not None:
-                self.sky_monitor_oktoimage = win32com.client.Dispatch(driver_3)
-                self.sky_monitor_oktoimage.Connected = True
-                plog("observing_conditions: sky_monitors connected = True")
-            if config["observing_conditions"]["observing_conditions1"]["has_unihedron"]:
-                
-                unihedron_path=self.config['wema_path'] + self.config['wema_name'] + "/unihedron"
-                if not os.path.exists(unihedron_path):
-                    os.makedirs(unihedron_path)
-                
-                
-                self.unihedron_connected = True
-                try:
-                    driver = config["observing_conditions"]["observing_conditions1"][
-                        "uni_driver"
-                    ]
-                    port = config["observing_conditions"]["observing_conditions1"][
-                        "unihedron_port"
-                    ]
-                    self.unihedron = win32com.client.Dispatch(driver)
-                    self.unihedron.Connected = True
-                    plog(
-                        "observing_conditions: Unihedron is connected, on COM"
-                        + str(port)
-                    )
-                except:
-                    plog(
-                        "Unihedron on Port COM" + str(port) + " is disconnected. Observing will proceed."
-                    )
-                    self.unihedron_connected = False
-                    # NB NB if no unihedron is installed the status code needs to not report it.
-        #elif not self.config["site_is_custom"]:
-        #    self.obsid_is_generic = False
-        #    self.obsid_is_custom = True
+                plog("Test: self.get_status(g_dev) did not respond.")
+        
+
+        #  This is meant to be thea generic Observing_condition code
+        #  instance that can be accessed by a simple site or by the WEMA,
+        #  assuming the transducers are connected to the WEMA.
+        self.obsid_is_generic = True
+        win32com.client.pythoncom.CoInitialize()
+        self.sky_monitor = win32com.client.Dispatch(driver)
+        self.sky_monitor.connected = True  
+        try:
+            driver_2 = config["observing_conditions"]["observing_conditions1"][
+            "driver_2"
+            ]
+            self.sky_monitor_oktoopen = win32com.client.Dispatch(driver_2)
+            self.sky_monitor_oktoopen.Connected = True
+            driver_3 = config["observing_conditions"]["observing_conditions1"][
+                "driver_3"
+            ]
+        except:
+            plog('ocn Drivers 2 or 3 not present.')
+            driver_2 = None
+            driver_3 = None
+        if driver_3 is not None:
+            self.sky_monitor_oktoimage = win32com.client.Dispatch(driver_3)
+            self.sky_monitor_oktoimage.Connected = True
+            plog("observing_conditions: sky_monitors connected = True")
+        if config["observing_conditions"]["observing_conditions1"]["has_unihedron"]:
+            
+            unihedron_path=self.config['wema_path'] + self.config['wema_name'] + "/unihedron"
+            if not os.path.exists(unihedron_path):
+                os.makedirs(unihedron_path)
+            
+            
+            self.unihedron_connected = True
+            try:
+                driver = config["observing_conditions"]["observing_conditions1"][
+                    "uni_driver"
+                ]
+                port = config["observing_conditions"]["observing_conditions1"][
+                    "unihedron_port"
+                ]
+                self.unihedron = win32com.client.Dispatch(driver)
+                self.unihedron.Connected = True
+                plog(
+                    "observing_conditions: Unihedron is connected, on COM"
+                    + str(port)
+                )
+            except:
+                plog(
+                    "Unihedron on Port COM" + str(port) + " is disconnected. Observing will proceed."
+                )
+                self.unihedron_connected = False
+                # NB NB if no unihedron is installed the status code needs to not report it.
+
         
         self.rain_limit_setting=self.config['rain_limit']
         self.humidity_limit_setting=self.config['humidity_limit']
@@ -212,7 +203,7 @@ class ObservingConditions:
         status=None
         # This is purely generic code for a generic site.
         # It may be overwritten with a monkey patch found in the appropriate config.py.
-
+        breakpoint()
         if not self.is_wema and self.site_is_custom:  #  EG., this was written first for SRO.                                        #  system is a proxoy for having a WEMA
             if self.config["site_IPC_mechanism"] == "shares":
                 try:
@@ -249,48 +240,7 @@ class ObservingConditions:
                             plog("Using prior OCN status after 4 failures.")
                             g_dev["ocn"].status = self.prior_status
                             return self.prior_status
-            # elif self.config["site_IPC_mechanism"] == "redis":
-            #     try:
-            #         status = eval(g_dev["redis"].get("wx_state"))
-            #     except:
-            #         status = g_dev["redis"].get("wx_state")
-            #     self.status = status
-            #     self.prior_status = status
-            #     g_dev["ocn"].status = status
-                
-            #     try:
 
-            #         if status['wx_ok'] in ['no', 'No', False]:
-            #             self.wx_is_ok = False
-            #         if status['wx_ok'] in ['yes', 'Yes', True]:
-            #             self.wx_is_ok = True
-            #         if status['open_ok'] in ['no', 'No', False]:
-            #             self.ok_to_open = False
-            #         if status['open_ok'] in ['yes', 'Yes', True]:
-            #             self.ok_to_open = True
-            #         if status['wx_hold'] in ['no', 'No', False]:
-            #             self.wx_hold = False
-            #         if status['wx_hold'] in ['yes', 'Yes', True]:
-            #             self.wx_hold = True
-            #     except:
-            #         plog ("There was a problem parsing the redis status.")
-            #         plog ("MTF - if this is a rare problem, no problem.. if it seems frequent better catching must be done.")
-            #     try:
-            #         self.current_ambient = self.status["temperature_C"]
-            #     except:
-            #         pass
-            #     return status
-            # else:
-            #     try:
-            #         self.current_ambient = self.status["temperature_C"]
-            #     except:
-            #         pass
-            #     self.status = status
-            # try:
-            #     self.current_ambient = self.status["temperature_C"]
-            # except:
-            #     pass
-            # return status
 
         elif self.config['observing_conditions']['observing_conditions1']["name"] == 'Boltwood Custom for ARO':
             try:
@@ -658,6 +608,7 @@ class ObservingConditions:
                 plog('Wx Ok: ', status["wx_ok"], wx_reasons)
 
             g_dev["wx_ok"] = self.wx_is_ok
+            g_dev['ocn'].wx_hold = False
 
 
             # if self.config["site_IPC_mechanism"] == "shares":
@@ -802,50 +753,50 @@ class ObservingConditions:
             return status
 
 
-    def get_noocndevice_status(self):
+    # def get_noocndevice_status(self):
 
-        illum, mag = g_dev["evnt"].illuminationNow()
+    #     illum, mag = g_dev["evnt"].illuminationNow()
 
-        if g_dev['seq'].weather_report_is_acceptable_to_observe:
-            openok='Yes'
-        else:
-            openok='No'
+    #     if g_dev['seq'].weather_report_is_acceptable_to_observe:
+    #         openok='Yes'
+    #     else:
+    #         openok='No'
 
-        status = {
-            #"temperature_C": 0.0,
-            #"pressure_mbar": 0.0,
-            #"humidity_%": 0.0,
-            #"dewpoint_C": 0.0,
-            #"sky_temp_C": 0.0,
-            #"last_sky_update_s": 0.0,
-            #"wind_m/s": 0.0,
-            #"rain_rate": 0.0,
-            #"solar_flux_w/m^2": None,
-            #"cloud_cover_%": 0.0,
-            #"calc_HSI_lux": illum,
-            #"calc_sky_mpsas": 0.0,  # Provenance of 20.01 is dubious 20200504 WER
-            "open_ok": openok, #self.ok_to_open,
-            "wx_hold": 'no',
-            "hold_duration": float(0.0),
-        }
+    #     status = {
+    #         #"temperature_C": 0.0,
+    #         #"pressure_mbar": 0.0,
+    #         #"humidity_%": 0.0,
+    #         #"dewpoint_C": 0.0,
+    #         #"sky_temp_C": 0.0,
+    #         #"last_sky_update_s": 0.0,
+    #         #"wind_m/s": 0.0,
+    #         #"rain_rate": 0.0,
+    #         #"solar_flux_w/m^2": None,
+    #         #"cloud_cover_%": 0.0,
+    #         #"calc_HSI_lux": illum,
+    #         #"calc_sky_mpsas": 0.0,  # Provenance of 20.01 is dubious 20200504 WER
+    #         "open_ok": openok, #self.ok_to_open,
+    #         "wx_hold": 'no',
+    #         "hold_duration": float(0.0),
+    #     }
 
-        #quick=[]
-        #if self.obsid_is_specific:
-        #    self.status = self.get_status(g_dev)  # Get current state.
-        #else:
-        #    self.status = self.get_status()
+    #     #quick=[]
+    #     #if self.obsid_is_specific:
+    #     #    self.status = self.get_status(g_dev)  # Get current state.
+    #     #else:
+    #     #    self.status = self.get_status()
         
-        # NB NB NB it is safer to make this a dict rather than a positionally dependant list.
-        #quick.append(time.time())
-        #quick.append(float(0))
-        #quick.append(float(0))
-        #quick.append(float(0))
-        #quick.append(float(0))
-        #quick.append(float(0))
-        #quick.append(float(0))  # 20200329 a SWAG!
-        #quick.append(float(illum))  # Add Solar, Lunar elev and phase
-        #quick.append(float(self.meas_sky_lux))  # intended for Unihedron
-        return status
+    #     # NB NB NB it is safer to make this a dict rather than a positionally dependant list.
+    #     #quick.append(time.time())
+    #     #quick.append(float(0))
+    #     #quick.append(float(0))
+    #     #quick.append(float(0))
+    #     #quick.append(float(0))
+    #     #quick.append(float(0))
+    #     #quick.append(float(0))  # 20200329 a SWAG!
+    #     #quick.append(float(illum))  # Add Solar, Lunar elev and phase
+    #     #quick.append(float(self.meas_sky_lux))  # intended for Unihedron
+    #     return status
 
     def get_quick_status(self, quick):
 
@@ -892,7 +843,7 @@ class ObservingConditions:
         return average
 
     def parse_command(self, command):
-        # The only possible Wx command is test Wx hold.
+        # The only possible Wx command is test Wx hold.  NB NB NB No longer true.
         req = command["required_params"]
         opt = command["optional_params"]
         action = command["action"]

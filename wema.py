@@ -94,62 +94,31 @@ class WxEncAgent:
         self.status_interval = 30
         self.config = config
         g_dev["wema"] = self
-        #g_dev['debug'] = False
-       
-        # self.debug_flag = self.config['debug_mode']
-        # self.admin_only_flag = self.config['admin_owner_commands_only']
-        # if self.debug_flag:
-        #     self.debug_lapse_time = time.time() + self.config['debug_duration_sec']
-        #     g_dev['debug'] = True
-        #     #g_dev['obs'].open_and_enabled_to_observe = True
-        # else:
-        #     self.debug_lapse_time = 0.0
-        #     g_dev['debug'] = False
-        #     #g_dev['obs'].open_and_enabled_to_observe = False
 
-
-
-        #self.hostname = self.hostname = socket.gethostname()
-        #if self.hostname in self.config["wema_hostname"]:
-        #    self.is_wema = True
-        #    self.is_process = False
-
-        #self.site = config["site"]
         self.debug_flag = self.config['debug_mode']
         self.admin_only_flag = self.config['admin_owner_commands_only']
         if self.debug_flag:
             self.debug_lapse_time = time.time() + self.config['debug_duration_sec']
             g_dev['debug'] = True
-            #g_dev['obs'].open_and_enabled_to_observe = True
         else:
             self.debug_lapse_time = 0.0
             g_dev['debug'] = False
-            #g_dev['obs'].open_and_enabled_to_observe = False
 
-        if True:  #self.config["wema_is_active"]:
-            self.hostname = self.hostname = socket.gethostname()
-            if self.hostname in self.config["wema_hostname"]:
-                self.is_wema = True
-                g_dev["wema_write_share_path"] = config["wema_path"]
-                self.wema_path = g_dev["wema_write_share_path"]
-                self.site_path = self.wema_path
-            else:
-                # This host is a client
-                self.is_wema = False  # This is a client.
-                self.site_path = config["wema_path"]
-                g_dev["site_path"] = self.site_path
-                g_dev["wema_write_share_path"] = self.site_path  # Just to be safe.
-                self.wema_path = g_dev["wema_write_share_path"]
+
+        self.hostname = self.hostname = socket.gethostname()
+        if self.hostname in self.config["wema_hostname"]:
+            self.is_wema = True
+            g_dev["wema_write_share_path"] = config["wema_path"]
+            self.wema_path = g_dev["wema_write_share_path"]
+            self.site_path = self.wema_path
         else:
             # This host is a client
             self.is_wema = False  # This is a client.
-            self.is_process = True
-
-
-            self.site_path = config["client_write_share_path"]
+            self.site_path = config["wema_path"]
             g_dev["site_path"] = self.site_path
             g_dev["wema_write_share_path"] = self.site_path  # Just to be safe.
             self.wema_path = g_dev["wema_write_share_path"]
+
 
         self.last_request = None
         self.stopped = False
@@ -369,10 +338,10 @@ class WxEncAgent:
                     #get_ocn_status()
                     #breakpoint()
                     
-                elif dev_type == "enclosure" and not self.config['enclosure']['enclosure1']['enc_is_custom']:
+                elif dev_type == "enclosure" and not self.config['enclosure']['enclosure1']['encl_is_custom']:
                     device = Enclosure(driver, name, self.config, self.astro_events)
                     self.enc_status_custom=False
-                elif dev_type == "enclosure" and self.config['enclosure']['enclosure1']['enc_is_custom']:
+                elif dev_type == "enclosure" and self.config['enclosure']['enclosure1']['encl_is_custom']:
                     
                     device=None
                     self.enc_status_custom=True
@@ -407,6 +376,9 @@ class WxEncAgent:
         This should be changed to look into the site command queue to pick up
         any commands directed at the Wx station, or if the agent is going to
         always exist lets develop a seperate command queue for it.
+        
+        NB NB NB should this be on some sort of timeout so that if AWS
+        connection goes away the code can deal with that case?
         """
 
 

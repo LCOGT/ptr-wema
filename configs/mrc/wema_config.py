@@ -17,7 +17,8 @@ Refactored on 20230407
 '''
 import json
 
-'''                                                                                                1         1         1       1
+'''
+         0         0         0         0         0         0         0         0         0         1         1         1       1
          1         2         3         4         5         6         7         8         9         0         1         2       2
 12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678
 '''
@@ -58,7 +59,7 @@ wema_config = {
     'archive_path':  'Q:/ptr/',
     'archive_age': 99,  # Number of days to keep files in the local archive before deletion. Negative means never delete
     'aux_archive_path':  None,  # NB NB we might want to put Q: here for MRC
-    'wema_is_a_process':  False,          # Note sure yet this is useful
+    'wema_is_a_process':  False,   #Indicating WEMA runs as an independent OS process on Obsp platform computer
     'wema_hostname': 'MRC-WEMA',   # Prefer the shorter version
     'wema_path':  'Q:/ptr/',  # '/wema_transfer/',
 
@@ -66,7 +67,7 @@ wema_config = {
     # 'client_read_share_path':  'Q:/ptr/',  # NB these are all very confusing names.
     # 'client_write_share_path': 'Q:/ptr/',
 
-    #'site_is_custom':  False,  # Indicates some special code for this site, found at end of config. Set True if SRO
+    'site_is_custom':  False,  # Indicates some special code for a site, found at end of wema_config. Set True if SRO
     'name': 'Mountain Ranch Camp Observatory',
     'airport_code': 'SBA',
     'location': 'Near Santa Barbara CA,  USA',
@@ -94,14 +95,9 @@ wema_config = {
     'reference_ambient':  10.0,  # Degrees Celsius.  Alternately 12 entries, one for every - mid month.
     'reference_pressure':  977.83,  # mbar Alternately 12 entries, one for every - mid month.
     
-    
     'wema_has_control_of_roof': True,
     'wema_allowed_to_open_roof': True,
 
-    
-    
-    #'obsid_roof_control': False,  # MTF entered this in to remove sro specific code  NB 'site_is_specifc' also deals with this
-    #'wema_allowed_to_open_roof': True,
     'period_of_time_to_wait_for_roof_to_open': 180,  # seconds - needed to check if the roof ACTUALLY opens.
     'check_time': 300,  # MF's original setting.
     'maximum_roof_opens_per_evening': 4,
@@ -111,16 +107,9 @@ wema_config = {
 
     'observing_check_period': 1,    # How many minutes between weather checks
     'enclosure_check_period': 1,    # How many minutes between enclosure checks
-    #'auto_eve_bias_dark': True,
-    #'auto_midnight_moonless_bias_dark': False,
 
-   # 'auto_eve_sky_flat': True,
-    #'eve_sky_flat_sunset_offset': -40.,  # 40 before Minutes  neg means before, + after.
     'eve_cool_down_open': -45.0,
     'morn_close_and_park': 32.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowban
-    #'auto_morn_sky_flat': True,
-    #auto_morn_bias_dark': True,
-
 
     # Whether these limits are on by default
     'rain_limit_on': False,
@@ -141,26 +130,26 @@ wema_config = {
     'temperature_minus_dewpoint_limit': 2,
     'sky_temperature_limit': -12,
     'cloud_cover_limit': 50,
-    'lowest_ambient_temperature': 1,
+    'lowest_ambient_temperature': -5,
     'highest_ambient_temperature': 40,
     
     # Local weather warning limits, will send a warning, but leave the roof alone
-    'warning_rain_limit': 3,
+    'warning_rain_limit': 2,
     'warning_humidity_limit': 75,
     'warning_windspeed_limit': 15,
-    'warning_lightning_limit' : 10,
-    'warning_temperature_minus_dewpoint_limit': 2,
+    'warning_lightning_limit' : 20,
+    'warning_temperature_minus_dewpoint_limit': 3,   #This Should be measured by a radiating metal surface.
     'warning_sky_temperature_limit': -17,
     'warning_cloud_cover_limit': 25,
-    'warning_lowest_ambient_temperature': 5,
+    'warning_lowest_ambient_temperature': 2,
     'warning_highest_ambient_temperature': 35,
     
 
     'defaults': {
         'observing_conditions': 'observing_conditions1',
-        'enclosure': 'enclosure1',
-    },
+        'enclosure': 'enclosure1',},
     'wema_types': ['observing_conditions','enclosure'], 
+    
     'observing_conditions': {
         'observing_conditions1': {
             'ocn_is_custom':  False,  # Indicates some special site code.
@@ -175,7 +164,6 @@ wema_config = {
             'have_local_unihedron': False,     #  Need to add these to setups.
             'uni_driver': 'ASCOM.SQM.serial.ObservingConditions',
             'unihedron_port':  10    #  False, None or numeric of COM port..
-
             },
         },
 
@@ -186,17 +174,15 @@ wema_config = {
             'enclosure_is_directly_connected': False, # True for ECO and EC2, they connect directly to the enclosure, whereas WEMA are different.
             # NB NB NB MF and WER think about this slightly different ways!
             'encl_serves':  ['mnt1', 'mnt2'],
-            'enc_is_custom':  False,   #SRO needs sorting, presuambly with this flag.
-            'enc_is_dome': False,   #NB NB NB WER Temp Hack
-            'enc_is_rolloff': False,
+            'encl_is_custom':  False,   #SRO needs sorting, presuambly with this flag.
+            'encl_is_dome': False,   #NB NB NB WER Temp Hack
+            'encl_is_rolloff': False,
             'rolloff_has_endwall': False,
-            'enc_is_clamshell': True,
+            'encl_axis': 'ENE',   #Typicall N or S
+            'encl_is_openair': False,   #An open-air telescope, on a patio, deck, etc. Presumably uncovered.
+            'encl_is_clamshell': True,
             'clamshell_is_split':  True,
             'clamshell_rotates': False,
-            'clamshell_axis': 'ENE',
-            'enc_is_none': False,   #An open-air telescope, on a patio, deck, etc. Presumably uncovered.
-            'enc_is_uncovered':  False,  #Presumably a swicth or sensor controls this signal.
-
         },
     },
 
