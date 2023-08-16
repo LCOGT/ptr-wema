@@ -519,7 +519,7 @@ class WxEncAgent:
                     else:
                         plog ("orphanned command?")
 
-                        breakpoint()
+                        #breakpoint()
                         plog(cmd)
 
             except:
