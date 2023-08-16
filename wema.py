@@ -427,12 +427,14 @@ class WxEncAgent:
                         if cmd['action']=='set_enclosure_mode':
                             plog ("set enclosure mode command received")
                             g_dev['enc'].mode = cmd['required_params']['enclosure_mode']
+                            self.enclosure_status_check_timer =time.time() - 2* self.enclosure_status_check_period
                             self.update_status()
                             
                         
                         if cmd['action']=='set_observing_mode':
                             plog ("set observing mode command received")
                             self.observing_mode=cmd['required_params']['observing_mode']
+                            self.enclosure_status_check_timer =time.time() - 2* self.enclosure_status_check_period
                             self.update_status()
                             
                         if cmd['action']=='configure_active_weather_report':
