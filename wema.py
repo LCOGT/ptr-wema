@@ -405,13 +405,16 @@ class WxEncAgent:
                 # Process each job one at a time
                 for cmd in unread_commands:
                     if 'action' in cmd:
-                        
+                        plog(cmd)
                         if cmd['action']=='open':
                             plog ("open enclosure command received")
                             self.open_enclosure()
+                            
+                            self.update_status()
                         if cmd['action']=='close':
                             plog ("command enclosure command received")
                             self.park_enclosure_and_close()
+                            self.update_status()
                         
                         
                         if cmd['action']=='simulate_weather_hold':
@@ -424,10 +427,13 @@ class WxEncAgent:
                         if cmd['action']=='set_enclosure_mode':
                             plog ("set enclosure mode command received")
                             g_dev['enc'].mode = cmd['required_params']['enclosure_mode']
+                            self.update_status()
+                            
                         
                         if cmd['action']=='set_observing_mode':
                             plog ("set observing mode command received")
                             self.observing_mode=cmd['required_params']['observing_mode']
+                            self.update_status()
                             
                         if cmd['action']=='configure_active_weather_report':
                             plog ("configure weather settings command received")
@@ -446,10 +452,12 @@ class WxEncAgent:
                         if cmd['action']=='keep_roof_open_all_night':
                             plog ("keep roof open all night command received")
                             self.keep_open_all_night = True
+                            self.keep_closed_all_night = False
                             
                         if cmd['action']=='keep_roof_closed_all_night':
                             plog ("keep roof closed all night command received")
                             self.keep_closed_all_night= True
+                            self.keep_open_all_night = False
                             
                         if cmd['action']=='set_weather_values': 
                             tempval=cmd['required_params']['weather_values']
@@ -808,6 +816,26 @@ class WxEncAgent:
             if len(self.weather_text_report) >0:
                 for line in self.weather_text_report:
                     plog (line)
+        
+            if not self.owm_active:
+                plog("OWM is off. OWM information is advisory only, it is currently inactive.")
+
+            if self.owm_active:
+                plog("OWM is on. OWM predicts it will set to open/close the roof at these times.")
+
+            if not self.local_weather_active:
+                plog("Reacting to local weather is *OFF*. Not reacting to local weather signals.")
+
+            if self.local_weather_active:
+                plog("Reacting to local weather is *ON*. Reacting to local weather signals.")
+
+            if self.keep_open_all_night:
+                plog("Roof is being forced to stay OPEN ALL NIGHT")
+
+            if self.keep_closed_all_night:                
+                plog("Roof is being forced to stay CLOSED ALL NIGHT")
+
+
             plog("**************************************************************")
 
             if (g_dev['events']['Nightly Reset'] <= ephem.now() < g_dev['events']['End Nightly Reset']): # and g_dev['enc'].mode == 'Automatic' ):
@@ -1444,12 +1472,7 @@ class WxEncAgent:
                     self.weather_text_report.append("Close and Park")
                 self.weather_text_report.append("-----------------------------")
 
-            if not self.owm_active:
-                self.weather_text_report.append("OWM information is advisory only, it is currently inactive.")
-
-            if self.owm_active:
-                self.weather_text_report.append("OWM predicts it will set to open/close the roof at these times .")
-
+           
             status = {}
             #status["timestamp"] = round(time.time(), 1)
             status['owm_report'] = json.dumps(self.weather_text_report)

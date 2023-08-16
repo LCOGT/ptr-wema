@@ -35,36 +35,36 @@ Shutter, Roof, Slit, etc., are the same things.
 # This module has been modified into wema only code, then unmodified to be normal enclousre code.
 # =============================================================================
 
-DEG_SYM = '°'
-PI = math.pi
-TWOPI = math.pi*2
-PIOVER2 = math.pi/2.
-DTOR = math.pi/180.
-RTOD = 180/math.pi
-STOR = math.pi/180./3600.
-RTOS = 3600.*180./math.pi
-RTOH = 12./math.pi
-HTOR = math.pi/12.
-HTOS = 15*3600.
-DTOS = 3600.
-STOD = 1/3600.
-STOH = 1/3600/15.
-SecTOH = 1/3600.
-APPTOSID = 1.00273811906  # USNO Supplement
-MOUNTRATE = 15*APPTOSID  # 15.0410717859
-KINGRATE = 15.029
+# DEG_SYM = '°'
+# PI = math.pi
+# TWOPI = math.pi*2
+# PIOVER2 = math.pi/2.
+# DTOR = math.pi/180.
+# RTOD = 180/math.pi
+# STOR = math.pi/180./3600.
+# RTOS = 3600.*180./math.pi
+# RTOH = 12./math.pi
+# HTOR = math.pi/12.
+# HTOS = 15*3600.
+# DTOS = 3600.
+# STOD = 1/3600.
+# STOH = 1/3600/15.
+# SecTOH = 1/3600.
+# APPTOSID = 1.00273811906  # USNO Supplement
+# MOUNTRATE = 15*APPTOSID  # 15.0410717859
+# KINGRATE = 15.029
 
 
-def test_connect(host='http://google.com'):
-    try:
-        urllib.request.urlopen(host)  # Python 3.x
-        return True
-    except:
-        return False
+# def test_connect(host='http://google.com'):
+#     try:
+#         urllib.request.urlopen(host)  # Python 3.x
+#         return True
+#     except:
+#         return False
 
 
-def f_to_c(f):
-    return round(5*(f - 32)/9, 2)
+# def f_to_c(f):
+#     return round(5*(f - 32)/9, 2)
 
 
 # def convert_to_mechanical_h_d(pRa, pDec, pFlip):
@@ -362,12 +362,12 @@ class Enclosure:
         #status['enclosure_message']: self.state
         #status['enclosure_synchronized']= True
 
-        try:
-            self.manager()  # There be monsters here. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        except:
-            plog("Enclosure Manager faulted.")
-            plog(traceback.format_exc())
-            breakpoint()
+        #try:
+        ##    self.manager()  # There be monsters here. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        #except:
+        #    plog("Enclosure Manager faulted.")
+        #    plog(traceback.format_exc())
+        #    breakpoint()
         self.status = status
         self.prior_status = status
         g_dev['enc'].status = status
@@ -737,120 +737,120 @@ class Enclosure:
 #         g_dev['enc'].status = status
 #         return status
 
-    def parse_command(self, command):
-        "Note:  This code is typically received by the observer's enclosure module but commands execute at the WEMA's\
-                host computer.  The command is killed upon execution."
+    # def parse_command(self, command):
+    #     "Note:  This code is typically received by the observer's enclosure module but commands execute at the WEMA's\
+    #             host computer.  The command is killed upon execution."
 
-        if self.config['enclosure']['enclosure1']['encl_is_specific']:
-            return  # There is noting to do!
-        # This gets commands from AWS, not normally used.
-        req = command['required_params']
-        opt = command['optional_params']
+    #     if self.config['enclosure']['enclosure1']['encl_is_specific']:
+    #         return  # There is noting to do!
+    #     # This gets commands from AWS, not normally used.
+    #     req = command['required_params']
+    #     opt = command['optional_params']
 
-        action = command['action']
-        cmd_list = []
-        generic = True
-        _redis = False
-        shares = False
-        if self.dome_on_wema and self.config['wema_is_active'] and self.config['site_IPC_mechanism'] == 'redis':
-            _redis = True
-            shares = False
-            generic = False
-        if self.dome_on_wema and self.config['wema_is_active'] and self.config['site_IPC_mechanism'] == 'shares':
-            _redis = False
-            shares = True
-            generic = False
-        if action == "open":
-            breakpoint()
-            if _redis:
-                g_dev['redis'].set('enc_cmd', 'open', ex=300)
-            if shares:
-                cmd_list.append('open')
-            if generic:
-                self.open_command(req, opt)
-        elif action == "close":
-            if _redis:
-                g_dev['redis'].set('enc_cmd', 'close', ex=300)
-            if shares:
-                cmd_list.append('close')
-            if generic:
-                self.close_command(req, opt)
-        elif action == "setAuto":
-            if _redis:
-                g_dev['redis'].set('enc_cmd', 'setAuto', ex=300)
-            if shares:
-                cmd_list.append('set_auto')
-            if generic:
-                self.mode = 'Automatic'
-            g_dev['enc'].obsid_in_automatic = True
-            g_dev['enc'].automatic_detail = "Night Automatic"
-            plog("Site and Enclosure set to Automatic.")
-        elif action == "setManual":
-            if _redis:
-                g_dev['redis'].set('enc_cmd', 'setManual', ex=300)
-            if shares:
-                cmd_list.append('set_manual')
-            if generic:
-                self.mode = 'Manual'
-            g_dev['enc'].obsid_in_automatic = False
-            g_dev['enc'].automatic_detail = "Manual Only"
-        elif action in ["setStayClosed", 'setShutdown', 'shutDown']:
-            if _redis:
-                g_dev['redis'].set('enc_cmd', 'setShutdown', ex=300)
-            if shares:
-                cmd_list.append('set_shutdown')
-            if generic:
-                self.mode = 'Shutdown'
-            g_dev['enc'].obsid_in_automatic = False
-            g_dev['enc'].automatic_detail = "Site Shutdown"
-        elif action == "home_dome":
-            if shares:
-                cmd_list.append('go_home')
-        elif action == 'track_telescope':
-            if shares:
-                cmd_list.append('sync_enc')
-        elif action == 'stop_tracking_telescope':
-            if shares:
-                cmd_list.append('unsync_enc')
-        elif action == 'simulate_weather_hold':
-            if shares:
-                cmd_list.append('toggle_wx_hold')
-        #     self.slew_alt_command(req, opt)
-        # elif action == "slew_az":
-        #     self.slew_az_command(req, opt)
-        # elif action == "sync_az":
-        #     self.sync_az_command(req, opt)
-        # elif action == "sync_mount":
-        #     self.sync_mount_command(req, opt)
-        # elif action == "park":
-        #     self.park_command(req, opt)
-        else:
-            plog("Command <{action}> not recognized.")
+    #     action = command['action']
+    #     cmd_list = []
+    #     generic = True
+    #     _redis = False
+    #     shares = False
+    #     if self.dome_on_wema and self.config['wema_is_active'] and self.config['site_IPC_mechanism'] == 'redis':
+    #         _redis = True
+    #         shares = False
+    #         generic = False
+    #     if self.dome_on_wema and self.config['wema_is_active'] and self.config['site_IPC_mechanism'] == 'shares':
+    #         _redis = False
+    #         shares = True
+    #         generic = False
+    #     if action == "open":
+    #         breakpoint()
+    #         if _redis:
+    #             g_dev['redis'].set('enc_cmd', 'open', ex=300)
+    #         if shares:
+    #             cmd_list.append('open')
+    #         if generic:
+    #             self.open_command(req, opt)
+    #     elif action == "close":
+    #         if _redis:
+    #             g_dev['redis'].set('enc_cmd', 'close', ex=300)
+    #         if shares:
+    #             cmd_list.append('close')
+    #         if generic:
+    #             self.close_command(req, opt)
+    #     elif action == "setAuto":
+    #         if _redis:
+    #             g_dev['redis'].set('enc_cmd', 'setAuto', ex=300)
+    #         if shares:
+    #             cmd_list.append('set_auto')
+    #         if generic:
+    #             self.mode = 'Automatic'
+    #         g_dev['enc'].obsid_in_automatic = True
+    #         g_dev['enc'].automatic_detail = "Night Automatic"
+    #         plog("Site and Enclosure set to Automatic.")
+    #     elif action == "setManual":
+    #         if _redis:
+    #             g_dev['redis'].set('enc_cmd', 'setManual', ex=300)
+    #         if shares:
+    #             cmd_list.append('set_manual')
+    #         if generic:
+    #             self.mode = 'Manual'
+    #         g_dev['enc'].obsid_in_automatic = False
+    #         g_dev['enc'].automatic_detail = "Manual Only"
+    #     elif action in ["setStayClosed", 'setShutdown', 'shutDown']:
+    #         if _redis:
+    #             g_dev['redis'].set('enc_cmd', 'setShutdown', ex=300)
+    #         if shares:
+    #             cmd_list.append('set_shutdown')
+    #         if generic:
+    #             self.mode = 'Shutdown'
+    #         g_dev['enc'].obsid_in_automatic = False
+    #         g_dev['enc'].automatic_detail = "Site Shutdown"
+    #     elif action == "home_dome":
+    #         if shares:
+    #             cmd_list.append('go_home')
+    #     elif action == 'track_telescope':
+    #         if shares:
+    #             cmd_list.append('sync_enc')
+    #     elif action == 'stop_tracking_telescope':
+    #         if shares:
+    #             cmd_list.append('unsync_enc')
+    #     elif action == 'simulate_weather_hold':
+    #         if shares:
+    #             cmd_list.append('toggle_wx_hold')
+    #     #     self.slew_alt_command(req, opt)
+    #     # elif action == "slew_az":
+    #     #     self.slew_az_command(req, opt)
+    #     # elif action == "sync_az":
+    #     #     self.sync_az_command(req, opt)
+    #     # elif action == "sync_mount":
+    #     #     self.sync_mount_command(req, opt)
+    #     # elif action == "park":
+    #     #     self.park_command(req, opt)
+    #     else:
+    #         plog("Command <{action}> not recognized.")
 
-        if len(cmd_list) > 0:
-            try:
-                enclosure = open(self.config['client_write_share_path']+'enc_cmd.txt', 'w')
-                enclosure.write(json.dumps(cmd_list))
-                enclosure.close()
-            except:
-                try:
-                    time.sleep(3)
-                    enclosure = open(self.config['client_write_share_path']+'enc_cmd.txt', 'w')
-                    enclosure.write(json.dumps(cmd_list))
-                    enclosure.close()
-                except:
-                    try:
-                        time.sleep(3)
-                        enclosure = open(self.config['client_write_share_path']+'enc_cmd.txt', 'w')
-                        enclosure.write(json.dumps(cmd_list))
-                        enclosure.close()
-                    except:
-                        time.sleep(3)
-                        enclosure = open(self.config['client_write_share_path']+'enc_cmd.txt', 'w')
-                        enclosure.write(json.dumps(cmd_list))
-                        enclosure.close()
-                        plog("4th try to append to enc-cmd  list.")
-        return
+    #     if len(cmd_list) > 0:
+    #         try:
+    #             enclosure = open(self.config['client_write_share_path']+'enc_cmd.txt', 'w')
+    #             enclosure.write(json.dumps(cmd_list))
+    #             enclosure.close()
+    #         except:
+    #             try:
+    #                 time.sleep(3)
+    #                 enclosure = open(self.config['client_write_share_path']+'enc_cmd.txt', 'w')
+    #                 enclosure.write(json.dumps(cmd_list))
+    #                 enclosure.close()
+    #             except:
+    #                 try:
+    #                     time.sleep(3)
+    #                     enclosure = open(self.config['client_write_share_path']+'enc_cmd.txt', 'w')
+    #                     enclosure.write(json.dumps(cmd_list))
+    #                     enclosure.close()
+    #                 except:
+    #                     time.sleep(3)
+    #                     enclosure = open(self.config['client_write_share_path']+'enc_cmd.txt', 'w')
+    #                     enclosure.write(json.dumps(cmd_list))
+    #                     enclosure.close()
+    #                     plog("4th try to append to enc-cmd  list.")
+    #     return
 
     ##############################
     #     Enclosure Commands     #
@@ -866,20 +866,20 @@ class Enclosure:
         self.enclosure.CloseShutter()
         plog("An actual shutter close command has been issued.")
 
-    def open_command(self, req: dict, opt: dict):
-        #     ''' open the enclosure '''
-        #g_dev['redis'].set('enc_cmd', 'open', ex=1200)
-        # self.guarded_open()
-        self.manager(open_cmd=True)
-        plog("enclosure cmd: open.")
+    # def open_command(self, req: dict, opt: dict):
+    #     #     ''' open the enclosure '''
+    #     #g_dev['redis'].set('enc_cmd', 'open', ex=1200)
+    #     # self.guarded_open()
+    #     self.manager(open_cmd=True)
+    #     plog("enclosure cmd: open.")
 
-    #     pass
+    # #     pass
 
-    def close_command(self, req: dict, opt: dict):
-        #     ''' close the enclosure '''
-        #g_dev['redis'].set('enc_cmd', 'close', ex=1200)
-        self.manager(close_cmd=True)
-        plog("enclosure cmd: close.")
+    # def close_command(self, req: dict, opt: dict):
+    #     #     ''' close the enclosure '''
+    #     #g_dev['redis'].set('enc_cmd', 'close', ex=1200)
+    #     self.manager(close_cmd=True)
+    #     plog("enclosure cmd: close.")
 
     #     pass
 
@@ -910,233 +910,233 @@ class Enclosure:
     #     self.dome_home = True
     #     pass
 
-    def guarded_open(self):
-        # The guard is obsessively redundant!
+    # def guarded_open(self):
+    #     # The guard is obsessively redundant!
 
 
-        #breakpoint()
-        if self.config['observing_conditions']['observing_conditions1']['driver'] == None or \
-            (g_dev['ocn'].status['wx_ok'] in [True, 'Yes'] and not (g_dev['ocn'].wx_hold \
-                                          or g_dev['ocn'].clamp_latch)):     # NB Is Wx ok really the right criterion???
+    #     #breakpoint()
+    #     if self.config['observing_conditions']['observing_conditions1']['driver'] == None or \
+    #         (g_dev['ocn'].status['wx_ok'] in [True, 'Yes']): # and not (g_dev['ocn'].wx_hold \
+    #                                       #or g_dev['ocn'].clamp_latch)):     # NB Is Wx ok really the right criterion???
            
-            try:
-                if self.wema_allowed_to_open_roof:
-                    if time.time() > self.guarded_roof_open_timer:
-                        print(g_dev['enc'].status['shutter_status'] != 'Open')
-                        print(self.dome_open)
-                        if g_dev['enc'].status['shutter_status'] != 'Open' or not self.dome_open:
-                            self.enclosure.OpenShutter()
-                            plog("An actual shutter open command has been issued.")
-                            if self.enclosure.ShutterStatus == 0:
-                                g_dev['obs'].send_to_user("Roof/shutter has opened.", p_level='INFO')
-                                #self.redis_server.set('Shutter_is_open', True)
-                                self.dome_open = True
-                                self.dome_home = True
-                                return True
-                            else:
-                                plog("A command to open the roof was sent.")
-                                plog("But the roof failed to open.")
-                                plog("We can only try once every 5 minutes.")
-                                self.guarded_roof_open_timer = time.time() + 300
-                                return False
-                    else:
-                        plog("An open command was requested, but an attempt was made only recently. Still waiting to try again")
+    #         try:
+    #             if self.wema_allowed_to_open_roof:
+    #                 if time.time() > self.guarded_roof_open_timer:
+    #                     print(g_dev['enc'].status['shutter_status'] != 'Open')
+    #                     print(self.dome_open)
+    #                     if g_dev['enc'].status['shutter_status'] != 'Open' or not self.dome_open:
+    #                         self.enclosure.OpenShutter()
+    #                         plog("An actual shutter open command has been issued.")
+    #                         if self.enclosure.ShutterStatus == 0:
+    #                             g_dev['obs'].send_to_user("Roof/shutter has opened.", p_level='INFO')
+    #                             #self.redis_server.set('Shutter_is_open', True)
+    #                             self.dome_open = True
+    #                             self.dome_home = True
+    #                             return True
+    #                         else:
+    #                             plog("A command to open the roof was sent.")
+    #                             plog("But the roof failed to open.")
+    #                             plog("We can only try once every 5 minutes.")
+    #                             self.guarded_roof_open_timer = time.time() + 300
+    #                             return False
+    #                 else:
+    #                     plog("An open command was requested, but an attempt was made only recently. Still waiting to try again")
 
 
-                # else:
-                #     plog("An open command was requested, but an attempt was made only recently. Still waiting to try again")
+    #             # else:
+    #             #     plog("An open command was requested, but an attempt was made only recently. Still waiting to try again")
 
-                else:
-                    plog("An open command was sent, but this site is not allowed to open the roof (site-config)")
-                    return False
-            except:
-                plog("Attempt to open roof/shutter failed at quarded_open command.")
-                g_dev['obs'].send_to_user("Roof/Shutter failed to open.", p_level='INFO')
-               # self.redis_server.set('Shutter_is_open', False)
-                return False
-        return False
+    #             else:
+    #                 plog("An open command was sent, but this site is not allowed to open the roof (site-config)")
+    #                 return False
+    #         except:
+    #             plog("Attempt to open roof/shutter failed at quarded_open command.")
+    #             g_dev['obs'].send_to_user("Roof/Shutter failed to open.", p_level='INFO')
+    #            # self.redis_server.set('Shutter_is_open', False)
+    #             return False
+    #     return False
 
-    # This is the place where the enclosure is autonomus during operating hours. Delicut Code!!!
-    def manager(self, open_cmd=False, close_cmd=False, _redis=False):
-        '''
-        Now what if code hangs?  To recover from that ideally we need a deadman style timer operating on a
-        separate computer.
-        First check out code restarts and roof is NOT CLOSED, what happens
-        during day, etc.
-        '''
+    # # This is the place where the enclosure is autonomus during operating hours. Delicut Code!!!
+    # def manager(self, open_cmd=False, close_cmd=False, _redis=False):
+    #     '''
+    #     Now what if code hangs?  To recover from that ideally we need a deadman style timer operating on a
+    #     separate computer.
+    #     First check out code restarts and roof is NOT CLOSED, what happens
+    #     during day, etc.
+    #     '''
 
-        # if not self.is_wema:  #NB NB NB this is clearly not correct.
-        #     return   #Nothing to do.
+    #     # if not self.is_wema:  #NB NB NB this is clearly not correct.
+    #     #     return   #Nothing to do.
 
-        #  NB NB NB Gather some facts:
+    #     #  NB NB NB Gather some facts:
 
-        #breakpoint()
-        ops_window_start, sunset, sunrise, ephem_now = self.astro_events.getSunEvents()
+    #     #breakpoint()
+    #     ops_window_start, sunset, sunrise, ephem_now = self.astro_events.getSunEvents()
        
-        az_opposite_sun = g_dev['evnt'].sun_az_now()
-        #plog('Sun Az: ', az_opposite_sun)
-        az_opposite_sun -= 180.
-        if az_opposite_sun < 0:
-            az_opposite_sun += 360.
-        if az_opposite_sun >= 360:
-            az_opposite_sun -= 360.
-        if self.is_dome:
-            shutter_str = "Dome."
-        else:
-            shutter_str = "Roof."
+    #     az_opposite_sun = g_dev['evnt'].sun_az_now()
+    #     #plog('Sun Az: ', az_opposite_sun)
+    #     az_opposite_sun -= 180.
+    #     if az_opposite_sun < 0:
+    #         az_opposite_sun += 360.
+    #     if az_opposite_sun >= 360:
+    #         az_opposite_sun -= 360.
+    #     if self.is_dome:
+    #         shutter_str = "Dome."
+    #     else:
+    #         shutter_str = "Roof."
 
-        #wx_is_ok = g_dev['ocn'].wx_is_ok
+    #     #wx_is_ok = g_dev['ocn'].wx_is_ok
 
-        #  NB NB First deal with the possible observing window being available or not.
-        #  THis routine basically opens and keeps dome opposite the sun. Whether system
-        #  takes sky flats or not is determined by the scheduler or calendar.  Mounting
-        #  could be parked.
+    #     #  NB NB First deal with the possible observing window being available or not.
+    #     #  THis routine basically opens and keeps dome opposite the sun. Whether system
+    #     #  takes sky flats or not is determined by the scheduler or calendar.  Mounting
+    #     #  could be parked.
 
-        if test_connect():
-            net_connected = True
-        else:
-            net_connected = False
+    #     if test_connect():
+    #         net_connected = True
+    #     else:
+    #         net_connected = False
 
-       # The following Redis hold makes little sense
+    #    # The following Redis hold makes little sense
 
-        # try:
-        #     redis_hold = eval(self.redis_server.get('wx_hold'))
-        # except:
-        #     redis_hold =False
+    #     # try:
+    #     #     redis_hold = eval(self.redis_server.get('wx_hold'))
+    #     # except:
+    #     #     redis_hold =False
 
-        wx_hold = g_dev['ocn'].wx_hold  # or redis_hold  #TWO PATHS to pick up wx-hold.
-        if self.mode == "Automatic" and (open_cmd or close_cmd):
-            g_dev['obs'].send_to_user("User enclosure requests not honored in Automatic mode.", p_level='INFO')
-        if self.mode == 'Shutdown':
-            #  NB in this situation we should always Park telescope, rotators, etc.
-            #  NB This code is weak
-            if self.is_dome and self.enclosure.CanSlave:
-                try:
-                    self.following = False
-                    self.enclosure_synchronized = False
-                except:
-                    plog('Could not decouple dome following.')
-            # if self.status_string in ['Open']:
+    #     #wx_hold = g_dev['ocn'].wx_hold  # or redis_hold  #TWO PATHS to pick up wx-hold.
+    #     if self.mode == "Automatic" and (open_cmd or close_cmd):
+    #         g_dev['obs'].send_to_user("User enclosure requests not honored in Automatic mode.", p_level='INFO')
+    #     if self.mode == 'Shutdown':
+    #         #  NB in this situation we should always Park telescope, rotators, etc.
+    #         #  NB This code is weak
+    #         if self.is_dome and self.enclosure.CanSlave:
+    #             try:
+    #                 self.following = False
+    #                 self.enclosure_synchronized = False
+    #             except:
+    #                 plog('Could not decouple dome following.')
+    #         # if self.status_string in ['Open']:
 
-            # Always attempt to close.... the string may be wrong!
-            try:
-                self.enclosure.CloseShutter()
-                self.dome_open = False
-                self.dome_home = True
-            except:
-                plog('Dome refused close command.')
+    #         # Always attempt to close.... the string may be wrong!
+    #         try:
+    #             self.enclosure.CloseShutter()
+    #             self.dome_open = False
+    #             self.dome_home = True
+    #         except:
+    #             plog('Dome refused close command.')
 
-            self.dome_opened = False
-            self.dome_homed = True
-            self.enclosure_synchronized = False
-            if _redis:
-                g_dev['redis'].set('park_the_mount', True, ex=3600)
-            if open_cmd:
-                g_dev['obs'].send_to_user("Request Open not allowed in Shutdown mode.", p_level='INFO')
-            if close_cmd:
-                g_dev['obs'].send_to_user("Request Close is ignored in Shutdown mode.", p_level='INFO')
-        elif wx_hold:  # There is no reason to deny a wx_hold!
-            # We leave telescope to track with dome closed.
-            if self.is_dome and self.enclosure.CanSlave:
-                try:
-                    self.following = False
-                    self.enclosure_synchronized = False
-                except:
-                    self.following = False
-                    self.enclosure_synchronized = False
-                    plog('Could not decouple dome following.')
-            if self.status_string in ['Open']:
-                try:
-                    self.enclosure.CloseShutter()
-                    self.dome_open = False
-                    self.dome_home = True
-                except:
-                    plog('Enclosure refused close command.')
-            self.dome_opened = False
-            self.dome_homed = True
+    #         self.dome_opened = False
+    #         self.dome_homed = True
+    #         self.enclosure_synchronized = False
+    #         if _redis:
+    #             g_dev['redis'].set('park_the_mount', True, ex=3600)
+    #         if open_cmd:
+    #             g_dev['obs'].send_to_user("Request Open not allowed in Shutdown mode.", p_level='INFO')
+    #         if close_cmd:
+    #             g_dev['obs'].send_to_user("Request Close is ignored in Shutdown mode.", p_level='INFO')
+    #     elif wx_hold:  # There is no reason to deny a wx_hold!
+    #         # We leave telescope to track with dome closed.
+    #         if self.is_dome and self.enclosure.CanSlave:
+    #             try:
+    #                 self.following = False
+    #                 self.enclosure_synchronized = False
+    #             except:
+    #                 self.following = False
+    #                 self.enclosure_synchronized = False
+    #                 plog('Could not decouple dome following.')
+    #         if self.status_string in ['Open']:
+    #             try:
+    #                 self.enclosure.CloseShutter()
+    #                 self.dome_open = False
+    #                 self.dome_home = True
+    #             except:
+    #                 plog('Enclosure refused close command.')
+    #         self.dome_opened = False
+    #         self.dome_homed = True
 
-            # Note we left the telescope alone
+    #         # Note we left the telescope alone
 
-        elif open_cmd and self.mode == 'Manual' and net_connected:  # NB NB NB Ideally Telescope parked away from Sun.
-            if g_dev['enc'].status['shutter_status'] != 'Open' or not self.dome_open:
-                self.guarded_open()
-                self.dome_opened = True
-                self.dome_homed = True
+    #     elif open_cmd and self.mode == 'Manual' and net_connected:  # NB NB NB Ideally Telescope parked away from Sun.
+    #         if g_dev['enc'].status['shutter_status'] != 'Open' or not self.dome_open:
+    #             self.guarded_open()
+    #             self.dome_opened = True
+    #             self.dome_homed = True
 
-        elif close_cmd and self.mode == 'Manual':
-            try:
-                self.enclosure.CloseShutter()
-                self.dome_open = False
-                self.dome_home = True
-                g_dev['obs'].send_to_user("Enclosure commanded to close in Manual mode.", p_level='INFO')
-            except:
-                plog('Dome refused close command. Try again in 120 sec')
-                time.sleep(120)
-                try:
-                    self.enclosure.CloseShutter()
-                    self.dome_open = False
-                    self.dome_home = True
-                except:
-                    plog('Dome refused close command second time.')
-                    g_dev['obs'].send_to_user("Enclosure failed to close in Manual mode.", p_level='INFO')
-            self.dome_opened = False
+    #     elif close_cmd and self.mode == 'Manual':
+    #         try:
+    #             self.enclosure.CloseShutter()
+    #             self.dome_open = False
+    #             self.dome_home = True
+    #             g_dev['obs'].send_to_user("Enclosure commanded to close in Manual mode.", p_level='INFO')
+    #         except:
+    #             plog('Dome refused close command. Try again in 120 sec')
+    #             time.sleep(120)
+    #             try:
+    #                 self.enclosure.CloseShutter()
+    #                 self.dome_open = False
+    #                 self.dome_home = True
+    #             except:
+    #                 plog('Dome refused close command second time.')
+    #                 g_dev['obs'].send_to_user("Enclosure failed to close in Manual mode.", p_level='INFO')
+    #         self.dome_opened = False
 
 
-            self.dome_homed = True    #g_dev['events']['Cool Down, Open']  <=
-        elif ((g_dev['events']['Cool Down, Open']  <= ephem_now < g_dev['events']['Observing Ends']) and \
-               g_dev['enc'].site_mode == 'Automatic') and not (g_dev['ocn'].wx_hold or g_dev['ocn'].clamp_latch) and net_connected:
+    #         self.dome_homed = True    #g_dev['events']['Cool Down, Open']  <=
+    #     elif ((g_dev['events']['Cool Down, Open']  <= ephem_now < g_dev['events']['Observing Ends']) and \
+    #            g_dev['enc'].site_mode == 'Automatic') and not (g_dev['ocn'].wx_hold or g_dev['ocn'].clamp_latch) and net_connected:
             
 
-            try:
-                # if self.status_string in ['Closed']:   #Fails at SRO, attriute not set. 20220806 wer
-                # ****************************NB NB NB For SRO we have no control so just observe and skip all this logic
+    #         try:
+    #             # if self.status_string in ['Closed']:   #Fails at SRO, attriute not set. 20220806 wer
+    #             # ****************************NB NB NB For SRO we have no control so just observe and skip all this logic
 
-                # Don't check the string, the string could be wrong!
+    #             # Don't check the string, the string could be wrong!
 
-                if g_dev['enc'].status is not None and g_dev['enc'].status['shutter_status'] != 'Open' or not self.dome_open:
-                    plog("Entering Guarded open, Expect slew opposite Sun")
-                    self.guarded_open()
-                    self.dome_opened = True
-                    self.dome_homed = True
-            except Exception as e:
-                plog("Error while opening the roof ", e)
+    #             if g_dev['enc'].status is not None and g_dev['enc'].status['shutter_status'] != 'Open' or not self.dome_open:
+    #                 plog("Entering Guarded open, Expect slew opposite Sun")
+    #                 self.guarded_open()
+    #                 self.dome_opened = True
+    #                 self.dome_homed = True
+    #         except Exception as e:
+    #             plog("Error while opening the roof ", e)
 
-            # if _redis: g_dev['redis'].set('Enc Auto Opened', True, ex= 600)   # Unused
-            try:
-                if self.status_string in ['Open'] and ephem_now < g_dev['events']['End Eve Sky Flats']:
-                    if self.is_dome:
-                        self.enclosure.SlewToAzimuth(az_opposite_sun)
-                        plog("Slewing Opposite Sun")
-                        g_dev['obs'].send_to_user("Dome slewing opposite the Solar azimuth", p_level='INFO')
-                        time.sleep(5)
-            except:
-                pass
-        # THIS should be the ultimate backup to force a close
-        elif ephem_now >= g_dev['events']['Close and Park']:  # sunrise + 45/1440:
-            # WE are now outside the observing window, so Sun is up!!!
-            # If Automatic just close straight away.
-            if self.obsid_in_automatic or (close_cmd and self.mode in ['Manual', 'Shutdown']):
-                if self.is_dome and self.enclosure.CanSlave:
-                    #enc_at_home = self.enclosure.AtHome
-                    self.following = False
-                else:
-                    self.following = False
-                    #enc_at_home = True
-                    pass
-                if close_cmd:
-                    self.state = 'User Closed the ' + shutter_str
-                else:
-                    self.state = 'Automatic Daytime normally Closed the ' + shutter_str
-                try:
-                    self.enclosure.CloseShutter()
-                    self.dome_opened = False
-                    self.dome_homed = True
+    #         # if _redis: g_dev['redis'].set('Enc Auto Opened', True, ex= 600)   # Unused
+    #         try:
+    #             if self.status_string in ['Open'] and ephem_now < g_dev['events']['End Eve Sky Flats']:
+    #                 if self.is_dome:
+    #                     self.enclosure.SlewToAzimuth(az_opposite_sun)
+    #                     plog("Slewing Opposite Sun")
+    #                     g_dev['obs'].send_to_user("Dome slewing opposite the Solar azimuth", p_level='INFO')
+    #                     time.sleep(5)
+    #         except:
+    #             pass
+    #     # THIS should be the ultimate backup to force a close
+    #     elif ephem_now >= g_dev['events']['Close and Park']:  # sunrise + 45/1440:
+    #         # WE are now outside the observing window, so Sun is up!!!
+    #         # If Automatic just close straight away.
+    #         if self.obsid_in_automatic or (close_cmd and self.mode in ['Manual', 'Shutdown']):
+    #             if self.is_dome and self.enclosure.CanSlave:
+    #                 #enc_at_home = self.enclosure.AtHome
+    #                 self.following = False
+    #             else:
+    #                 self.following = False
+    #                 #enc_at_home = True
+    #                 pass
+    #             if close_cmd:
+    #                 self.state = 'User Closed the ' + shutter_str
+    #             else:
+    #                 self.state = 'Automatic Daytime normally Closed the ' + shutter_str
+    #             try:
+    #                 self.enclosure.CloseShutter()
+    #                 self.dome_opened = False
+    #                 self.dome_homed = True
 
-               # plog("Daytime Close issued to the " + shutter_str  + "   No longer following Mount.")
-                except:
-                    plog("Shutter Failed to close at End of Morning Sky Flats.")
-                #self.mode = 'Manual'
-        return
+    #            # plog("Daytime Close issued to the " + shutter_str  + "   No longer following Mount.")
+    #             except:
+    #                 plog("Shutter Failed to close at End of Morning Sky Flats.")
+    #             #self.mode = 'Manual'
+    #     return
 
 
 

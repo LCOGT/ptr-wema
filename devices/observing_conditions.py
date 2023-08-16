@@ -843,16 +843,16 @@ class ObservingConditions:
         average.append(round((pre[8] + post[8]) / 2, 1))
         return average
 
-    def parse_command(self, command):
-        # The only possible Wx command is test Wx hold.  NB NB NB No longer true.
-        req = command["required_params"]
-        opt = command["optional_params"]
-        action = command["action"]
-        if action is not None:
-            pass
-            # self.move_relative_command(req, opt)   ???
-        else:
-            plog(f"Command <{action}> not recognized in Ocn")
+    # def parse_command(self, command):
+    #     # The only possible Wx command is test Wx hold.  NB NB NB No longer true.
+    #     req = command["required_params"]
+    #     opt = command["optional_params"]
+    #     action = command["action"]
+    #     if action is not None:
+    #         pass
+    #         # self.move_relative_command(req, opt)   ???
+    #     else:
+    #         plog(f"Command <{action}> not recognized in Ocn")
 
     # ###################################
     #   Observing Conditions Commands  #
