@@ -168,6 +168,9 @@ wema_config = {
     #'solve_timer': 0.05,  # Only solve every X minutes
     #'threshold_mount_update': 100,  # only update mount when X arcseconds away
 
+    # WEMA can not have local_weather_info sometimes.. e.g. ECO
+    'has_local_weather_info' : False,
+
     # Whether these limits are on by default
     'rain_limit_on': False,
     'humidity_limit_on': True,

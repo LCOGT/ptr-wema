@@ -150,6 +150,9 @@ wema_config = {
     'morn_close_and_park': 32.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowband flats
     #'eve_sky_flat_sunset_offset': -60.0,  # Minutes  neg means before, + after.
 
+    # WEMA can not have local_weather_info sometimes.. e.g. ECO
+    'has_local_weather_info' : True,
+
     # Whether these limits are on by default
     'rain_limit_on': False,  #Right now Skyalert Babbles.
     'humidity_limit_on': True,
@@ -274,11 +277,11 @@ wema_config = {
             'has_lights':  False,
             'controlled_by': 'mount1',
             #"serving_obsp's": ['aro1', 'aro2', 'aro3'],
-			'enc_is_dome': False,   #otherwise a Rool off or Clamshel
-            'enc_radius':  None,  #  inches Ok for now.
-            'enc_is_roll-off':  True,
-            'enc_is_clamshell': False,
-            'enc_axis_az': 315.,   #  May be useful for clamshell wind screening.
+			'encl_is_dome': False,   #otherwise a Rool off or Clamshel
+            'encl_radius':  None,  #  inches Ok for now.
+            'encl_is_roll-off':  True,
+            'encl_is_clamshell': False,
+            'encl_axis_az': 315.,   #  May be useful for clamshell wind screening.
 
             #'common_offset_east': -19.5,  # East is negative.  These will vary per telescope. ARO AO1600
             #'common_offset_south': -8,  # South is negative.   So think of these as default.

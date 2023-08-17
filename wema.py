@@ -671,7 +671,7 @@ class WxEncAgent:
             #status["timestamp"] = round(time.time(), 1)
             status['wema_settings']={}
             
-            
+            #print (self.owm_active)
             status['wema_settings']['OWM_active']=self.owm_active
             status['wema_settings']['local_weather_active']=self.local_weather_active
             status['wema_settings']['keep_roof_open_all_night'] = self.keep_open_all_night
@@ -730,7 +730,7 @@ class WxEncAgent:
                 status['wema_settings']['lowtemperature_limit_quiet'] = self.lowtemp_limit_quiet
                 status['wema_settings']['lowtemperature_limit_warning_level'] = g_dev['ocn'].warning_lowest_temperature_setting
                 status['wema_settings']['lowtemperature_limit_danger_level'] = g_dev['ocn'].lowest_temperature_setting
-                
+
             lane = "wema_settings"
             try:
                 # time.sleep(2)

@@ -111,6 +111,9 @@ wema_config = {
     'eve_cool_down_open': -45.0,
     'morn_close_and_park': 32.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowban
 
+    # WEMA can not have local_weather_info sometimes.. e.g. ECO
+    'has_local_weather_info' : True,
+
     # Whether these limits are on by default
     'rain_limit_on': False,
     'humidity_limit_on': True,

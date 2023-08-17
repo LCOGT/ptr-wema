@@ -131,7 +131,9 @@ wema_config = {
 
     'eve_cool_down_open': -80.0,  #  Values supplied By SRO 20230708 WER
     'morn_close_and_park': 15.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowban
-    
+
+    # WEMA can not have local_weather_info sometimes.. e.g. ECO
+    'has_local_weather_info' : True,
     
     
         # Local weather limits
@@ -189,7 +191,7 @@ wema_config = {
 
     'enclosure': {
         'enclosure1': {
-            'enc_is_custom':  True,
+            'encl_is_custom':  True,
             'name': 'SRO Roof Manager',
             'driver': None
         },
