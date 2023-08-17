@@ -144,14 +144,14 @@ wema_config = {
     
     #Sequencing keys and value, sets up Events
     'auto_eve_bias_dark': True,
-    'auto_midnight_moonless_bias_dark': False,
     'auto_eve_sky_flat': True,
     'eve_cool_down_open': -65.0, # How many minutes after sunrise to open. Default -65 = an hour-ish before sunset. Gives time to cool and get narrowband flats
+    'auto_midnight_moonless_bias_dark': False,
     'morn_close_and_park': 32.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowband flats
     #'eve_sky_flat_sunset_offset': -60.0,  # Minutes  neg means before, + after.
 
     # Whether these limits are on by default
-    'rain_limit_on': False,
+    'rain_limit_on': False,  #Right now Skyalert Babbles.
     'humidity_limit_on': True,
     'windspeed_limit_on': True,
     'lightning_limit_on': True,

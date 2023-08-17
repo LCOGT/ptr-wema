@@ -754,6 +754,7 @@ class ObservingConditions:
             return status
 
 
+
     # def get_noocndevice_status(self):
 
     #     illum, mag = g_dev["evnt"].illuminationNow()
