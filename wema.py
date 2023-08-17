@@ -8,11 +8,6 @@ etc.
 This would be a good place to log the weather data and any enclosure history,
 once this code is stable enough to run as a service.
 
-Note this is derived from OBS but is WEMA so we should not need to build
-things from a config file, but rather by implication just pick the correct
-data from the config file. All config files for a cluster of mounts/telescopes
-under one WEMA should start with common data for the WEMA. Note the WEMA
-has no knowledge of how many mnt/tels there may be in any given enclosure.
 """
 
 
@@ -352,11 +347,12 @@ class WxEncAgent:
                         if cmd['action']=='open':
                             plog ("open enclosure command received")
                             self.open_enclosure()
-                            
+                            self.enclosure_status_check_timer=time.time() - 2*self.enclosure_status_check_period
                             self.update_status()
                         if cmd['action']=='close':
                             plog ("command enclosure command received")
                             self.park_enclosure_and_close()
+                            self.enclosure_status_check_timer=time.time() - 2*self.enclosure_status_check_period
                             self.update_status()
                         
                         
@@ -547,6 +543,11 @@ class WxEncAgent:
                         enc_status['enclosure']['enclosure1']['shut_reason_daytime'] = True
                     else:
                         enc_status['enclosure']['enclosure1']['shut_reason_daytime'] = False
+
+                #breakpoint()
+                
+                if self.observing_mode == 'inactive':
+                    enc_status['enclosure']['enclosure1']['shutter_status'] = enc_status['enclosure']['enclosure1']['shutter_status'] + '/NoObs'
 
                 if enc_status is not None:
                     lane = "enclosure"
