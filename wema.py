@@ -25,8 +25,6 @@ import socket
 from pathlib import Path
 import math
 import requests
-#import redis
-#import datetime
 import traceback
 import ephem
 import ptr_config
@@ -182,19 +180,10 @@ class WxEncAgent:
         self.cool_down_latch = False
 
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
-        #self.weather_report_open_during_evening = False
-        #self.weather_report_open_during_evening_time = ephem_now
-        #self.weather_report_close_during_evening = False
-        #self.weather_report_close_during_evening_time = ephem_now + 86400
         self.nightly_weather_report_complete = False
-
         self.weather_report_run_timer=time.time()-3600
         
-
-
         self.open_and_enabled_to_observe = False
-
-        #self.local_weather_always_overrides_OWM=config['local_weather_always_overrides_OWM']
 
         self.owm_active=config['OWM_active']
         self.local_weather_active=config['local_weather_active']
@@ -212,11 +201,8 @@ class WxEncAgent:
         self.scan_requests_timer=time.time() -2 * self.scan_requests_check_period
         self.wema_settings_upload_timer=time.time() -2 * self.wema_settings_upload_period
 
-
         # This is a flag that enables or disables observing for all OBS in the WEMA.
         self.observing_mode = 'active'
-
-
         self.rain_limit_quiet=False
         self.cloud_limit_quiet=False
         self.humidity_limit_quiet=False
@@ -241,20 +227,9 @@ class WxEncAgent:
         self.opens_this_evening = 0
         self.local_weather_ok = None
         self.weather_text_report = []
-        # The weather report has to be at least passable at some time of the night in order to 
-        # allow the enclosure to become active and observe. This doesn't mean that it is
-        # necessarily a GOOD night at all, just that there are patches of feasible
-        # observing during the night.
-        #self.nightly_weather_report_complete = False
-        #self.weather_report_is_acceptable_to_observe = False
-        # If the night is patchy, the weather report can identify a later time to open
-        # or to close the enclosure early during the night.
-        obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
-        #self.weather_report_open_during_evening=False
-        #self.weather_report_open_during_evening_time=ephem_now
-        #self.weather_report_close_during_evening=False
-        #self.weather_report_close_during_evening_time=ephem_now
-
+        
+        #obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
+        
         self.times_to_open = []
         self.times_to_close = []
         self.hourly_report_holder=[]
@@ -270,8 +245,6 @@ class WxEncAgent:
     
         self.wema_has_roof_control=config['wema_has_control_of_roof']
 
-
-
         # This prevents commands from previous nights/runs suddenly running
         # when wema.py is booted (has happened a bit!)
         url_job = "https://jobs.photonranch.org/jobs/getnewjobs"
@@ -282,33 +255,6 @@ class WxEncAgent:
         requests.request(
             "POST", url_job, data=json.dumps(body), timeout=30
         ).json()
-
-
-        #self.update_status()
-        #breakpoint()
-        # Run a weather report on bootup so enclosure can run if need be.
-        # if not g_dev['debug']:
-        #     # self.global_wx()
-        #     if self.enc_status_custom:
-        #         enc_status={}
-        #         enc_status['enclosure']={}
-
-        #         enc_status['enclosure']['enclosure1']= get_enc_status_custom()
-        #         self.run_nightly_weather_report(enc_status=enc_status['enclosure']['enclosure1'])
-        #     else:
-        #         self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
-        #else:
-            
-        # if self.enc_status_custom:
-        #     enc_status={}
-        #     enc_status['enclosure']={}
-
-        #     enc_status['enclosure']['enclosure1']= get_enc_status_custom()
-        #     self.run_nightly_weather_report(enc_status=enc_status['enclosure']['enclosure1'])
-        # else:
-        #     self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
-        #     #self.weather_report_is_acceptable_to_observe = True
-        #     #self.weather_report_open_during_evening = False
 
 
     def create_devices(self, config: dict):
@@ -332,12 +278,10 @@ class WxEncAgent:
                     )
                     self.ocn_status_custom=False
                 elif dev_type == "observing_conditions" and self.config['observing_conditions']['observing_conditions1']['ocn_is_custom']:
-                    #plog("breakpoint")
                     
                     device=None
                     self.ocn_status_custom=True
-                    #get_ocn_status()
-                    #breakpoint()
+                    
                     
                 elif dev_type == "enclosure" and not self.config['enclosure']['enclosure1']['encl_is_custom']:
                     device = Enclosure(driver, name, self.config, self.astro_events)
@@ -346,8 +290,7 @@ class WxEncAgent:
                     
                     device=None
                     self.enc_status_custom=True
-                    #get_enc_status()
-                    #breakpoint()
+                   
                 else:
                     print(f"Unknown device: {name}")
                 self.all_devices[dev_type][name] = device
@@ -396,7 +339,6 @@ class WxEncAgent:
         except:
             plog(traceback.format_exc())
             plog("problem gathering scan requests. Likely just a connection glitch.")
-            #breakpoint()
             unread_commands = []
         # Make sure the list is sorted in the order the jobs were issued
         # Note: the ulid for a job is a unique lexicographically-sortable id.
@@ -512,10 +454,6 @@ class WxEncAgent:
                             
                             self.wema_settings_upload_timer=time.time() -2 * self.wema_settings_upload_period
                             self.update_status()
-                            #breakpoint()
-                            
-                            
-                            
                             
                     else:
                         plog ("orphanned command?")
@@ -549,10 +487,7 @@ class WxEncAgent:
         
         enc_status = None
         ocn_status = None
-        #device_status = None
         obsy = self.config['wema_name']   #  This is meant to be for the wema, not an OBSP.
-
-
         # Hourly Weather Report
         if time.time() > (self.weather_report_run_timer + 3600):
             self.weather_report_run_timer=time.time()
@@ -566,10 +501,6 @@ class WxEncAgent:
                 self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
         
         
-            
-            
-
-
         # Enclosure Status
         if time.time() > self.enclosure_status_check_timer + self.enclosure_status_check_period:
             self.enclosure_status_check_timer = time.time()
@@ -685,12 +616,9 @@ class WxEncAgent:
         # WEMA Settings
         if time.time() > self.wema_settings_upload_timer + self.wema_settings_upload_period:
             self.wema_settings_upload_timer = time.time()
-            #plog("wema settings upload")
+
             status = {}
-            #status["timestamp"] = round(time.time(), 1)
             status['wema_settings']={}
-            
-            #print (self.owm_active)
             status['wema_settings']['OWM_active']=self.owm_active
             status['wema_settings']['local_weather_active']=self.local_weather_active
             status['wema_settings']['keep_roof_open_all_night'] = self.keep_open_all_night
@@ -751,14 +679,12 @@ class WxEncAgent:
                 status['wema_settings']['lowtemperature_limit_danger_level'] = g_dev['ocn'].lowest_temperature_setting
 
             lane = "wema_settings"
-            try:
-                # time.sleep(2)
+            try:                
                 send_status(obsy, lane, status)
             except:
                 plog('could not send wema_settings status') 
             
             
-            #plog(status)
 
     def update(self):     ## NB NB NB This is essentially the sequencer for the WEMA.
         self.update_status()
@@ -791,8 +717,7 @@ class WxEncAgent:
                 enc_status = g_dev['enc'].get_status()
             else:
                 enc_status = get_enc_status_custom()
-            #breakpoint()
-
+           
             if ocn_status==None:
                 self.local_weather_ok = None
             else:
@@ -831,9 +756,6 @@ class WxEncAgent:
             plog("Nightly Reset Complete        : " + str(self.nightly_reset_complete))
             plog("\n")
 
-
-            #breakpoint()
-
             if len(self.weather_text_report) >0:
                 for line in self.weather_text_report:
                     plog (line)
@@ -863,14 +785,7 @@ class WxEncAgent:
                 if self.nightly_reset_complete == False:
                     self.nightly_reset_complete = True
                     self.nightly_reset_script(enc_status)
-
-
-            #try:
-            #    multiplier = min(len(wx_reasons),3)
-            #except:
-            #    multiplier = 1
-            #wx_delay_time *= multiplier/2   #Stretch out the Wx hold if there are multiple reasons
-
+            
             # Safety checks here
             if not g_dev['debug'] and self.open_and_enabled_to_observe and g_dev['enc'].mode == 'Automatic':
                 if enc_status is not None:
@@ -902,7 +817,11 @@ class WxEncAgent:
             if not (g_dev['events']['Cool Down, Open'] < ephem_now < g_dev['events']['Close and Park']):
                 roof_should_be_shut = True
                 self.open_and_enabled_to_observe = False
-
+                
+            if self.keep_closed_all_night:
+                roof_should_be_shut = True
+                self.open_and_enabled_to_observe = False
+                
             if enc_status['shutter_status'] == 'Open':
                 if roof_should_be_shut == True and enc_status['enclosure_mode'] == 'Automatic':
                     plog("Safety check notices that the roof was open outside of the normal observing period")
@@ -920,72 +839,9 @@ class WxEncAgent:
                 plog("minutes until next open attempt ALLOWED: " +
                      str((self.enclosure_next_open_time - time.time()) / 60))
 
-            # # If OWM wants to open the roof later, this is where it checks if it is past that time. 
-            # if self.weather_report_open_during_evening and not self.cool_down_latch and enc_status['enclosure_mode'] == 'Automatic':
-            #     if ephem_now > self.weather_report_open_during_evening_time :
-
-            #         self.cool_down_latch = True
-            #         self.weather_report_open_during_evening == False
-            #         # Things may have changed! So re-checking the weather and such
-
-            #         # Reopening config and resetting all the things.
-            #         # This is necessary just in case a previous weather report was done today
-            #         # That can sometimes change the timing.
-            #         self.astro_events.compute_day_directory()
-            #         self.astro_events.calculate_events()
-
-            #         # Run nightly weather report
-            #         #self.run_nightly_weather_report()
-
-            #         if not self.open_and_enabled_to_observe and self.weather_report_is_acceptable_to_observe == True:
-            #             if (g_dev['events']['Cool Down, Open'] < ephem_now < g_dev['events']['Observing Ends']):
-            #                 if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config[
-            #                     'maximum_roof_opens_per_evening']:
-            #                     self.nightly_reset_complete = False
-            #                     self.open_enclosure(enc_status, ocn_status)
-
-            #                     if self.open_and_enabled_to_observe:
-            #                         self.weather_report_open_during_evening = False
-            #                         self.weather_report_is_acceptable_to_observe = True
-
-            #         self.cool_down_latch = False
-
-            # # If the enclosure is meant to shut during the evening
-            # obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
-            # if self.weather_report_close_during_evening == True and enc_status['enclosure_mode'] == 'Automatic' and not (self.local_weather_ok == True and self.local_weather_always_overrides_OWM):
-            #     if ephem_now > self.weather_report_close_during_evening_time and ephem_now < g_dev['events'][
-            #         'Close and Park']:
-            #         if enc_status['enclosure_mode'] == 'Automatic':
-            #             self.nightly_reset_complete = False
-            #             self.weather_report_is_acceptable_to_observe = False
-            #             plog("End of Observing Period due to weather. Closing up enclosure early.")
-
-            #             self.open_and_enabled_to_observe = False
-            #             self.park_enclosure_and_close()
-
-            #             self.weather_report_close_during_evening = False
-
-            # Do nightly weather report at cool down open
-            #if (g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events'][
-            #    'Observing Ends']) and not self.nightly_weather_report_complete and not g_dev['debug'] and enc_status['enclosure_mode'] == 'Automatic':
-                
-            #    self.run_nightly_weather_report()
-            #    self.nightly_weather_report_complete = True
-                # Also make sure nightly reset is switched to go off
-            #    self.nightly_reset_complete = False
-
-
-
-            # Ordinary opening routine.
-            # Do some checks that it isn't meant to be shut.
-
-            #temp_meant_to_be_shut= False
-            # if self.weather_report_open_during_evening and self.weather_report_close_during_evening:
-            #     if self.weather_report_close_during_evening_time < ephem_now < self.weather_report_open_during_evening_time:
-            #         temp_meant_to_be_shut=True
-
-            if ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends']) and (self.weather_report_open_at_start==True or not self.owm_active) and \
-                enc_status['enclosure_mode'] == 'Automatic') and not self.cool_down_latch and (self.local_weather_ok == True or (not self.ocn_exists) or (not self.local_weather_active)) and not \
+            
+            if (not self.keep_closed_all_night) and ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends']) and (self.keep_open_all_night or self.weather_report_open_at_start==True or not self.owm_active) and \
+                enc_status['enclosure_mode'] == 'Automatic') and not self.cool_down_latch and (self.keep_open_all_night or self.local_weather_ok == True or (not self.ocn_exists) or (not self.local_weather_active)) and not \
                 enc_status['shutter_status'] in ['Software Fault', 'Opening', 'Closing', 'Error']:# and not temp_meant_to_be_shut:
 
                 self.cool_down_latch = True
@@ -1007,14 +863,11 @@ class WxEncAgent:
                     self.park_enclosure_and_close()
 
 
-
-
     def nightly_reset_script(self, enc_status):
         
         if enc_status['enclosure_mode'] == 'Automatic':
             self.park_enclosure_and_close()
-
-        #self.nightly_weather_report_complete=False
+        
         # Set weather report to false because it is daytime anyways.
         self.weather_report_open_at_start=False
         
@@ -1037,20 +890,8 @@ class WxEncAgent:
             plog("Config uploaded successfully.")
 
         self.cool_down_latch = False
-        
-        
         self.nightly_reset_complete = True
-        
         self.opens_this_evening=0
-        
-        # Set weather report back to False until ready to check the weather again. 
-        #self.nightly_weather_report_complete=False
-        #self.weather_report_is_acceptable_to_observe=False
-        #self.weather_report_open_during_evening=False
-        #self.weather_report_open_during_evening_time=ephem_now
-        #self.weather_report_close_during_evening=False
-        #self.weather_report_close_during_evening_time=ephem_now + 86400
-        #self.nightly_weather_report_complete=False
         
         self.keep_open_all_night = False
         self.keep_closed_all_night   = False          
@@ -1111,7 +952,6 @@ class WxEncAgent:
                     ephem_now < g_dev['events']['Cool Down, Open']) or \
                     (g_dev['events']['Close and Park'] < ephem_now < g_dev['events']['Nightly Reset']):
                 plog("NOT OPENING THE enclosure -- IT IS THE DAYTIME!!")
-                #self.send_to_user("An open enclosure request was rejected as it is during the daytime.")
                 return
             else:
 
@@ -1121,13 +961,11 @@ class WxEncAgent:
 
                     if ocn_status == None:
                         if not enc_status['shutter_status'] in ['Open', 'open','Opening','opening'] and \
-                                enc_status['enclosure_mode'] == 'Automatic':# \
-                                #and self.weather_report_is_acceptable_to_observe:
+                                enc_status['enclosure_mode'] == 'Automatic':
                             self.opens_this_evening = self.opens_this_evening + 1
 
                             g_dev['enc'].open_roof_directly({}, {})
-                            # g_dev['enc'].open_command({}, {})
-
+                           
 
                     elif  not enc_status['shutter_status'] in ['Open', 'open','Opening','opening'] and \
                             enc_status['enclosure_mode'] == 'Automatic' \
@@ -1136,8 +974,7 @@ class WxEncAgent:
                         self.opens_this_evening = self.opens_this_evening + 1
 
                         g_dev['enc'].open_roof_directly({}, {})
-                        # g_dev['enc'].open_command({}, {})
-
+                        
                     plog("Attempting to Open Shutter. Waiting until shutter opens")
                     if not g_dev['enc'].enclosure.ShutterStatus == 0:
                         time.sleep(self.config['period_of_time_to_wait_for_roof_to_open'])
@@ -1160,7 +997,6 @@ class WxEncAgent:
 
                     else:
                         plog("Failed to open roof. Sending the close command to the roof.")
-                        # g_dev['enc'].close_roof_directly()
                         plog("opens this eve: " + str(self.opens_this_evening))
                         plog("minutes until next open attempt ALLOWED: " + str(
                             (self.enclosure_next_open_time - time.time()) / 60))
@@ -1182,7 +1018,7 @@ class WxEncAgent:
         events = g_dev['events']
 
         obs_win_begin, sunset, sunrise, ephem_now = self.astro_events.getSunEvents()
-        #if self.nightly_weather_report_complete==False:
+        
         self.update_status()
         # First thing to do at the Cool Down, Open time is to calculate the quality of the evening
         # using the broad weather report.
@@ -1198,8 +1034,7 @@ class WxEncAgent:
                 time.sleep(10)
                 return
             self.weather_report_run_timer = time.time()
-            #self.nightly_weather_report_complete=True
-            #breakpoint()
+            
             # Collect relevant info for fitzgerald weather number calculation
             hourcounter=0
             fitzgerald_weather_number_grid=[]
@@ -1209,17 +1044,12 @@ class WxEncAgent:
                 hours_until_start_of_observing = 0
             plog("Hours until end of observing: " + str(hours_until_end_of_observing))
             
-
             OWM_status_json={}
             OWM_status_json["timestamp"] = round(time.time(), 1)
             for hourly_report in one_call.forecast_hourly:
                 
-                #if hourcounter > 24:
-                #    pass
-                #else:
-                #breakpoint()
+                
                 clock_hour=int(hourly_report.reference_time('iso').split(' ')[1].split(':')[0])
-
 
                 # Calculate Fitzgerald number for this hour
                 tempFn=0
@@ -1254,8 +1084,6 @@ class WxEncAgent:
                 if 'rain'  in hourly_report.detailed_status or 'storm'  in hourly_report.detailed_status or hourly_report.rain != {}:
                     tempFn=tempFn+101
 
-                #breakpoint()
-                #
                 weatherline=[hourly_report.humidity,hourly_report.clouds,hourly_report.wind()['speed'],hourly_report.status, hourly_report.detailed_status, clock_hour, tempFn, hourly_report.reference_time('iso'), hourly_report.temperature()['temp'] - 273.15, hourly_report.rain]
                 fitzgerald_weather_number_grid.append(weatherline)
 
@@ -1266,13 +1094,11 @@ class WxEncAgent:
             for weatherline in fitzgerald_weather_number_grid:
 
                 status_line={}
-                #breakpoint()
                 status_line['humidity']=weatherline[0]
                 status_line['cloud_cover'] = weatherline[1]
                 status_line['wind_speed'] = weatherline[2]
                 status_line['short_text'] = weatherline[3]
                 status_line['long_text'] = weatherline[4]
-                #breakpoint()
                 status_line['utc_clock_hour'] = weatherline[5]
                 status_line['fitz_number'] = weatherline[6]
                 status_line['utc_long_form'] = weatherline[7].replace(' ','T').split('+')[0]+'Z'
@@ -1291,11 +1117,7 @@ class WxEncAgent:
                     status_line['weather_quality_number'] = 5
 
                 forecast_status.append(status_line)
-                #breakpoint()
-                #OWM_status_json[str(hourcounter)] = weatherline
-            #plog (fitzgerald_weather_number_grid)    
-
-            #breakpoint()
+                
 
             if forecast_status is not None:
                 lane = "forecast"
@@ -1307,18 +1129,8 @@ class WxEncAgent:
                     "status": { "forecast": forecast_status }
                 })
                 response = requests.request("POST", url, data=payload)
-                #print(response.json())
 
-                #breakpoint()
-
-
-                #try:
-                #    send_status(obsy, lane, forecast_status)
-                #except:
-                #    plog('could not send owm weather status')
-
-
-            #breakpoint()
+            
             # Fitzgerald weather number calculation.
             hourly_fitzgerald_number=[]
             hourly_fitzgerald_number_by_hour=[]
@@ -1327,8 +1139,6 @@ class WxEncAgent:
             for entry in fitzgerald_weather_number_grid:
                 if hourcounter >= hours_until_start_of_observing and hourcounter <= hours_until_end_of_observing:
                     
-                    #breakpoint()
-
                     textdescription= entry[4]+ '   Cloud:   ' + str(entry[1]) + '%     Hum:    ' + str(entry[0]) +   '%    Wind:  ' +str(entry[2])+' m/s      rain: ' + str(entry[9])  # WER changed to make more readable.
 
                     hourly_fitzgerald_number.append(entry[6])
@@ -1344,53 +1154,19 @@ class WxEncAgent:
             for line in hourly_fitzgerald_number_by_hour:
                 plog (str(line[0]) + '         | '+ str(line[1]) + '        | ' + str(line[2]))
                 self.hourly_report_holder.append(str(line[0]) + '         | '+ str(line[1]) + '        | ' + str(line[2]))
-            #plog (hourly_fitzgerald_number_by_hour)
+            
             plog ("Night's total fitzgerald number: " + str(sum(hourly_fitzgerald_number)))
-            #plog (sum(hourly_fitzgerald_number))
-
-            #breakpoint()
+            
 
             self.night_fitzgerald_number = sum(hourly_fitzgerald_number)
             if len(hourly_fitzgerald_number) >= 1:
                 average_fitzn_for_rest_of_night = sum(hourly_fitzgerald_number) / len(hourly_fitzgerald_number)
             else:
                 average_fitzn_for_rest_of_night = 100
-            #breakpoint()
+            
             plog("Night's average fitzgerald number: " + str(average_fitzn_for_rest_of_night))
-            #plog(sum(hourly_fitzgerald_number))
-
-            # if average_fitzn_for_rest_of_night < 10:
-            #     plog ("This is a good observing night!")
-            #     #self.weather_report_is_acceptable_to_observe=True
-            #     self.weather_report_open_at_start=True
-            #     #self.weather_report_open_during_evening=True
-            #     #self.weather_report_open_during_evening_time=ephem_now
-            #     #self.weather_report_close_during_evening=False
-            #     #self.weather_report_close_during_evening_time=ephem_now
-            # #elif average_fitzn_for_rest_of_night > 40:
-            # #    plog ("This is a horrible observing night!")
-            # #    self.weather_report_is_acceptable_to_observe=False
-            # #    self.weather_report_open_at_start = False
-            #     #self.weather_report_open_during_evening=False
-            #     #self.weather_report_open_during_evening_time=ephem_now
-            #     #self.weather_report_close_during_evening=False
-            #     #self.weather_report_close_during_evening_time=ephem_now
-            # elif average_fitzn_for_rest_of_night < 18:
-            #     plog ("This is perhaps not the best night, but we will give it a shot!")
-            #     #self.weather_report_is_acceptable_to_observe=True
-            #     self.weather_report_open_at_start = True
-            #     #self.weather_report_open_during_evening=True
-            #     #self.weather_report_open_during_evening_time=ephem_now
-            #     #self.weather_report_close_during_evening=False
-            #     #self.weather_report_close_during_evening_time=ephem_now
-            # else:
-                #plog ("This is a problematic night, lets check if one part of the night is clearer than the other.")
-
-
-            #print (hourly_fitzgerald_number_by_hour)
-            #breakpoint()
-
-            # Simplify decision array
+            
+            # Simplified decision array
             hours_bad_or_good=[]
             for entry in hourly_fitzgerald_number_by_hour:
                 if entry[1] > 41:
@@ -1398,8 +1174,7 @@ class WxEncAgent:
                 else:
                     hours_bad_or_good.append([entry[0],1])
 
-            #breakpoint()
-
+           
             # If the first three hours are good, then open from the start
             self.weather_report_open_at_start = False
             if (hours_bad_or_good[0][1] + hours_bad_or_good[1][1] +hours_bad_or_good[2][1] ) == 3:
@@ -1414,14 +1189,10 @@ class WxEncAgent:
             self.times_to_open=[]
             self.times_to_close=[]
             for counter in range(len(hours_bad_or_good)):
-                #print (counter)
-                #print (hours_bad_or_good[counter])
-
+                
                 # A three hour gap after a bad hour is a good time to open.
-                #print (counter - len(hours_bad_or_good))
-                if (counter - len(hours_bad_or_good)) == -1:
-                    #sum_of_next_three_hours = int(hours_bad_or_good[counter][1] * 3)
-                    #plog("The roof can open in the final hour but that isn't worth it")
+                
+                if (counter - len(hours_bad_or_good)) == -1:                   
                     pass
                 elif (counter - len(hours_bad_or_good)) == -2:
                     sum_of_next_three_hours=int((hours_bad_or_good[counter][1]+hours_bad_or_good[counter+1][1])*1.5)
@@ -1429,31 +1200,21 @@ class WxEncAgent:
                     sum_of_next_three_hours = hours_bad_or_good[counter][1] + hours_bad_or_good[counter + 1][1] + \
                                           hours_bad_or_good[counter + 2][1]
 
-                #print (sum_of_next_three_hours)
                 if sum_of_next_three_hours == 3 and hours_bad_or_good[counter-1][1] == 0:
                     plog ("good time to open")
                     self.times_to_open.append([hours_bad_or_good[counter][0]])
 
                 # Simply a bad hour is a good time to close.
-                if len(hours_bad_or_good) == counter + 1:
-                    #if hours_bad_or_good[counter][1] == 0:
-                    #    plog("good time to close")
-                    #    self.times_to_close.append([hours_bad_or_good[counter][0]])
-                    # going to close and park anyway
+                if len(hours_bad_or_good) == counter + 1:                    
                     pass
                 elif hours_bad_or_good[counter][1] == 1 and hours_bad_or_good[counter+1][1] == 0:
                     plog ("good time to close")
                     self.times_to_close.append([hours_bad_or_good[counter][0]])
 
 
-            plog ("times to close")
-            plog (self.times_to_close)
-            plog("times to open")
-            plog(self.times_to_open)
-
             self.weather_text_report=[]
             # Construct the text!
-            #breakpoint()
+
             if len(self.hourly_report_holder) > 0:
                 pasttitle = False
                 firstentry = True
@@ -1462,26 +1223,20 @@ class WxEncAgent:
 
                     if pasttitle == True:
                         current_utc_hour = float(line.split(' ')[0])
-                        # breakpoint()
+
                         if len(self.times_to_open) > 0:
                             for entry in self.times_to_open:
-                                # print (entry)
+
                                 if int(current_utc_hour) == int(entry[0]) and not firstentry:
                                     self.weather_text_report.append("OWM would plan to open the roof")
-
-                            # breakpoint()
-                            # if current_utc_hour <= (ephem.Date(self.weather_report_open_during_evening_time).datetime().hour) < (current_utc_hour + 1):
+                            
                         if len(self.times_to_close) > 0:
                             for entry in self.times_to_close:
-                                # print (entry)
+                                
                                 if int(current_utc_hour) == int(entry[0]):
                                     self.weather_text_report.append("OWM would plan to close the roof")
                         firstentry = False
-                        # if self.weather_report_close_during_evening:
-                        #    if current_utc_hour <= (ephem.Date(self.weather_report_close_during_evening_time).datetime().hour) < (
-                        #            current_utc_hour + 1):
-                        #        plog("OWM would plan to close the roof")
-
+                        
                     if 'Hour(UTC)' in line:
                         pasttitle = True
                         self.weather_text_report.append("-----------------------------")
@@ -1497,268 +1252,28 @@ class WxEncAgent:
 
            
             status = {}
-            #status["timestamp"] = round(time.time(), 1)
             status['owm_report'] = json.dumps(self.weather_text_report)
             lane = "owm_report"
 
-            #breakpoint()
 
             try:
-                # time.sleep(2)
                 send_status(self.config['wema_name'], lane, status)
             except:
                 plog('could not send owm_report status')
                 plog(traceback.format_exc())
-                #breakpoint()
-
+                
         except Exception as e:
             plog ("OWN failed", e)
             plog ("Usually a connection glitch")
             plog(traceback.format_exc())
-            #breakpoint()
-
+            
         # However, if the enclosure is under manual control, leave this switch on.
         if self.enc_status_custom==False:
             enc_status = g_dev['enc'].status
         else:
-            enc_status = get_enc_status_custom()
-        
-        #try:
-        #if enc_status is not None:
-        #    if enc_status['enclosure_mode'] == 'Manual':
-        #        self.weather_report_is_acceptable_to_observe=True
-        #except:
-
-            #self.weather_report_is_acceptable_to_observe=True
-            
-        return
-            
-    # def global_wx(self):
-    #     '''
-    #     THIS ROUTINE IS A COMPLETE HACK -- BEWARE.
-    #
-    #     Next steps: condition night vs day
-    #     add aperture size  and solar totalizers
-    #     run in reverse for 10-20 years
-    #     build a database
-    #
-    #     '''
-    #     # g_dev['ocn'].status = g_dev['ocn'].get_status()
-    #     # g_dev['enc'].status = g_dev['enc'].get_status()
-    #     # ocn_status = g_dev['ocn'].status
-    #     # enc_status = g_dev['enc'].statusl
-    #     # events = g_dev['events']
-    #     #breakpoint()
-    #     obs_win_begin, sunset, sunrise, ephem_now = self.astro_events.getSunEvents()
-    #     if True: #self.nightly_weather_report_complete==False:
-    #         #self.nightly_weather_report_complete=True
-    #         # First thing to do at the Cool Down, Open time is to calculate the quality of the evening
-    #         # using the broad weather report.
-    #         #             site   >=2m>=1m>m45 sml sol   lat
-    #         lat_lons = [['coj ',    1,  2,  2,  3,  1,  -31.272856,  149.070813],
-    #                     ['eco ',    0,  0,  1,  1,  0,  -37.700976,  145.191672],
-    #                     ['nsq ',    0,  2,  2,  1,  1,   32.354453,  80.0531263],
-    #                     ['tlv ',    0,  1,  0,  0,  0,   30.597529,  34.7623430],
-    #                     ['cpt ',    0,  2,  1,  1,  1,  -32.380561,  20.810137 ],
-    #                     ['tfn ',    0,  2,  1,  1,  1,   28.302079, -16.5113277],
-    #                     ['lsc ',    0,  3,  2,  1,  1,  -30.167654, -70.804709 ],
-    #                     ['roc ',    0,  0,  2,  0,  0,   42.250616, -77.7850655],
-    #                     ['elp ',    0,  2,  1,  1,  0,   30.679280, -104.024396],
-    #                     ['aro ',    0,  0,  3,  1,  1,   35.554307, -105.870189],
-    #                     ['udro',    0,  0,  1,  1,  0,   37.737001, -113.691774],
-    #                     ['sro ',    0,  0,  1,  1,  0,   37.070365, -119.413107],
-    #                     ['mrc ',    0,  0,  2,  2,  1,   34.459375, -119.681172],
-    #                     ['sqa ',    0,  0,  1,  0,  0,   34.691481, -120.042251],
-    #                     ['ogg ',    1,  0,  4,  2,  1,   20.707034, -156.257481],
-    #                     ['whs ',    0,  0,  1,  0,  0,   21.388383, -157.993459]]
-    #         plog("Appraising quality of evening from Open Weather Map.")
-    #         owm = OWM('d5c3eae1b48bf7df3f240b8474af3ed0')
-    #         mgr = owm.weather_manager()
-    #         total_clear_hrs = 0
-    #         total_cloudy_hrs = 0
-    #         for site in lat_lons:
-    #             one_call = mgr.one_call(lat=site[-2], lon=site[-1])
-    #             breakpoint()
-    #             two_day = one_call.forecast_hourly
-    #             clear_hrs = 0
-    #             cloudy_hrs = 0
-    #
-    #             #print( '\n' + site[0], two_day, '\n' + site[0], '\n\n')
-    #             for hourly_report in two_day:
-    #                 if hourly_report.status in ['Clear']:
-    #                     clear_hrs += 1
-    #                     total_clear_hrs += 1
-    #                     #print("Bingo")
-    #                 else:
-    #                     cloudy_hrs += 1
-    #                     total_cloudy_hrs += 1
-    #             print('Clear  Fraction:  ' + site[0], round(clear_hrs*100/(clear_hrs + cloudy_hrs), 1), '\t', clear_hrs/2)
-    #            # breakpoint()
-    #         print('Global Fraction:      ', round(total_clear_hrs*100/(total_clear_hrs + total_cloudy_hrs), 1), '\t', total_clear_hrs/2)
-    #         breakpoint()
-    #         """
-    #         https://api.openweathermap.org/data/3.0/onecall/timemachine?lat=34.459375&lon=-119.681172&dt=1580052892&appid=d5c3eae1b48bf7df3f240b8474af3ed0
-    #         The above return historical values for the nominated timestamp.
-    #         """
-    #         # # Collect relevant info for fitzgerald weather number calculation
-    #         hourcounter=0
-    #         # fitzgerald_weather_number_grid=[]
-    #         # hours_until_end_of_observing= math.ceil((events['Observing Ends'] - ephem_now) * 24)
-    #         # plog("Hours until end of observing: " + str(hours_until_end_of_observing))
-    #
-    #
-    #         # for hourly_report in one_call.forecast_hourly:
-    #
-    #         #     if hourcounter > hours_until_end_of_observing:
-    #         #         pass
-    #         #     else:
-    #         #         fitzgerald_weather_number_grid.append([hourly_report.humidity,hourly_report.clouds,hourly_report.wind()['speed'],hourly_report.status, hourly_report.detailed_status])
-    #         #         hourcounter=hourcounter + 1
-    #         # plog (fitzgerald_weather_number_grid)
-    #
-    #
-    #         # Fitzgerald weather number calculation.
-    #         hourly_fitzgerald_number=[]
-    #         fitzgerald_weather_number_grid = 0  #Hack!!
-    #         for entry in fitzgerald_weather_number_grid:
-    #             tempFn=0
-    #             # Add humidity score up
-    #             if 80 < entry[0] <= 85:
-    #                 tempFn=tempFn+1
-    #             elif 85 < entry[0] <= 90:
-    #                 tempFn=tempFn+4
-    #             elif 90 < entry[0] <= 100:
-    #                 tempFn=tempFn+40
-    #
-    #             # Add cloud score up
-    #             if 20 < entry[1] <= 40:
-    #                 tempFn=tempFn+1
-    #             elif 40 < entry[1] <= 60:
-    #                 tempFn=tempFn+4
-    #             elif 60 < entry[1] <= 80:
-    #                 tempFn=tempFn+40
-    #             elif 80 < entry[1] <= 100:
-    #                 tempFn=tempFn+100
-    #
-    #             # Add wind score up
-    #             if 8 < entry[2] <=12:
-    #                 tempFn=tempFn+1
-    #             elif 12 < entry[2] <= 15:
-    #                 tempFn=tempFn+4
-    #             elif 15 < entry[2] <= 20:
-    #                 tempFn=tempFn+40
-    #             elif 15 < entry[2] :
-    #                 tempFn=tempFn+100
-    #             hourly_fitzgerald_number.append(tempFn)
-    #
-    #         plog ("Hourly Fitzgerald number")
-    #         plog (hourly_fitzgerald_number)
-    #         plog ("Night's total fitzgerald number")
-    #         plog (sum(hourly_fitzgerald_number))
-    #
-    #         if sum(hourly_fitzgerald_number) < 10:
-    #             plog ("This is a good observing night!")
-    #             self.weather_report_is_acceptable_to_observe=True
-    #             self.weather_report_open_during_evening=True
-    #             self.weather_report_open_during_evening_time=ephem_now
-    #             self.weather_report_close_during_evening=False
-    #             self.weather_report_close_during_evening_time=ephem_now
-    #         elif sum(hourly_fitzgerald_number) > 1000:
-    #             plog ("This is a horrible observing night!")
-    #             self.weather_report_is_acceptable_to_observe=False
-    #             self.weather_report_open_during_evening=False
-    #             self.weather_report_open_during_evening_time=ephem_now
-    #             self.weather_report_close_during_evening=False
-    #             self.weather_report_close_during_evening_time=ephem_now
-    #         elif sum(hourly_fitzgerald_number) < 100:
-    #             plog ("This is perhaps not the best night, but we will give it a shot!")
-    #             self.weather_report_is_acceptable_to_observe=True
-    #             self.weather_report_open_during_evening=True
-    #             self.weather_report_open_during_evening_time=ephem_now
-    #             self.weather_report_close_during_evening=False
-    #             self.weather_report_close_during_evening_time=ephem_now
-    #         else:
-    #             plog ("This is a problematic night, lets check if one part of the night is clearer than the other.")
-    #             TEMPhourly_restofnight_fitzgerald_number=hourly_fitzgerald_number.copy()
-    #             TEMPhourly_nightuptothen_fitzgerald_number=hourly_fitzgerald_number.copy()
-    #             hourly_restofnight_fitzgerald_number=[]
-    #
-    #             for entry in range(len(TEMPhourly_restofnight_fitzgerald_number)):
-    #                 hourly_restofnight_fitzgerald_number.append(sum(TEMPhourly_restofnight_fitzgerald_number))
-    #                 TEMPhourly_restofnight_fitzgerald_number.pop(0)
-    #
-    #             plog ("Hourly Fitzgerald Number for the Rest of the Night")
-    #             plog (hourly_restofnight_fitzgerald_number)
-    #
-    #             later_clearing_hour=99
-    #             for q in range(len(hourly_restofnight_fitzgerald_number)):
-    #                 if hourly_restofnight_fitzgerald_number[q] < 100:
-    #                     plog ("looks like it is clear for the rest of the night after hour " + str(q+1) )
-    #                     later_clearing_hour=q+1
-    #                     number_of_hours_left_after_later_clearing_hour= len(hourly_restofnight_fitzgerald_number) - q
-    #                     break
-    #
-    #             hourly_nightuptothen_fitzgerald_number=[]
-    #             counter=0
-    #             for entry in TEMPhourly_nightuptothen_fitzgerald_number:
-    #                 temp_value=0
-    #                 for q in range(len(TEMPhourly_nightuptothen_fitzgerald_number)):
-    #                     if q < counter:
-    #                         temp_value = temp_value + TEMPhourly_nightuptothen_fitzgerald_number[q]
-    #                 counter=counter+1
-    #
-    #                 hourly_nightuptothen_fitzgerald_number.append(temp_value)
-    #
-    #             plog ("Hourly Fitzgerald Number up until that point in the night")
-    #             plog (hourly_nightuptothen_fitzgerald_number)
-    #
-    #             clear_until_hour=99
-    #             for q in range(len(hourly_nightuptothen_fitzgerald_number)):
-    #                 if hourly_nightuptothen_fitzgerald_number[q] < 100:
-    #                     #plog ("looks like it is clear until hour " + str(q+1) )
-    #                     clear_until_hour=q+1
-    #
-    #             if clear_until_hour != 99:
-    #                 if clear_until_hour > 2:
-    #                     plog ("looks like it is clear until hour " + str(clear_until_hour) )
-    #                     plog ("Will observe until then then close down enclosure")
-    #                     self.weather_report_is_acceptable_to_observe=True
-    #                     self.weather_report_close_during_evening=True
-    #                     self.weather_report_close_during_evening_time=ephem_now + (clear_until_hour/24)
-    #                     g_dev['events']['Observing Ends'] = ephem_now + (clear_until_hour/24)
-    #                 else:
-    #                     plog ("looks like it is clear until hour " + str(clear_until_hour) )
-    #                     plog ("But that isn't really long enough to rationalise opening the enclosure")
-    #                     self.weather_report_is_acceptable_to_observe=False
-    #                     self.weather_report_close_during_evening=False
-    #
-    #             if later_clearing_hour != 99:
-    #                 if number_of_hours_left_after_later_clearing_hour > 2:
-    #                     plog ("looks like clears up at hour " + str(later_clearing_hour) )
-    #                     plog ("Will attempt to open/re-open enclosure then.")
-    #                     self.weather_report_open_during_evening=True
-    #                     self.weather_report_open_during_evening_time=ephem_now + (later_clearing_hour/24)
-    #                 else:
-    #                     plog ("looks like it clears up at hour " + str(later_clearing_hour) )
-    #                     plog ("But there isn't much time after then, so not going to open then. ")
-    #                     self.weather_report_open_during_evening=False
-    #
-    #             # if self.weather_report_close_during_evening==True or self.weather_report_open_during_evening==True:
-    #             #     self.weather_report_is_acceptable_to_observe=True
-    #             # else:
-    #             #     self.weather_report_is_acceptable_to_observe=False
-    #
-    #             if clear_until_hour==99 and later_clearing_hour ==99:
-    #                 plog ("It doesn't look like there is a clear enough patch to observe tonight")
-    #                 self.weather_report_is_acceptable_to_observe=False
-    #     return
+            enc_status = get_enc_status_custom()        
                     
-                
-            
-        
-        
-        
-        
+        return
         
 if __name__ == "__main__":
     wema = WxEncAgent(ptr_config.wema_name, ptr_config.wema_config)
