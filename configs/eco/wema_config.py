@@ -271,14 +271,16 @@ wema_config = {
     'enclosure': {
         'enclosure1': {
             'parent': 'site',
-            'enc_is_custom':  False,   #SRO needs sorting, presuambly with this flag.
+            'encl_is_custom':  False,   #SRO needs sorting, presuambly with this flag.
             'directly_connected': True, # For ECO and EC2, they connect directly to the enclosure, whereas WEMA are different.
             'name': 'Dragonfly Roof',
             'hostIP':  None,
             'driver': 'Dragonfly.Dome',  #'ASCOM.DigitalDomeWorks.Dome',  #  ASCOMDome.Dome',  #  ASCOM.DeviceHub.Dome',  #  ASCOM.DigitalDomeWorks.Dome',  #"  ASCOMDome.Dome',
             'has_lights':  False,
             'controlled_by': 'mount1',
-			'enc_is_dome': False,
+			'encl_is_dome': False,
+            'encl_is_rolloff': False,
+            'rolloff_has_endwall': False,
             'mode': 'Automatic',
             #'cool_down': -90.0,    #  Minutes prior to sunset.
             'settings': {
