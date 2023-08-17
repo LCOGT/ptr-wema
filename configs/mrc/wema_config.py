@@ -66,8 +66,10 @@ wema_config = {
     # 'wema_write_share_path': 'Q:/ptr/',  # Meant to be where Wema puts status data.
     # 'client_read_share_path':  'Q:/ptr/',  # NB these are all very confusing names.
     # 'client_write_share_path': 'Q:/ptr/',
-
-    'site_is_custom':  False,  # Indicates some special code for a site, found at end of wema_config. Set True if SRO
+    
+    # MTF - 'wema_is_custom' isn't used anymore. we have custom for enc and ocn specifically now
+    #'wema_is_custom':  False,  # Indicates some special code for a site, found at end of wema_config. Set True if SRO
+    
     'name': 'Mountain Ranch Camp Observatory',
     'airport_code': 'SBA',
     'location': 'Near Santa Barbara CA,  USA',
