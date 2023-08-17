@@ -410,7 +410,7 @@ class WxEncAgent:
                             
                             if cmd['required_params']["force_roof_state"] == 'auto':
                                 
-                                plog ("keep roof closed all night command received")
+                                plog ("Remove roof force command received")
                                 self.keep_closed_all_night= False
                                 self.keep_open_all_night = False
                             
