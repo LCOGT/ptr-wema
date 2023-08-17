@@ -287,27 +287,28 @@ class WxEncAgent:
         #self.update_status()
         #breakpoint()
         # Run a weather report on bootup so enclosure can run if need be.
-        if not g_dev['debug']:
-            # self.global_wx()
-            if self.enc_status_custom:
-                enc_status={}
-                enc_status['enclosure']={}
+        # if not g_dev['debug']:
+        #     # self.global_wx()
+        #     if self.enc_status_custom:
+        #         enc_status={}
+        #         enc_status['enclosure']={}
 
-                enc_status['enclosure']['enclosure1']= get_enc_status_custom()
-                self.run_nightly_weather_report(enc_status=enc_status)
-            else:
-                self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
-        else:
-            if self.enc_status_custom:
-                enc_status={}
-                enc_status['enclosure']={}
+        #         enc_status['enclosure']['enclosure1']= get_enc_status_custom()
+        #         self.run_nightly_weather_report(enc_status=enc_status['enclosure']['enclosure1'])
+        #     else:
+        #         self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
+        #else:
+            
+        # if self.enc_status_custom:
+        #     enc_status={}
+        #     enc_status['enclosure']={}
 
-                enc_status['enclosure']['enclosure1']= get_enc_status_custom()
-                self.run_nightly_weather_report(enc_status=enc_status)
-            else:
-                self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
-            #self.weather_report_is_acceptable_to_observe = True
-            #self.weather_report_open_during_evening = False
+        #     enc_status['enclosure']['enclosure1']= get_enc_status_custom()
+        #     self.run_nightly_weather_report(enc_status=enc_status['enclosure']['enclosure1'])
+        # else:
+        #     self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
+        #     #self.weather_report_is_acceptable_to_observe = True
+        #     #self.weather_report_open_during_evening = False
 
 
     def create_devices(self, config: dict):
@@ -542,7 +543,7 @@ class WxEncAgent:
                 enc_status['enclosure']={}
 
                 enc_status['enclosure']['enclosure1']= get_enc_status_custom()
-                self.run_nightly_weather_report(enc_status=enc_status)
+                self.run_nightly_weather_report(enc_status=enc_status['enclosure']['enclosure1'])
             else:
                 self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
         
@@ -1368,7 +1369,7 @@ class WxEncAgent:
                 #plog ("This is a problematic night, lets check if one part of the night is clearer than the other.")
 
 
-            print (hourly_fitzgerald_number_by_hour)
+            #print (hourly_fitzgerald_number_by_hour)
             #breakpoint()
 
             # Simplify decision array
@@ -1378,6 +1379,8 @@ class WxEncAgent:
                     hours_bad_or_good.append([entry[0],0])
                 else:
                     hours_bad_or_good.append([entry[0],1])
+
+            #breakpoint()
 
             # If the first three hours are good, then open from the start
             self.weather_report_open_at_start = False
