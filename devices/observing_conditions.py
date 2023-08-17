@@ -125,6 +125,7 @@ class ObservingConditions:
                 self.sky_monitor_oktoimage = win32com.client.Dispatch(driver_3)
                 self.sky_monitor_oktoimage.Connected = True
                 plog("observing_conditions: sky_monitors connected = True")
+
             if config["observing_conditions"]["observing_conditions1"]["has_unihedron"]:
 
                 unihedron_path = self.config['wema_path'] + self.config['wema_name'] + "/unihedron"
@@ -151,6 +152,8 @@ class ObservingConditions:
                     )
                     self.unihedron_connected = False
                     # NB NB if no unihedron is installed the status code needs to not report it.
+            else:
+                self.unihedron_connected = False
 
         self.rain_limit_setting = self.config['rain_limit']
         self.humidity_limit_setting = self.config['humidity_limit']
@@ -202,7 +205,6 @@ class ObservingConditions:
         status = None
         # This is purely generic code for a generic site.
         # It may be overwritten with a monkey patch found in the appropriate config.py.
-        # breakpoint()
         if not self.is_wema: #and self.site_is_custom:  # EG., this was written first for SRO.                                        #  system is a proxoy for having a WEMA
             if self.config["site_IPC_mechanism"] == "shares":
                 try:
@@ -425,7 +427,6 @@ class ObservingConditions:
 
         elif self.is_wema:  # These operations are common to a generic single computer or wema site.
             ## Here we get the status from local devices
-
             status = {}
             illum, mag = self.astro_events.illuminationNow()
             # illum = float(redis_monitor["illum lux"])
@@ -463,10 +464,9 @@ class ObservingConditions:
             # NB NB NB This is a very odd problem which showed up at MRC.
 
             try:
-                self.new_pressure = round(float(self.pressure[0]), 2)  # was [0]), 2)
+                self.new_pressure = round(float(self.pressure[0]), 2)  # was [0]), 2)  #NB this is an unfinished lame attempt to index by month.
             except:
                 self.new_pressure = round(float(self.pressure), 2)
-
             try:
                 status = {
                     "temperature_C": round(self.temperature, 2),

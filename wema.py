@@ -451,15 +451,32 @@ class WxEncAgent:
                                 if cmd['required_params']["weather_type_value"] == 'off':
                                     self.owm_active=False
                             
-                        if cmd['action']=='keep_roof_open_all_night':
-                            plog ("keep roof open all night command received")
-                            self.keep_open_all_night = True
-                            self.keep_closed_all_night = False
+                            self.wema_settings_upload_timer=time.time() -2 * self.wema_settings_upload_period
+                            self.update_status()
                             
-                        if cmd['action']=='keep_roof_closed_all_night':
-                            plog ("keep roof closed all night command received")
-                            self.keep_closed_all_night= True
-                            self.keep_open_all_night = False
+                            
+                        if cmd['action']=='force_roof_state':
+                            if cmd['required_params']["force_roof_state"] == 'open':
+                                plog ("keep roof open all night command received")
+                                self.keep_open_all_night = True
+                                self.keep_closed_all_night = False
+                            
+                            
+                            
+                            if cmd['required_params']["force_roof_state"] == 'closed':
+                                
+                                plog ("keep roof closed all night command received")
+                                self.keep_closed_all_night= True
+                                self.keep_open_all_night = False
+                            
+                            if cmd['required_params']["force_roof_state"] == 'auto':
+                                
+                                plog ("keep roof closed all night command received")
+                                self.keep_closed_all_night= False
+                                self.keep_open_all_night = False
+                            
+                            self.wema_settings_upload_timer=time.time() -2 * self.wema_settings_upload_period
+                            self.update_status()
                             
                         if cmd['action']=='set_weather_values': 
                             tempval=cmd['required_params']['weather_values']
@@ -492,7 +509,8 @@ class WxEncAgent:
                             g_dev['ocn'].warning_sky_temp_limit_setting=tempval['skyTempLimit']['warning_level']
                             g_dev['ocn'].sky_temp_limit_setting=tempval['skyTempLimit']['danger_level']
                             
-                            
+                            self.wema_settings_upload_timer=time.time() -2 * self.wema_settings_upload_period
+                            self.update_status()
                             #breakpoint()
                             
                             
