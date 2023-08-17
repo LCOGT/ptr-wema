@@ -544,8 +544,7 @@ class WxEncAgent:
                     else:
                         enc_status['enclosure']['enclosure1']['shut_reason_daytime'] = False
 
-                #breakpoint()
-                
+                # If the observing mode is set to off, append a noobs to prevent the obs from observing
                 if self.observing_mode == 'inactive':
                     enc_status['enclosure']['enclosure1']['shutter_status'] = enc_status['enclosure']['enclosure1']['shutter_status'] + '/NoObs'
 
