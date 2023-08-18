@@ -471,6 +471,8 @@ class Events:
         DAY_Directory = str(now_here.year) + str(nowheremonth) + str(nowhereday)
         #plog('Day_Directory:  ', DAY_Directory)
         g_dev['day'] = DAY_Directory
+        
+        g_dev['dayhyphened'] = str(now_here.year) + '-' + str(nowheremonth) + '-' + str(nowhereday)
 
         return DAY_Directory
 
