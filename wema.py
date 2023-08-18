@@ -1147,6 +1147,13 @@ class WxEncAgent:
             
             plog ("Hourly Fitzgerald number report")
             self.hourly_report_holder.append("Hourly Fitzgerald number report")
+            
+            plog ("For Evening of " +str(g_dev['dayhyphened']) )
+            self.hourly_report_holder.append("For LOCAL Evening of " +str(g_dev['dayhyphened']) )
+            
+            plog("Time of Weather Report: " + str(time.asctime()))
+            self.hourly_report_holder.append("Time of Weather Report (UTC): " + str(time.asctime()))
+            
             plog ("*******************************")
             self.hourly_report_holder.append("*******************************")
             plog ("Hour(UTC) |  FNumber |  Text    ")
