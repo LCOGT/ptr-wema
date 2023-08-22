@@ -399,6 +399,7 @@ class WxEncAgent:
                                 plog ("keep roof open all night command received")
                                 self.keep_open_all_night = True
                                 self.keep_closed_all_night = False
+
                             
                             
                             
@@ -1194,7 +1195,7 @@ class WxEncAgent:
                 plog("Looks like it is clear enough to open the observatory from the beginning.")
                 self.weather_report_open_at_start = True
             elif (hours_bad_or_good[0][1]) == 0 and enc_status['enclosure_mode'] == 'Automatic' and not \
-            enc_status['shutter_status'] in ['Closed', 'closed'] and self.owm_active:
+            'closed' in enc_status['shutter_status'].lower() and self.owm_active:
                 plog("Looks like the weather gets rough in the first hour, shutting up observatory.")
                 self.park_enclosure_and_close()
 
