@@ -831,7 +831,13 @@ class WxEncAgent:
                     if (not self.local_weather_ok and self.local_weather_active):
                         plog("Safety check notices that the local weather is not ok. Shutting the roof.")
                         self.park_enclosure_and_close()
+
+            if enc_status['shutter_status'] == 'Closed' and self.keep_open_all_night:
                 
+                if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config[
+                    'maximum_roof_opens_per_evening']:
+                    self.nightly_reset_complete = False
+                    self.open_enclosure(enc_status, ocn_status)
 
             if (self.enclosure_next_open_time - time.time()) > 0:
                 plog("opens this eve: " + str(self.opens_this_evening))
