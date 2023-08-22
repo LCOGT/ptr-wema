@@ -833,7 +833,7 @@ class WxEncAgent:
                         self.park_enclosure_and_close()
 
             if enc_status['shutter_status'] == 'Closed' and self.keep_open_all_night:
-                
+
                 if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config[
                     'maximum_roof_opens_per_evening']:
                     self.nightly_reset_complete = False
