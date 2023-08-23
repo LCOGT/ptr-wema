@@ -815,6 +815,10 @@ class WxEncAgent:
 
             roof_should_be_shut = False
 
+            if enc_status['enclosure_mode'] in ['Shutdown']:
+                roof_should_be_shut = True
+                self.open_and_enabled_to_observe = False
+
             if not (g_dev['events']['Cool Down, Open'] < ephem_now < g_dev['events']['Close and Park']):
                 roof_should_be_shut = True
                 self.open_and_enabled_to_observe = False
@@ -833,7 +837,7 @@ class WxEncAgent:
                         plog("Safety check notices that the local weather is not ok. Shutting the roof.")
                         self.park_enclosure_and_close()
 
-            if enc_status['shutter_status'] == 'Closed' and self.keep_open_all_night:
+            if enc_status['shutter_status'] == 'Closed' and self.keep_open_all_night and enc_status['enclosure_mode'] in ['Automatic']:
 
                 if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config[
                     'maximum_roof_opens_per_evening']:
@@ -951,6 +955,10 @@ class WxEncAgent:
         
         flat_spot, flat_alt = g_dev['evnt'].flat_spot_now()
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
+
+        if enc_status['enclosure_mode'] in ['Shutdown']:
+            plog ("Not OPENING the enclosure. Site in Shutdown mode.")
+            return
 
         # Only send an enclosure open command if the weather
         if (self.weather_report_open_at_start or not self.owm_active):
