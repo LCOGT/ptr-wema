@@ -788,7 +788,7 @@ class WxEncAgent:
                     self.nightly_reset_script(enc_status)
             
             # Safety checks here
-            if not g_dev['debug'] and self.open_and_enabled_to_observe and g_dev['enc'].mode == 'Automatic':
+            if not g_dev['debug'] and self.open_and_enabled_to_observe:
                 if enc_status is not None:
                     if enc_status['shutter_status'] == 'Software Fault':
                         plog("Software Fault Detected. Will alert the authorities!")
