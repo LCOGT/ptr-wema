@@ -346,7 +346,7 @@ class WxEncAgent:
                         plog(cmd)
                         if cmd['action']=='open':
                             plog ("open enclosure command received")
-                            self.open_enclosure()
+                            self.open_enclosure(g_dev['enc'].get_status(), g_dev['ocn'].get_status())
                             self.enclosure_status_check_timer=time.time() - 2*self.enclosure_status_check_period
                             self.update_status()
                         if cmd['action']=='close':
@@ -747,7 +747,7 @@ class WxEncAgent:
                 if not self.local_weather_active:
                     plog ("However, Local Weather control is set off")
             
-            if enc_status['enclosure_mode'] == 'Manual':
+            if g_dev['enc'].mode == 'Manual':
                 plog ("Weather Considerations overriden due to being in Manual or debug mode: ")
             
             plog("Weather Report Good to Observe: " + str(self.weather_report_open_at_start))
@@ -782,7 +782,7 @@ class WxEncAgent:
 
             plog("**************************************************************")
 
-            if (g_dev['events']['Nightly Reset'] <= ephem.now() < g_dev['events']['End Nightly Reset']): # and g_dev['enc'].mode == 'Automatic' ):
+            if (g_dev['events']['Nightly Reset'] <= ephem.now() < g_dev['events']['End Nightly Reset']):
                 if self.nightly_reset_complete == False:
                     self.nightly_reset_complete = True
                     self.nightly_reset_script(enc_status)
@@ -796,14 +796,13 @@ class WxEncAgent:
                         self.park_enclosure_and_close()
                         
                     if enc_status['shutter_status'] == 'Closing':
-                        # if self.config['obsid_roof_control'] and g_dev['enc'].mode == 'Automatic':
                         plog("Detected Roof Closing.")
                         self.open_and_enabled_to_observe = False
                         self.enclosure_next_open_time = time.time(
                          ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
 
                     if enc_status['shutter_status'] == 'Error':
-                        if  enc_status['enclosure_mode'] == 'Automatic':
+                        if  g_dev['enc'].mode == 'Automatic':
                             plog("Detected an Error in the Roof Status. Packing up for safety.")
                             self.open_and_enabled_to_observe = False
                             self.park_enclosure_and_close()
@@ -815,7 +814,7 @@ class WxEncAgent:
 
             roof_should_be_shut = False
 
-            if enc_status['enclosure_mode'] in ['Shutdown']:
+            if g_dev['enc'].mode in ['Shutdown']:
                 roof_should_be_shut = True
                 self.open_and_enabled_to_observe = False
 
@@ -828,16 +827,16 @@ class WxEncAgent:
                 self.open_and_enabled_to_observe = False
                 
             if enc_status['shutter_status'] == 'Open':
-                if roof_should_be_shut == True and enc_status['enclosure_mode'] == 'Automatic':
+                if roof_should_be_shut == True and g_dev['enc'].mode == 'Automatic':
                     plog("Safety check notices that the roof was open outside of the normal observing period")
                     self.park_enclosure_and_close()
                 
-                if not (self.local_weather_ok == None) and enc_status['enclosure_mode'] == 'Automatic':
+                if not (self.local_weather_ok == None) and g_dev['enc'].mode == 'Automatic':
                     if (not self.local_weather_ok and self.local_weather_active):
                         plog("Safety check notices that the local weather is not ok. Shutting the roof.")
                         self.park_enclosure_and_close()
 
-            if enc_status['shutter_status'] == 'Closed' and self.keep_open_all_night and enc_status['enclosure_mode'] in ['Automatic']:
+            if enc_status['shutter_status'] == 'Closed' and self.keep_open_all_night and g_dev['enc'].mode in ['Automatic']:
 
                 if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config[
                     'maximum_roof_opens_per_evening']:
@@ -852,7 +851,7 @@ class WxEncAgent:
 
             
             if (not self.keep_closed_all_night) and ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends']) and (self.keep_open_all_night or self.weather_report_open_at_start==True or not self.owm_active) and \
-                enc_status['enclosure_mode'] == 'Automatic') and not self.cool_down_latch and (self.keep_open_all_night or self.local_weather_ok == True or (not self.ocn_exists) or (not self.local_weather_active)) and not \
+                g_dev['enc'].mode == 'Automatic') and not self.cool_down_latch and (self.keep_open_all_night or self.local_weather_ok == True or (not self.ocn_exists) or (not self.local_weather_active)) and not \
                 enc_status['shutter_status'] in ['Software Fault', 'Opening', 'Closing', 'Error']:# and not temp_meant_to_be_shut:
 
                 self.cool_down_latch = True
@@ -867,7 +866,7 @@ class WxEncAgent:
 
             # If in post-close and park era of the night, check those two things have happened!
             if (g_dev['events']['Close and Park'] <= ephem_now < g_dev['events']['Nightly Reset']) \
-                    and enc_status['enclosure_mode'] == 'Automatic':
+                    and g_dev['enc'].mode == 'Automatic':
 
                 if not ('closed' in enc_status['shutter_status'].lower()) :
                     plog("Found shutter open after Close and Park, shutting up the shutter")
@@ -876,7 +875,7 @@ class WxEncAgent:
 
     def nightly_reset_script(self, enc_status):
         
-        if enc_status['enclosure_mode'] == 'Automatic':
+        if g_dev['enc'].mode == 'Automatic':
             self.park_enclosure_and_close()
         
         # Set weather report to false because it is daytime anyways.
@@ -956,14 +955,14 @@ class WxEncAgent:
         flat_spot, flat_alt = g_dev['evnt'].flat_spot_now()
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
 
-        if enc_status['enclosure_mode'] in ['Shutdown']:
+        if g_dev['enc'].mode in ['Shutdown']:
             plog ("Not OPENING the enclosure. Site in Shutdown mode.")
             return
 
         # Only send an enclosure open command if the weather
-        if (self.weather_report_open_at_start or not self.owm_active):
+        if (self.weather_report_open_at_start or not self.owm_active or g_dev['enc'].mode == "Manual"):
 
-            if not g_dev['debug'] and not enc_status['enclosure_mode'] in ['Manual'] and (
+            if not g_dev['debug'] and not g_dev['enc'].mode in ['Manual'] and (
                     ephem_now < g_dev['events']['Cool Down, Open']) or \
                     (g_dev['events']['Close and Park'] < ephem_now < g_dev['events']['Nightly Reset']):
                 plog("NOT OPENING THE enclosure -- IT IS THE DAYTIME!!")
@@ -976,19 +975,26 @@ class WxEncAgent:
 
                     if ocn_status == None:
                         if not enc_status['shutter_status'] in ['Open', 'open','Opening','opening'] and \
-                                enc_status['enclosure_mode'] == 'Automatic':
+                                g_dev['enc'].mode == 'Automatic' or g_dev['enc'].mode == 'Manual':
                             self.opens_this_evening = self.opens_this_evening + 1
 
                             g_dev['enc'].open_roof_directly({}, {})
                            
 
                     elif  not enc_status['shutter_status'] in ['Open', 'open','Opening','opening'] and \
-                            enc_status['enclosure_mode'] == 'Automatic' \
+                            g_dev['enc'].mode == 'Automatic' \
                             and time.time() > self.enclosure_next_open_time and self.weather_report_open_at_start:#  and self.weather_report_is_acceptable_to_observe:  # NB
 
                         self.opens_this_evening = self.opens_this_evening + 1
 
                         g_dev['enc'].open_roof_directly({}, {})
+
+                    elif not enc_status['shutter_status'] in ['Open', 'open', 'Opening', 'opening'] and \
+                            g_dev['enc'].mode == 'Manual':
+                        self.opens_this_evening = self.opens_this_evening + 1
+
+                        g_dev['enc'].open_roof_directly({}, {})
+
                         
                     plog("Attempting to Open Shutter. Waiting until shutter opens")
                     if not g_dev['enc'].enclosure.ShutterStatus == 0:
@@ -1202,7 +1208,7 @@ class WxEncAgent:
             if (hours_bad_or_good[0][1] + hours_bad_or_good[1][1] +hours_bad_or_good[2][1] ) == 3:
                 plog("Looks like it is clear enough to open the observatory from the beginning.")
                 self.weather_report_open_at_start = True
-            elif (hours_bad_or_good[0][1]) == 0 and enc_status['enclosure_mode'] == 'Automatic' and not \
+            elif (hours_bad_or_good[0][1]) == 0 and g_dev['enc'].mode == 'Automatic' and not \
             'closed' in enc_status['shutter_status'].lower() and self.owm_active:
                 plog("Looks like the weather gets rough in the first hour, shutting up observatory.")
                 self.park_enclosure_and_close()
