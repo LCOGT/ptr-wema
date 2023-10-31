@@ -110,13 +110,23 @@ wema_config = {
     #Sequencing keys and value, sets up Events
     'auto_eve_bias_dark': True,
     'auto_eve_sky_flat': True,
-    'eve_cool_down_open': -60.0, # How many minutes before sunset to open. Default -65 = an hour-ish before sunset. Gives time to cool and get narrowband flats
+
     'auto_midnight_moonless_bias_dark': False,
     'auto_morn_sky_flat': True,
     'auto_morn_bias_dark': True,
 
+    # NB NB THe following two entries are relevant for SRO
     'morn_close_and_park': 45.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowband flats
-    #'eve_sky_flat_sunset_offset': -60.0,  # Minutes  neg means before, + after.
+    'eve_cool_down_open': -60.0, # How many minutes before sunset to open. Default -65 = an hour-ish before sunset. Gives time to cool and get narrowband flats
+    
+    'bias_dark interval':  105.,   #minutes
+    'eve_sky_flat_sunset_offset': -45.,  # Before Sunset Minutes  neg means before, + after.
+    'end_eve_sky_flats_offset': -1 ,      # How many minutes after civilDusk to do....
+    'clock_and_auto_focus_offset':-10,   #min before start of observing
+    'astro_dark_buffer': 30,   #Min before and after AD to extend observing window
+    'morn_flat_start_offset': -10,       #min from Sunrise
+    'morn_flat_end_offset':  +45,        #min from Sunrise
+    'end_night_processing_time':  90,   #  A guess#'eve_sky_flat_sunset_offset': -60.0,  # Minutes  neg means before, + after.
 
     # WEMA can not have local_weather_info sometimes.. e.g. ECO
     'has_local_weather_info' : True,
