@@ -4,9 +4,13 @@ from global_yard import g_dev
 import time
 import math as math
 #import shelve
+import requests
+import xmltodict
+
 import json
 import socket
 import os
+
 #import ptr_config
 
 import urllib
@@ -35,24 +39,24 @@ Shutter, Roof, Slit, etc., are the same things.
 # This module has been modified into wema only code, then unmodified to be normal enclousre code.
 # =============================================================================
 
-# DEG_SYM = '°'
-# PI = math.pi
-# TWOPI = math.pi*2
-# PIOVER2 = math.pi/2.
-# DTOR = math.pi/180.
-# RTOD = 180/math.pi
-# STOR = math.pi/180./3600.
-# RTOS = 3600.*180./math.pi
-# RTOH = 12./math.pi
-# HTOR = math.pi/12.
-# HTOS = 15*3600.
-# DTOS = 3600.
-# STOD = 1/3600.
-# STOH = 1/3600/15.
-# SecTOH = 1/3600.
-# APPTOSID = 1.00273811906  # USNO Supplement
-# MOUNTRATE = 15*APPTOSID  # 15.0410717859
-# KINGRATE = 15.029
+DEG_SYM = '°'
+PI = math.pi
+TWOPI = math.pi*2
+PIOVER2 = math.pi/2.
+DTOR = math.pi/180.
+RTOD = 180/math.pi
+STOR = math.pi/180./3600.
+RTOS = 3600.*180./math.pi
+RTOH = 12./math.pi
+HTOR = math.pi/12.
+HTOS = 15*3600.
+DTOS = 3600.
+STOD = 1/3600.
+STOH = 1/3600/15.
+SecTOH = 1/3600.
+APPTOSID = 1.00273811906  # USNO Supplement
+MOUNTRATE = 15*APPTOSID  # 15.0410717859
+KINGRATE = 15.029
 
 
 # def test_connect(host='http://google.com'):
@@ -204,6 +208,42 @@ Shutter, Roof, Slit, etc., are the same things.
 # =============================================================================
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# =============================================================================
+# 
+# # =============================================================================
+# # UPDATE 20231023 WER:  ARO has an expeimental roof controller based on a Xylogics X322 IO controller.
+# # So the code is ver experimental and change at your own risk!   WER
+# # =============================================================================
+# 
+# =============================================================================
 class Enclosure:
 
     def __init__(self, driver: str, name: str, config: dict, astro_events):
@@ -262,17 +302,24 @@ class Enclosure:
             #  instance that can be accessed by a simple site or by the WEMA,
             #  assuming the transducers are connected to the WEMA.
             self.obsid_is_generic = True
-            win32com.client.pythoncom.CoInitialize()
-
-            self.enclosure = win32com.client.Dispatch(driver)
-
-            plog(self.enclosure)
-            try:
-                if not self.enclosure.Connected:
-                    self.enclosure.Connected = True
-                plog("ASCOM enclosure connected.")
-            except:
-                plog("ASCOM enclosure NOT connected, proabably the App is not connected to telescope.")
+            if driver == 'X322_http':
+                plog('X322 http exeperimaneta driver is connected. ')
+                self.http_driver = True
+                
+                
+            else:
+                self.http_driver = False
+                win32com.client.pythoncom.CoInitialize()
+    
+                self.enclosure = win32com.client.Dispatch(driver)
+    
+                plog(self.enclosure)
+                try:
+                    if not self.enclosure.Connected:
+                        self.enclosure.Connected = True
+                    plog("ASCOM enclosure connected.")
+                except:
+                    plog("ASCOM enclosure NOT connected, proabably the App is not connected to telescope.")
         else:
             self.obsid_is_generic = False  # NB NB Changed to False for MRC from SRO where True
         
@@ -308,53 +355,94 @@ class Enclosure:
             #plog("we got a direct connect status!")
 
         #breakpoint()
-        try:
-            shutter_status = self.enclosure.ShutterStatus
-        except:
-            plog("self.enclosure.Roof.ShutterStatus -- Faulted. ")
-            shutter_status = 5
+        if self.http_driver:
 
-        if shutter_status == 0:
-            stat_string = "Open"
-            self.shutter_is_closed = False
-            #g_dev['redis'].set('Shutter_is_open', True)
-        elif shutter_status == 1:
-            stat_string = "Closed"
-            self.shutter_is_closed = True
-            #g_dev['redis'].set('Shutter_is_open', False)
-        elif shutter_status == 2:
-            stat_string = "Opening"
-            self.shutter_is_closed = False
-            #g_dev['redis'].set('Shutter_is_open', False)
-        elif shutter_status == 3:
-            stat_string = "Closing"
-            self.shutter_is_closed = False
-            #g_dev['redis'].set('Shutter_is_open', False)
-        elif shutter_status == 4:
-            # breakpoint()
-            stat_string = "Error"
-            self.shutter_is_closed = False
-            #g_dev['redis'].set('Shutter_is_open', False)
+            try:
+                xml_state = requests.get('http://10.0.0.200/state.xml').content
+                x322_state = xmltodict.parse(xml_state)['datavalues']
+                input_state = int(x322_state['inputstates'])
+                relay_state = int(x322_state['relaystates'])
+            except:
+                plog("X322 http ShutterStatus -- Faulted. ")
+                shutter_status = 5
+            if relay_state == 0 and input_state == 0:
+               stat_string = 'Indeterminate!'
+               self.shutter_is_closed = False          
+            if relay_state == 11 or input_state == 11:
+                stat_string = "Error"
+                self.shutter_is_closed = False             
+            elif relay_state == 10:
+                stat_string = "Opening"
+                self.shutter_is_closed = False
+            elif relay_state == 1:
+                stat_string = "Closing"
+                self.shutter_is_closed = False
+            elif relay_state == 0  and input_state == 1:
+                stat_string = 'Closed'
+                self.shutter_is_closed = True
+            elif relay_state == 0  and input_state == 10:
+                stat_string = 'Open'
+                self.shutter_is_closed = False
+            else:
+                stat_string = "Software Fault"
+                self.shutter_is_closed = False
+
+
+
+            
+            
+                
+            
         else:
-            stat_string = "Software Fault"
-            self.shutter_is_closed = False
-            #g_dev['redis'].set('Shutter_is_open', False)
-        self.status_string = stat_string
+            
+            try:
+                shutter_status = self.enclosure.ShutterStatus
+            except:
+                plog("self.enclosure.Roof.ShutterStatus -- Faulted. ")
+                shutter_status = 5
+    
+            if shutter_status == 0:
+                stat_string = "Open"
+                self.shutter_is_closed = False
+                #g_dev['redis'].set('Shutter_is_open', True)
+            elif shutter_status == 1:
+                stat_string = "Closed"
+                self.shutter_is_closed = True
+                #g_dev['redis'].set('Shutter_is_open', False)
+            elif shutter_status == 2:
+                stat_string = "Opening"
+                self.shutter_is_closed = False
+                #g_dev['redis'].set('Shutter_is_open', False)
+            elif shutter_status == 3:
+                stat_string = "Closing"
+                self.shutter_is_closed = False
+                #g_dev['redis'].set('Shutter_is_open', False)
+            elif shutter_status == 4:
+                # breakpoint()
+                stat_string = "Error"
+                self.shutter_is_closed = False
+                #g_dev['redis'].set('Shutter_is_open', False)
+            else:
+                stat_string = "Software Fault"
+                self.shutter_is_closed = False
+                #g_dev['redis'].set('Shutter_is_open', False)
+            self.status_string = stat_string
 
-        # status = {'shutter_status': stat_string,
+        status = {'shutter_status': stat_string}  #Re-enabled 10142023 WER
         #          'enclosure_synchronized': True, #self.following, 20220103_0135 WER
         #          'dome_azimuth': 0,
         #          'dome_slewing': False,
         #          'enclosure_mode': self.mode,
         #          'enclosure_message': "No message"}, #self.state}#self.following, 20220103_0135 WER
 
-        status = {'shutter_status': stat_string}
+        #status = {'shutter_status': 'Sim. Open'}    #Removed 10142023 WER  Not much of below is a lie!
         #status['dome_slewing'] = False
         status['enclosure_mode'] = str(self.mode)
         status['dome_azimuth'] = 0.0
-        status['inside_temperature C'] = 20.0
-        status['inside_humidity %'] = 51.2
-        status['access_door'] = "Closed"
+        status['inside_temperature C'] = 'n/a'
+        status['inside_humidity %'] = 'n/a'
+        status['access_door'] = "n/a"
+        status['ladder_stowed'] = 'n/a'
         status['end_wall'] = 'n/a'
         status['lights_on'] = 'Off'
         
@@ -858,13 +946,26 @@ class Enclosure:
 
     def open_roof_directly(self, req: dict, opt: dict):
         # if g_dev['enc'].status['shutter_status'] != 'Open' or not self.dome_open:
-        self.enclosure.OpenShutter()
-        plog("An actual shutter open command has been issued.")
+        if self.http_driver:
+            resp =requests.get('http://10.0.0.200/state.xml?relay2State=2')  #A 45 second pulse to open, takes 35 sec
+            plog("A http shutter open command has been issued:", resp)
+
+            
+            
+        else:
+            
+            self.enclosure.OpenShutter()
+            plog("A shutter open command has been issued.")
 
     def close_roof_directly(self, req: dict, opt: dict):
         # if g_dev['enc'].status['shutter_status'] != 'Open' or not self.dome_open:
-        self.enclosure.CloseShutter()
-        plog("An actual shutter close command has been issued.")
+        if self.http_driver:
+            resp =requests.get('http://10.0.0.200/state.xml?relay1State=2')  #A 45 second pulse to open, takes 35 sec
+            plog("A http shutter close command has been issued:", resp)
+            
+        else:
+            self.enclosure.CloseShutter()
+        plog("A shutter close command has been issued.")
 
     # def open_command(self, req: dict, opt: dict):
     #     #     ''' open the enclosure '''

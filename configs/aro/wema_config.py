@@ -14,7 +14,6 @@ NB NB NB  If we have one config file then paths need to change depending upon wh
 #23456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
 import json
 import time
-#import ptr_events
 from pprint import pprint
 
 
@@ -34,18 +33,15 @@ wema_config = {
 
     'wema_name': 'aro',
     'instance_type': 'wema',
-    'obsp_ids': ['aro1'], #, 'aro2','aro3'],    #Possible hint to site about who are its children.
-    
+    'obsp_ids': ['aro1'], #, 'aro2','aro3', 'aro4']  #Possible hint to site about who are its children.  
     # These are just the bootup default values.
     'OWM_active': True,
     'local_weather_active': True,
-    
-    
+       
     'debug_mode': False,
-    #'debug_obsy_mode': False,   #not needed for a WEMA instance 
+    'debug_duration_sec': 80000, 
     'admin_owner_commands_only': False,
-    'debug_duration_sec': 80000,
-    'local_weather_always_overrides_OWM': False,
+    'local_weather_always_overrides_OWM': True,  ##WERE changed 10/14//2023
     'enclosure_status_check_period': 30,
     'weather_status_check_period': 30,
     'safety_status_check_period': 30,
@@ -59,29 +55,8 @@ wema_config = {
     'site_desc': "Apache Ridge Observatory, Santa Fe, NM, USA. 2194m",  #Chg name to site_location?
     'airport_codes':  ['SAF', 'ABQ', 'LSN'],   #  Meant to bracket the site so we can probe Obsy Wx reports
     
-    #'obs_desc': "Apache Ridge Observatory", #>>not neededby wema??
-
-
-    'client_hostname':"ARO-0m30",     #>> Generic place for this host to stash.  Make no obvious sense
+    'client_hostname':"ARO-0m30",     # This should be a list corresponding to obsp ID's and maybe an parallel ip# list.
     
-    # 'client_path': 'F:/ptr/',
-    # #'alt_path': '//house-computer/saf_archive_2/archive/sq01/',
-    # 'save_to_alt_path' : 'no',
-    # 'archive_path': 'F:/ptr/',       # Where images are kept.
-    # #'local_calibration_path': 'F:/ptr/', # THIS FOLDER HAS TO BE ON A LOCAL DRIVE, not a network drive due to the necessity of huge memmap files
-    
-    # 'archive_age' : -99.9, # Number of days to keep files in the local archive before deletion. Negative means never delete
-    #     'send_files_at_end_of_night' : 'no', # For low bandwidth sites, do not send up large files until the end of the night. set to 'no' to disable
-    #     'save_raw_to_disk' : True, # For low diskspace sites (or just because they aren't needed), don't save a separate raw file to disk after conversion to fz.
-    #     'keep_reduced_on_disk' : True, # PTR uses the reduced file for some calculations (focus, SEP, etc.). To save space, this file can be removed after usage or not saved.
-    #     'keep_focus_images_on_disk' : True, # To save space, the focus file can not be saved.
-        
-    #     # Minimum realistic seeing at the site.
-    #     # This allows culling of unphysical results in photometry and other things
-    #     # Particularly useful for focus
-    #     'minimum_realistic_seeing' : 1.0,
-    
-    #'aux_archive_path':  None,
     'wema_is_active':  True,     # True if an agent (ie a wema) is used at a site.   # Wemas are split sites -- at least two CPS's sharing the control.
     'wema_hostname':  'ARO-WEMA',
     'host_wema_site_name':  'ARO',   #do we need this? 
@@ -93,9 +68,7 @@ wema_config = {
     'dome_on_wema':  True,  #Temporary assignment   20230617 WER
     'redis_ip': None,   # None if no redis path present, localhost if redis iself-contained
     'site_is_single_host':  False,   # A simple single computer ASCOM site.
-    #'site_is_custom':  False,  #  Meaning like SRO with site specific methods to read weateher and roof status
-                               #  so the Wema for such a site fakes it as needed to assemble WX and Enc conditions.
-    #'site_has_proxy': True,   # All site now wil have a wema so this is no longer necessary
+
     'name': "Apache Ridge Observatory, Santa Fe, NM, USA. 2194m",
     'location': 'Santa Fe, New Mexico,  USA',
     'observatory_url': 'https://starz-r-us.sky/clearskies2',   # This is meant to be optional, something supplied by the owner.
@@ -122,55 +95,50 @@ wema_config = {
 
     'wema_has_control_of_roof': True,
     'wema_allowed_to_open_roof': True,
-
-    
     #next few are enclosure parameteers
-    'period_of_time_to_wait_for_roof_to_open' : 180, # seconds - needed to check if the roof ACTUALLY opens. 
-    #'only_scope_that_controls_the_roof': True, # If multiple scopes control the roof, set this to False
+    'period_of_time_to_wait_for_roof_to_open' : 90, # seconds - needed to check if the roof ACTUALLY opens. 
+    'only_scope_that_controls_the_roof': True, # If multiple scopes control the roof, set this to False
     'check_time': 300,
     'maximum_roof_opens_per_evening' : 4,
     'roof_open_safety_base_time' : 15, # How many minutes to use as the default retry time to open roof. This will be progressively multiplied as a back-off function.
+    'site_enclosure_default_mode': "Automatic",   # ["Manual", "Shutdown", "Automatic"]  Was "Simulated' as o 10/14/2023 Wer
     
-    # 'closest_distance_to_the_sun': 45, # Degrees. For normal pointing requests don't go this close to the sun. 
-    # 'closest_distance_to_the_moon': 10, # Degrees. For normal pointing requests don't go this close to the moon. 
-    # 'lowest_requestable_altitude': -5, # Degrees. For normal pointing requests don't allow requests to go this low. 
-    
-    
-    'site_enclosure_default_mode': "Automatic",   # ["Manual", "Shutdown", "Automatic"]
-    
-    'automatic_detail_default': "Enclosure is initially set to  Automatic by ARO site_config.",
+    'automatic_detail_default': "Enclosure is initially set to Automatic by ARO site_config.",
     'observing_check_period' : 2,    # How many minutes between weather checks
     'enclosure_check_period' : 2,    # How many minutes between enclosure checks
     
     #Sequencing keys and value, sets up Events
     'auto_eve_bias_dark': True,
     'auto_eve_sky_flat': True,
-    'eve_cool_down_open': -65.0, # How many minutes after sunrise to open. Default -65 = an hour-ish before sunset. Gives time to cool and get narrowband flats
+    'eve_cool_down_open': -60.0, # How many minutes before sunset to open. Default -65 = an hour-ish before sunset. Gives time to cool and get narrowband flats
     'auto_midnight_moonless_bias_dark': False,
-    'morn_close_and_park': 32.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowband flats
+    'auto_morn_sky_flat': True,
+    'auto_morn_bias_dark': True,
+
+    'morn_close_and_park': 45.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowband flats
     #'eve_sky_flat_sunset_offset': -60.0,  # Minutes  neg means before, + after.
 
     # WEMA can not have local_weather_info sometimes.. e.g. ECO
     'has_local_weather_info' : True,
 
     # Whether these limits are on by default
-    'rain_limit_on': False,  #Right now Skyalert Babbles.
+    'rain_limit_on': True,  #Right now Skyalert Babbles.
     'humidity_limit_on': True,
     'windspeed_limit_on': True,
     'lightning_limit_on': True,
     'temperature_minus_dewpoint_limit_on': True,
     'sky_temperature_limit_on': True,
-    'cloud_cover_limit_on': False,
+    'cloud_cover_limit_on': True,
     'lowest_ambient_temperature_on': True,
     'highest_ambient_temperature_on': True,
     
     # Local weather limits   #NB we should move these into OCN config section
     'rain_limit': 1.0,         # NO we shouldn't because it will be different per site
     'humidity_limit': 75,   # With multiple elements etc. I think.
-    'windspeed_limit': 25,  # Some of this could be OWM stuff e.g.
-    'lightning_limit' : 15,
+    'windspeed_limit': 15,  #  Units? Some of this could be OWM stuff e.g.
+    'lightning_limit' : 15, #km
     'temperature_minus_dewpoint_limit': 2,
-    'sky_temperature_limit': -1,
+    'sky_temperature_limit': -1,  #It must be colder than this
     'cloud_cover_limit': 51,
     'lowest_ambient_temperature': 1,
     'highest_ambient_temperature': 45,
@@ -186,18 +154,6 @@ wema_config = {
     'warning_lowest_ambient_temperature': 5,
     'warning_highest_ambient_temperature': 35,
     
-    #'auto_morn_sky_flat': True,
-    #'auto_morn_bias_dark': True,
-    #'re-calibrate_on_solve': False,
-    #'pointing_calibration_on_startup': False,
-    #'periodic_focus_time' : 0.5, # This is a time, in hours, over which to bypass automated focussing (e.g. at the start of a project it will not refocus if a new project starts X hours after the last focus)
-    #'stdev_fwhm' : 0.5, # This is the expected variation in FWHM at a given telescope/camera/site combination. This is used to check if a fwhm is within normal range or the focus has shifted
-    #'focus_exposure_time': 15, # Exposure time in seconds for exposure image
-    #'pointing_exposure_time': 20, # Exposure time in seconds for exposure image
-    #'focus_trigger' : 0.5, # What FWHM increase is needed to trigger an autofocus
-    #'solve_nth_image' : 6, # Only solve every nth image
-    #'solve_timer' : 4, # Only solve every X minutes
-    #'threshold_mount_update' : 10, # only update mount when X arcseconds away
     'get_ocn_status': None,
     'get_enc_status': None,
     'not_used_variable': None,
@@ -269,10 +225,10 @@ wema_config = {
     'enclosure': {
         'enclosure1': {
             'name': 'Roll Top',
-            'enc_is_custom':  False,  ##if custom this config would have routines to monkey patch 
+            'encl_is_custom':  False,  ##if custom this config would have routines to monkey patch 
             'directly_connected': False, # For ECO and EC2, they connect directly to the enclosure, whereas WEMA are different.
             'hostIP':  '10.0.0.50',
-            'driver': 'Dragonfly.Dome',  #  'ASCOMDome.Dome',  #ASCOMDome.Dome',  # ASCOM.DeviceHub.Dome',  # ASCOM.DigitalDomeWorks.Dome',  #"  ASCOMDome.Dome',
+            'driver': 'X322_http',  #     Dragonfly.Dome,  #  'ASCOMDome.Dome',  #ASCOMDome.Dome',  # ASCOM.DeviceHub.Dome',  # ASCOM.DigitalDomeWorks.Dome',  #"  ASCOMDome.Dome',
             "encl_IP": '10.0.0.103',    #New
             'has_lights':  False,
             'controlled_by': 'mount1',
@@ -292,7 +248,7 @@ wema_config = {
                                                                         #First Entry is always default condition.
                 'roof_shutter':  ['Auto', 'Open', 'Close', 'Lock Closed', 'Unlock'],
             },
-           # Not sure what these are here and not part of the site.
+           # Not sure why these are here and not part of the site.
             'eve_bias_dark_dur':  1.5,   # hours Duration, prior to next.
             'eve_screen_flat_dur': 0.0,   # hours Duration, prior to next.
             'operations_begin':  -1.0,   # - hours from Sunset
@@ -312,9 +268,9 @@ def get_ocn_status_custom():
     pass
 
 if __name__ == '__main__':
-    j_dump = json.dumps(site_config)
-    site_unjasoned = json.loads(j_dump)
-    if str(site_config)  == str(site_unjasoned):
+    j_dump = json.dumps(wema_config)
+    wema_unjasoned = json.loads(j_dump)
+    if str(wema_config)  == str(wema_unjasoned):
         print('Strings matched.')
-    if site_config == site_unjasoned:
+    if wema_config == wema_unjasoned:
         print('Dictionaries matched.')

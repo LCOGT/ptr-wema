@@ -311,12 +311,15 @@ class WxEncAgent:
                         plog(cmd)
                         if cmd['action']=='open':
                             plog ("open enclosure command received")
-                            self.open_enclosure(g_dev['enc'].get_status(), g_dev['ocn'].get_status())
+                 
+                            self.open_enclosure({}, {})     #WER added missing dicts 10142023 WER
+
                             self.enclosure_status_check_timer=time.time() - 2*self.enclosure_status_check_period
                             self.update_status()
                             
                         if cmd['action']=='close':
                             plog ("command enclosure command received")
+                           
                             self.park_enclosure_and_close()
                             self.enclosure_status_check_timer=time.time() - 2*self.enclosure_status_check_period
                             self.update_status()
@@ -478,11 +481,12 @@ class WxEncAgent:
 
             if enc_status is not None:
                 # New Tim Entries
-                if enc_status['enclosure']['enclosure1']['shutter_status'] == 'Open':
-                    enc_status['enclosure']['enclosure1']['enclosure_is_open'] = True
-                    enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = False
-                    enc_status['enclosure']['enclosure1']['shut_reason_daytime'] = False
-                    enc_status['enclosure']['enclosure1']['shut_reason_manual_mode'] = False
+                if enc_status['enclosure']['enclosure1']['shutter_status']  is not None:
+                    if enc_status['enclosure']['enclosure1']['shutter_status'] in ['Open', 'Sim Open']:
+                        enc_status['enclosure']['enclosure1']['enclosure_is_open'] = True
+                        enc_status['enclosure']['enclosure1']['shut_reason_bad_weather'] = False
+                        enc_status['enclosure']['enclosure1']['shut_reason_daytime'] = False
+                        enc_status['enclosure']['enclosure1']['shut_reason_manual_mode'] = False
                 else:
                     enc_status['enclosure']['enclosure1']['enclosure_is_open'] = False
                     if not enc_status['enclosure']['enclosure1']['enclosure_mode'] == 'Automatic':
@@ -905,9 +909,10 @@ class WxEncAgent:
         
         return
 
-    def open_enclosure(self, enc_status, ocn_status, no_sky=False):
+    def open_enclosure(self, enc_status, ocn_status):   # Unused 10142023 wer, no_sky=False):
 
-        
+        enc_status = g_dev['enc'].status
+        ocn_status = g_dev['ocn'].get_status()   #The call to get-status causes s spurious pringout of two Boltood lines, Status is the average
         flat_spot, flat_alt = g_dev['evnt'].flat_spot_now()
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
 
@@ -957,13 +962,15 @@ class WxEncAgent:
 
                         
                     plog("Attempting to Open Shutter. Waiting until shutter opens")
-                    if not g_dev['enc'].enclosure.ShutterStatus == 0:
+                    #while True:
+                    enc_status = g_dev['enc'].status
+                    if not enc_status['shutter_status'] in ['Open', 'open']:
                         time.sleep(self.config['period_of_time_to_wait_for_roof_to_open'])
 
                     self.enclosure_next_open_time = time.time() + (self.config['roof_open_safety_base_time'] * 60) * self.opens_this_evening
 
-
-                    if g_dev['enc'].enclosure.ShutterStatus == 0:
+                    enc_status = g_dev['enc'].status
+                    if enc_status['shutter_status'] in ['Open', 'open']:
                         self.open_and_enabled_to_observe = True
 
                         try:

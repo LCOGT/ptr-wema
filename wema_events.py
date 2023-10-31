@@ -43,11 +43,12 @@ retries = Retry(total=3,
 reqs.mount('http://', HTTPAdapter(max_retries=retries))
 
 
-EVESCREENFLATDURATION = 60/1440  # 1.5 hours
+EVESCREENFLATDURATION = 0/1440  # 0.0 hours
 BIASDARKDURATION = 120/1440  # 2.0 hours
-EVESKYFLATDURATION = 105/1440
-MORNSKYFLATDURATION = 0/1440
-MORNBIASDARKDURATION = 0/1440  # 1.5 min
+#EVESKYFLATDURATION = 75/1440  # 1.25 hours
+#MORNSKYFLATDURATION = 75/1440  # 1.25 hours
+MORNBIASDARKDURATION = 120/1440  # 1.5 min
+
 LONGESTSCREEN = 0/1440  # 1 min
 LONGESTFLAT = 2.5/1440
 LONGESTDARK = 5.5/1440  # 6 min
@@ -610,7 +611,7 @@ class Events:
                      ('Close and Park     ', ephem.Date(self.close_and_park)),
                      ('Sun Rise           ', ephem.Date(self.sunrise)),
                      ('Morn Bias Dark     ', ephem.Date(self.close_and_park + 10/1440.)),
-                     ('End Morn Bias Dark ', ephem.Date(self.close_and_park + 120/1440.)),
+                     ('End Morn Bias Dark ', ephem.Date(self.close_and_park + 130/1440.)),
                      ('Nightly Reset      ', ephem.Date(self.close_and_park + 150/1440.)),
                      ('End Nightly Reset  ', ephem.Date(self.close_and_park + 200/1440.)),
                      ('Prior Moon Rise    ', ephem.Date(self.last_moonrise)),
@@ -692,20 +693,4 @@ class Events:
             plog(self.evnt[0], 'UTC: ', self.evnt[1], self.timezone, ephem.Date(self.evnt[1] + float(self.offset)/24.))
             # plog(self.evnt[0], 'UTC: ', self.evnt[1], self.timezone)    # NB Additon of local times would be handy here.
 
-    # def display_events(self, endofnightoverride='no'):
-    #     breakpoint()
-    #     plog('Events module reporting for duty. \n')
-    #     plog('Ephem date     :    ', dayNow)
-    #     #plog("Julian Day     :    ")
-    #     #plog("MJD            :    ")
-    #     #plog('Day_Directory  :    ', DAY_Directory)
-    #     #plog('Next day       :    ', Day_tomorrow)
-    #     plog('Night Duration :    ', str(round(self.duration, 2)) + ' hr')
-    #     plog('Moon Ra; Dec   :    ', round(self.mid_moon_ra, 2), ";  ", round(self.mid_moon_dec, 1))
-    #     plog('Moon phase %   :    ', round(self.mid_moon_phase, 1), '%\n')
-    #     plog("Key events for the evening, presented by the Solar System: \n")
 
-    #     for self.evnt in self.evnt_sort:
-    #         # NB Additon of local times would be handy here.
-    #         plog(self.evnt[0], 'UTC: ', self.evnt[1], self.timezone, ephem.Date(self.evnt[1] + float(self.offset)/24.))
-    #         # plog(self.evnt[0], 'UTC: ', self.evnt[1], self.timezone)    # NB Additon of local times would be handy here.
