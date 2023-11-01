@@ -911,7 +911,7 @@ class WxEncAgent:
 
     def open_enclosure(self, enc_status, ocn_status):   # Unused 10142023 wer, no_sky=False):
 
-        enc_status = g_dev['enc'].status
+        enc_status = g_dev['enc'].get_status()
         ocn_status = g_dev['ocn'].get_status()   #The call to get-status causes s spurious pringout of two Boltood lines, Status is the average
         flat_spot, flat_alt = g_dev['evnt'].flat_spot_now()
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
@@ -963,13 +963,13 @@ class WxEncAgent:
                         
                     plog("Attempting to Open Shutter. Waiting until shutter opens")
                     #while True:
-                    enc_status = g_dev['enc'].status
+                    enc_status = g_dev['enc'].get_status()
                     if not enc_status['shutter_status'] in ['Open', 'open']:
                         time.sleep(self.config['period_of_time_to_wait_for_roof_to_open'])
 
                     self.enclosure_next_open_time = time.time() + (self.config['roof_open_safety_base_time'] * 60) * self.opens_this_evening
 
-                    enc_status = g_dev['enc'].status
+                    enc_status = g_dev['enc'].get_status()
                     if enc_status['shutter_status'] in ['Open', 'open']:
                         self.open_and_enabled_to_observe = True
 

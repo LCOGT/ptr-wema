@@ -450,12 +450,13 @@ class Enclosure:
         #status['enclosure_message']: self.state
         #status['enclosure_synchronized']= True
 
-        #try:
-        ##    self.manager()  # There be monsters here. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        #except:
-        #    plog("Enclosure Manager faulted.")
-        #    plog(traceback.format_exc())
-        #    breakpoint()
+        try:
+            pass
+            #self.manager()  # There be monsters here. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        except:
+            plog("Enclosure Manager faulted.")
+            plog(traceback.format_exc())
+
         self.status = status
         self.prior_status = status
         g_dev['enc'].status = status
@@ -1058,186 +1059,186 @@ class Enclosure:
     #     return False
 
     # # This is the place where the enclosure is autonomus during operating hours. Delicut Code!!!
-    # def manager(self, open_cmd=False, close_cmd=False, _redis=False):
-    #     '''
-    #     Now what if code hangs?  To recover from that ideally we need a deadman style timer operating on a
-    #     separate computer.
-    #     First check out code restarts and roof is NOT CLOSED, what happens
-    #     during day, etc.
-    #     '''
+    def manager(self, open_cmd=False, close_cmd=False, _redis=False):
+        '''
+        Now what if code hangs?  To recover from that ideally we need a deadman style timer operating on a
+        separate computer.
+        First check out code restarts and roof is NOT CLOSED, what happens
+        during day, etc.
+        '''
 
-    #     # if not self.is_wema:  #NB NB NB this is clearly not correct.
-    #     #     return   #Nothing to do.
+        # if not self.is_wema:  #NB NB NB this is clearly not correct.
+        #     return   #Nothing to do.
 
-    #     #  NB NB NB Gather some facts:
+        #  NB NB NB Gather some facts:
 
-    #     #breakpoint()
-    #     ops_window_start, sunset, sunrise, ephem_now = self.astro_events.getSunEvents()
+
+        ops_window_start, sunset, sunrise, ephem_now = self.astro_events.getSunEvents()
        
-    #     az_opposite_sun = g_dev['evnt'].sun_az_now()
-    #     #plog('Sun Az: ', az_opposite_sun)
-    #     az_opposite_sun -= 180.
-    #     if az_opposite_sun < 0:
-    #         az_opposite_sun += 360.
-    #     if az_opposite_sun >= 360:
-    #         az_opposite_sun -= 360.
-    #     if self.is_dome:
-    #         shutter_str = "Dome."
-    #     else:
-    #         shutter_str = "Roof."
+        az_opposite_sun = g_dev['evnt'].sun_az_now()
+        #plog('Sun Az: ', az_opposite_sun)
+        az_opposite_sun -= 180.
+        if az_opposite_sun < 0:
+            az_opposite_sun += 360.
+        if az_opposite_sun >= 360:
+            az_opposite_sun -= 360.
+        if self.is_dome:
+            shutter_str = "Dome."
+        else:
+            shutter_str = "Roof."
 
-    #     #wx_is_ok = g_dev['ocn'].wx_is_ok
+        #wx_is_ok = g_dev['ocn'].wx_is_ok
 
-    #     #  NB NB First deal with the possible observing window being available or not.
-    #     #  THis routine basically opens and keeps dome opposite the sun. Whether system
-    #     #  takes sky flats or not is determined by the scheduler or calendar.  Mounting
-    #     #  could be parked.
+        #  NB NB First deal with the possible observing window being available or not.
+        #  THis routine basically opens and keeps dome opposite the sun. Whether system
+        #  takes sky flats or not is determined by the scheduler or calendar.  Mounting
+        #  could be parked.
 
-    #     if test_connect():
-    #         net_connected = True
-    #     else:
-    #         net_connected = False
+        # if test_connect():
+        #     net_connected = True
+        # else:
+        #     net_connected = False
 
-    #    # The following Redis hold makes little sense
+        # The following Redis hold makes little sense
 
-    #     # try:
-    #     #     redis_hold = eval(self.redis_server.get('wx_hold'))
-    #     # except:
-    #     #     redis_hold =False
+        # try:
+        #     redis_hold = eval(self.redis_server.get('wx_hold'))
+        # except:
+        #     redis_hold =False
 
-    #     #wx_hold = g_dev['ocn'].wx_hold  # or redis_hold  #TWO PATHS to pick up wx-hold.
-    #     if self.mode == "Automatic" and (open_cmd or close_cmd):
-    #         g_dev['obs'].send_to_user("User enclosure requests not honored in Automatic mode.", p_level='INFO')
-    #     if self.mode == 'Shutdown':
-    #         #  NB in this situation we should always Park telescope, rotators, etc.
-    #         #  NB This code is weak
-    #         if self.is_dome and self.enclosure.CanSlave:
-    #             try:
-    #                 self.following = False
-    #                 self.enclosure_synchronized = False
-    #             except:
-    #                 plog('Could not decouple dome following.')
-    #         # if self.status_string in ['Open']:
+        #wx_hold = g_dev['ocn'].wx_hold  # or redis_hold  #TWO PATHS to pick up wx-hold.
+        if self.mode == "Automatic" and (open_cmd or close_cmd):
+            g_dev['obs'].send_to_user("User enclosure requests not honored in Automatic mode.", p_level='INFO')
+        if self.mode == 'Shutdown':
+            #  NB in this situation we should always Park telescope, rotators, etc.
+            #  NB This code is weak
+            if self.is_dome and self.enclosure.CanSlave:
+                try:
+                    self.following = False
+                    self.enclosure_synchronized = False
+                except:
+                    plog('Could not decouple dome following.')
+            # if self.status_string in ['Open']:
 
-    #         # Always attempt to close.... the string may be wrong!
-    #         try:
-    #             self.enclosure.CloseShutter()
-    #             self.dome_open = False
-    #             self.dome_home = True
-    #         except:
-    #             plog('Dome refused close command.')
+            # Always attempt to close.... the string may be wrong!
+            try:
+                self.close_roof_directly( {}, {} )
+                self.dome_open = False
+                self.dome_home = True
+            except:
+                plog('Dome refused close command.')
 
-    #         self.dome_opened = False
-    #         self.dome_homed = True
-    #         self.enclosure_synchronized = False
-    #         if _redis:
-    #             g_dev['redis'].set('park_the_mount', True, ex=3600)
-    #         if open_cmd:
-    #             g_dev['obs'].send_to_user("Request Open not allowed in Shutdown mode.", p_level='INFO')
-    #         if close_cmd:
-    #             g_dev['obs'].send_to_user("Request Close is ignored in Shutdown mode.", p_level='INFO')
-    #     elif wx_hold:  # There is no reason to deny a wx_hold!
-    #         # We leave telescope to track with dome closed.
-    #         if self.is_dome and self.enclosure.CanSlave:
-    #             try:
-    #                 self.following = False
-    #                 self.enclosure_synchronized = False
-    #             except:
-    #                 self.following = False
-    #                 self.enclosure_synchronized = False
-    #                 plog('Could not decouple dome following.')
-    #         if self.status_string in ['Open']:
-    #             try:
-    #                 self.enclosure.CloseShutter()
-    #                 self.dome_open = False
-    #                 self.dome_home = True
-    #             except:
-    #                 plog('Enclosure refused close command.')
-    #         self.dome_opened = False
-    #         self.dome_homed = True
+            self.dome_opened = False
+            self.dome_homed = True
+            self.enclosure_synchronized = False
+            if _redis:
+                g_dev['redis'].set('park_the_mount', True, ex=3600)
+            if open_cmd:
+                g_dev['obs'].send_to_user("Request Open not allowed in Shutdown mode.", p_level='INFO')
+            if close_cmd:
+                g_dev['obs'].send_to_user("Request Close is ignored in Shutdown mode.", p_level='INFO')
+        # elif g_dev['ocn'].wx_hold:  # There is no reason to deny a wx_hold!
+        #     # We leave telescope to track with dome closed.
+        #     if self.is_dome and self.enclosure.CanSlave:
+        #         try:
+        #             self.following = False
+        #             self.enclosure_synchronized = False
+        #         except:
+        #             self.following = False
+        #             self.enclosure_synchronized = False
+        #             plog('Could not decouple dome following.')
+        #     if self.status_string in ['Open']:
+        #         try:
+        #             self.enclosure.CloseShutter()
+        #             self.dome_open = False
+        #             self.dome_home = True
+        #         except:
+        #             plog('Enclosure refused close command.')
+        #     self.dome_opened = False
+        #     self.dome_homed = True
 
-    #         # Note we left the telescope alone
+            # Note we left the telescope alone
 
-    #     elif open_cmd and self.mode == 'Manual' and net_connected:  # NB NB NB Ideally Telescope parked away from Sun.
-    #         if g_dev['enc'].status['shutter_status'] != 'Open' or not self.dome_open:
-    #             self.guarded_open()
-    #             self.dome_opened = True
-    #             self.dome_homed = True
+        elif open_cmd and self.mode == 'Manual' :# and net_connected:  # NB NB NB Ideally Telescope parked away from Sun.
+            if g_dev['enc'].status['shutter_status'] != 'Open' or not self.dome_open:
+                self.guarded_open()
+                self.dome_opened = True
+                self.dome_homed = True
 
-    #     elif close_cmd and self.mode == 'Manual':
-    #         try:
-    #             self.enclosure.CloseShutter()
-    #             self.dome_open = False
-    #             self.dome_home = True
-    #             g_dev['obs'].send_to_user("Enclosure commanded to close in Manual mode.", p_level='INFO')
-    #         except:
-    #             plog('Dome refused close command. Try again in 120 sec')
-    #             time.sleep(120)
-    #             try:
-    #                 self.enclosure.CloseShutter()
-    #                 self.dome_open = False
-    #                 self.dome_home = True
-    #             except:
-    #                 plog('Dome refused close command second time.')
-    #                 g_dev['obs'].send_to_user("Enclosure failed to close in Manual mode.", p_level='INFO')
-    #         self.dome_opened = False
+        elif close_cmd and self.mode == 'Manual':
+            try:
+                self.enclosure.CloseShutter()
+                self.dome_open = False
+                self.dome_home = True
+                g_dev['obs'].send_to_user("Enclosure commanded to close in Manual mode.", p_level='INFO')
+            except:
+                plog('Dome refused close command. Try again in 120 sec')
+                time.sleep(120)
+                try:
+                    self.enclosure.CloseShutter()
+                    self.dome_open = False
+                    self.dome_home = True
+                except:
+                    plog('Dome refused close command second time.')
+                    g_dev['obs'].send_to_user("Enclosure failed to close in Manual mode.", p_level='INFO')
+            self.dome_opened = False
 
 
-    #         self.dome_homed = True    #g_dev['events']['Cool Down, Open']  <=
-    #     elif ((g_dev['events']['Cool Down, Open']  <= ephem_now < g_dev['events']['Observing Ends']) and \
-    #            g_dev['enc'].site_mode == 'Automatic') and not (g_dev['ocn'].wx_hold or g_dev['ocn'].clamp_latch) and net_connected:
+            self.dome_homed = True    #g_dev['events']['Cool Down, Open']  <=
+        elif ((g_dev['events']['Cool Down, Open']  <= ephem_now < g_dev['events']['Observing Ends']) and \
+                g_dev['enc'].site_mode == 'Automatic') and not (g_dev['ocn'].wx_hold or g_dev['ocn'].clamp_latch): # and net_connected:
             
 
-    #         try:
-    #             # if self.status_string in ['Closed']:   #Fails at SRO, attriute not set. 20220806 wer
-    #             # ****************************NB NB NB For SRO we have no control so just observe and skip all this logic
+            try:
+                # if self.status_string in ['Closed']:   #Fails at SRO, attriute not set. 20220806 wer
+                # ****************************NB NB NB For SRO we have no control so just observe and skip all this logic
 
-    #             # Don't check the string, the string could be wrong!
+                # Don't check the string, the string could be wrong!
 
-    #             if g_dev['enc'].status is not None and g_dev['enc'].status['shutter_status'] != 'Open' or not self.dome_open:
-    #                 plog("Entering Guarded open, Expect slew opposite Sun")
-    #                 self.guarded_open()
-    #                 self.dome_opened = True
-    #                 self.dome_homed = True
-    #         except Exception as e:
-    #             plog("Error while opening the roof ", e)
+                if g_dev['enc'].status is not None and g_dev['enc'].status['shutter_status'] != 'Open' or not self.dome_open:
+                    plog("Entering Guarded open, Expect slew opposite Sun")
+                    self.guarded_open()
+                    self.dome_opened = True
+                    self.dome_homed = True
+            except Exception as e:
+                plog("Error while opening the roof ", e)
 
-    #         # if _redis: g_dev['redis'].set('Enc Auto Opened', True, ex= 600)   # Unused
-    #         try:
-    #             if self.status_string in ['Open'] and ephem_now < g_dev['events']['End Eve Sky Flats']:
-    #                 if self.is_dome:
-    #                     self.enclosure.SlewToAzimuth(az_opposite_sun)
-    #                     plog("Slewing Opposite Sun")
-    #                     g_dev['obs'].send_to_user("Dome slewing opposite the Solar azimuth", p_level='INFO')
-    #                     time.sleep(5)
-    #         except:
-    #             pass
-    #     # THIS should be the ultimate backup to force a close
-    #     elif ephem_now >= g_dev['events']['Close and Park']:  # sunrise + 45/1440:
-    #         # WE are now outside the observing window, so Sun is up!!!
-    #         # If Automatic just close straight away.
-    #         if self.obsid_in_automatic or (close_cmd and self.mode in ['Manual', 'Shutdown']):
-    #             if self.is_dome and self.enclosure.CanSlave:
-    #                 #enc_at_home = self.enclosure.AtHome
-    #                 self.following = False
-    #             else:
-    #                 self.following = False
-    #                 #enc_at_home = True
-    #                 pass
-    #             if close_cmd:
-    #                 self.state = 'User Closed the ' + shutter_str
-    #             else:
-    #                 self.state = 'Automatic Daytime normally Closed the ' + shutter_str
-    #             try:
-    #                 self.enclosure.CloseShutter()
-    #                 self.dome_opened = False
-    #                 self.dome_homed = True
+            # if _redis: g_dev['redis'].set('Enc Auto Opened', True, ex= 600)   # Unused
+            try:
+                if self.status_string in ['Open'] and ephem_now < g_dev['events']['End Eve Sky Flats']:
+                    if self.is_dome:
+                        self.enclosure.SlewToAzimuth(az_opposite_sun)
+                        plog("Slewing Opposite Sun")
+                        g_dev['obs'].send_to_user("Dome slewing opposite the Solar azimuth", p_level='INFO')
+                        time.sleep(5)
+            except:
+                pass
+        # THIS should be the ultimate backup to force a close
+        elif ephem_now >= g_dev['events']['Close and Park']:  # sunrise + 45/1440:
+            # WE are now outside the observing window, so Sun is up!!!
+            # If Automatic just close straight away.
+            if self.obsid_in_automatic or (close_cmd and self.mode in ['Manual', 'Shutdown']):
+                if self.is_dome and self.enclosure.CanSlave:
+                    #enc_at_home = self.enclosure.AtHome
+                    self.following = False
+                else:
+                    self.following = False
+                    #enc_at_home = True
+                    pass
+                if close_cmd:
+                    self.state = 'User Closed the ' + shutter_str
+                else:
+                    self.state = 'Automatic Daytime normally Closed the ' + shutter_str
+                try:
+                    self.enclosure.CloseShutter()
+                    self.dome_opened = False
+                    self.dome_homed = True
 
-    #            # plog("Daytime Close issued to the " + shutter_str  + "   No longer following Mount.")
-    #             except:
-    #                 plog("Shutter Failed to close at End of Morning Sky Flats.")
-    #             #self.mode = 'Manual'
-    #     return
+                # plog("Daytime Close issued to the " + shutter_str  + "   No longer following Mount.")
+                except:
+                    plog("Shutter Failed to close at End of Morning Sky Flats.")
+                #self.mode = 'Manual'
+        return
 
 
 

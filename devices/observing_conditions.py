@@ -201,11 +201,11 @@ class ObservingConditions:
 
         """
         # Just need to initialise this.
-
         status = None
         # This is purely generic code for a generic site.
         # It may be overwritten with a monkey patch found in the appropriate config.py.
         if not self.is_wema: #and self.site_is_custom:  # EG., this was written first for SRO.                                        #  system is a proxoy for having a WEMA
+            # This is NOT the normal ARO path
             if self.config["site_IPC_mechanism"] == "shares":
                 try:
                     weather = open(g_dev["wema_share_path"] + "weather.txt", "r")
@@ -244,6 +244,8 @@ class ObservingConditions:
 
 
         elif self.config['observing_conditions']['observing_conditions1']["name"] == 'Boltwood Custom for ARO':
+            #This is the normal path for ARO
+
             try:
                 with open("C:\ptr\wema_transfer\\boltwood.txt", 'r') as bw_rec:
                     bw1 = bw_rec.readline().split()
