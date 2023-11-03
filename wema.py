@@ -97,26 +97,21 @@ class WxEncAgent:
             self.debug_lapse_time = 0.0
             g_dev['debug'] = False
 
-
-        self.hostname = self.hostname = socket.gethostname()
+        self.hostname = socket.gethostname()
         if self.hostname in self.config["wema_hostname"]:
             self.is_wema = True
-            g_dev["wema_write_share_path"] = config["wema_path"]
-            self.wema_path = g_dev["wema_write_share_path"]
-            self.site_path = self.wema_path
         else:
-            # This host is a client
+            # This host is a client.   What does this mean??  This IS wema code.
             self.is_wema = False  # This is a client.
-            self.site_path = config["wema_path"]
-            g_dev["site_path"] = self.site_path
-            g_dev["wema_write_share_path"] = self.site_path  # Just to be safe.
-            self.wema_path = g_dev["wema_write_share_path"]
+        self.wema_path = config["wema_path"]
+        g_dev["wema_write_share_path"] = self.wema_path
+        #self.site_path = self.wema_path  #  No longer used
 
 
         self.last_request = None
         self.stopped = False
         self.site_message = "-"
-        self.site_mode = config['site_enclosure_default_mode']
+        self.site_mode = config['site_enclosures_default_mode']
         self.device_types = config["wema_types"]
         self.astro_events = wema_events.Events(self.config)
         self.astro_events.compute_day_directory()
@@ -187,35 +182,25 @@ class WxEncAgent:
         # If it is too many, then it shuts down for the whole evening. 
         self.opens_this_evening = 0
         self.local_weather_ok = None
-        self.weather_text_report = []
-        
-        #obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
-        
+        self.weather_text_report = []       
         self.times_to_open = []
         self.times_to_close = []
         self.hourly_report_holder=[]
         self.weather_report_open_at_start = False
-        self.nightly_reset_complete = False
-      
+        self.nightly_reset_complete = False  
         self.keep_open_all_night = False
         self.keep_closed_all_night   = False          
         self.open_at_specific_utc = False
         self.specific_utc_when_to_open = -1.0  
         self.manual_weather_hold_set = False
-        self.manual_weather_hold_duration = -1.0
-    
+        self.manual_weather_hold_duration = -1.0    
         self.wema_has_roof_control=config['wema_has_control_of_roof']
 
         # This prevents commands from previous nights/runs suddenly running
         # when wema.py is booted (has happened a bit!)
         url_job = "https://jobs.photonranch.org/jobs/getnewjobs"
         body = {"site": self.config['wema_name']}
-        #cmd = {}
-        # Get a list of new jobs to complete (this request
-        # marks the commands as "RECEIVED")
-        requests.request(
-            "POST", url_job, data=json.dumps(body), timeout=30
-        ).json()
+        requests.request("POST", url_job, data=json.dumps(body), timeout=30).json()
 
 
     def create_devices(self, config: dict):
@@ -449,7 +434,7 @@ class WxEncAgent:
         enc_status = None
         ocn_status = None
         wema = self.config['wema_name']  
-        
+
         # Hourly Weather Report
         if time.time() > (self.weather_report_run_timer + 3600):
             self.weather_report_run_timer=time.time()
@@ -463,8 +448,9 @@ class WxEncAgent:
                 self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
         
         
-        # Enclosure Status
+        # Enclosure and Weather Status
         if time.time() > self.enclosure_status_check_timer + self.enclosure_status_check_period:
+            breakpoint()
             self.enclosure_status_check_timer = time.time()
             status = {}
             status["timestamp"] = round(time.time(), 1)
@@ -474,6 +460,7 @@ class WxEncAgent:
                 status['enclosure']['enclosure1'] = device.get_status()
                 enc_status = {"enclosure": status.pop("enclosure")}
             else:
+                #This is SRO mode
                 enc_status={}
                 enc_status['enclosure']={}
 
@@ -522,7 +509,6 @@ class WxEncAgent:
                     except:
                         plog('could not send enclosure status')
 
-
         if time.time() > self.weather_status_check_timer + self.weather_status_check_period:
             self.weather_status_check_timer=time.time()
             status = {}
@@ -550,7 +536,7 @@ class WxEncAgent:
 
             ocn_status['observing_conditions']['observing_conditions1']['weather_report_good'] = self.weather_report_open_at_start
             try:
-                ocn_status['observing_conditions']['observing_conditions1']['fitzgerald_number'] = self.night_fitzgerald_number
+                ocn_status['observing_conditions']['observing_conditions1']['fitzgerald_number'] = self.night_fitzgerald_number  # uninit Variable
             except:
                 pass
 
@@ -648,7 +634,8 @@ class WxEncAgent:
             
             
 
-    def update(self):     ## NB NB NB This is essentially the sequencer for the WEMA.
+    def update(self):     ## NB NB NB This is essentially the Manager/Sequencer for the
+        #breakpoint()                 ## enclosures managed by the WEMA
         self.update_status()
 
         if time.time() > self.scan_requests_timer + self.scan_requests_check_period:
@@ -666,11 +653,12 @@ class WxEncAgent:
 
             # If the enclosure is simply delayed until opening, then wait until then, then attempt to start up the enclosure
             obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
-            if (g_dev['events']['Cool Down, Open'] <= ephem_now):
+            
+            if (g_dev['events']['Cool Down, Open'] <= ephem_now) or \
+                (g_dev['events']['Close and Park'] <= ephem_now):
                 self.nightly_reset_complete = False
 
-            if (g_dev['events']['Close and Park'] <= ephem_now):
-                self.nightly_reset_complete = False
+            #This is used to access SRO weather and Enclosure shares.
             if self.ocn_status_custom==False:                            
                 ocn_status = g_dev['ocn'].get_status()
             else:
@@ -679,7 +667,7 @@ class WxEncAgent:
                 enc_status = g_dev['enc'].get_status()
             else:
                 enc_status = get_enc_status_custom()
-           
+            breakpoint()
             if ocn_status==None:
                 self.local_weather_ok = None
             else:
@@ -750,6 +738,7 @@ class WxEncAgent:
             
             # Safety checks here
             if not g_dev['debug'] and self.open_and_enabled_to_observe:
+                breakpoint()
                 if enc_status is not None:
                     if enc_status['shutter_status'] == 'Software Fault':
                         plog("Software Fault Detected. Will alert the authorities!")
@@ -809,10 +798,10 @@ class WxEncAgent:
                 plog("minutes until next open attempt ALLOWED: " +
                      str((self.enclosure_next_open_time - time.time()) / 60))
 
-            
+            #breakpoint()
             if (not self.keep_closed_all_night) and ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends']) and (self.keep_open_all_night or self.weather_report_open_at_start==True or not self.owm_active) and \
-                g_dev['enc'].mode == 'Automatic') and not self.cool_down_latch and (self.keep_open_all_night or self.local_weather_ok == True or (not self.ocn_exists) or (not self.local_weather_active)) and not \
-                enc_status['shutter_status'] in ['Software Fault', 'Opening', 'Closing', 'Error']:
+                g_dev['enc'].mode == 'Automatic') and (not self.cool_down_latch) and (self.keep_open_all_night or self.local_weather_ok  or (not self.ocn_exists) or (not self.local_weather_active)) and \
+                (not enc_status['shutter_status'] in ['Software Fault', 'Opening', 'Closing', 'Error']):
 
                 self.cool_down_latch = True
 
@@ -881,6 +870,7 @@ class WxEncAgent:
         try:
             while True:
                 self.update()  # `Ctrl-C` will exit the program.
+                time.sleep(15)
         except KeyboardInterrupt:
             print("Finishing loops and exiting...")
             self.stopped = True
@@ -966,7 +956,8 @@ class WxEncAgent:
                     enc_status = g_dev['enc'].get_status()
                     if not enc_status['shutter_status'] in ['Open', 'open']:
                         time.sleep(self.config['period_of_time_to_wait_for_roof_to_open'])
-
+                   
+                    #This is where successive opens get stretched out.
                     self.enclosure_next_open_time = time.time() + (self.config['roof_open_safety_base_time'] * 60) * self.opens_this_evening
 
                     enc_status = g_dev['enc'].get_status()
@@ -1011,7 +1002,7 @@ class WxEncAgent:
         # First thing to do at the Cool Down, Open time is to calculate the quality of the evening
         # using the broad weather report.
         try: 
-            plog("Applsing quality of evening from Open Weather Map.")
+            plog("Appraising quality of evening from Open Weather Map.")
             owm = OWM('d5c3eae1b48bf7df3f240b8474af3ed0')
             mgr = owm.weather_manager()
             try:

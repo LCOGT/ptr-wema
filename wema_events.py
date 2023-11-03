@@ -608,7 +608,7 @@ class Events:
                      ('Morn Sky Flats     ', ephem.Date(self.sunrise + self.config['morn_flat_start_offset']/1440.)),
                      ('Sun Rise           ', ephem.Date(self.sunrise)), 
                      ('End Morn Sky Flats ', ephem.Date(self.sunrise  + self.config['morn_flat_end_offset']/1440.)),                    # Enclosure must close 5 min after sunrise
-                     ('Ops Window Closes  ', ephem.Date(self.close_and_park - 2/1440.)),
+                     ('Ops Window Closes  ', ephem.Date(self.close_and_park - 1/1440.)),
                      ('Close and Park     ', ephem.Date(self.close_and_park)),
 
                      ('Morn Bias Dark     ', ephem.Date(self.close_and_park + 2/1440.)),  #I guess this is warm-up time!
