@@ -38,13 +38,10 @@ wema_config = {
     'wema_name': 'aro',
     'instance_type': 'wema',
     'obsp_ids': ['aro1'], #, 'aro2','aro3', 'aro4']  #Possible hint to site about who are its children.  
-    # These are just the bootup default values.
-
-       
+      
     'debug_mode': False,
     'debug_duration_sec': 80000, 
     'admin_owner_commands_only': False,
-
 
     'owner':  ['google-oauth2|102124071738955888216',
                'google-oauth2|112401903840371673242'],  #    WER and  Neyle,
@@ -55,7 +52,7 @@ wema_config = {
     'site_desc': "Apache Ridge Observatory, Santa Fe, NM, USA. 2194m",  #Chg name to site_location?
     'airport_codes':  ['SAF', 'ABQ', 'LSN'],   #  Meant to bracket the site so we can probe Obsy Wx reports
     
-    'client_hostname':"ARO-0m30",     # This should be a list corresponding to obsp ID's and maybe an parallel ip# list.
+    'client_hostnames': ["ARO-0m30"],     # This should be a list corresponding to obsp ID's and maybe an parallel ip# list.
     
     'wema_is_active':  True,     # True if an agent (ie a wema) is used at a site.   # Wemas are split sites -- at least two CPS's sharing the control.
     'wema_hostname':  'ARO-WEMA',
@@ -66,7 +63,7 @@ wema_config = {
     'site_IPC_mechanism':  'shares',   # ['None', shares', 'shelves', 'redis']
     'wema_write_share_path':  'W:/', #Meant to be a share with to by the Obsp TCS computer
     'dome_on_wema':  True,  #Temporary assignment   20230617 WER
-    'redis_ip': None,   # None if no redis path present, localhost if redis iself-contained
+    'redis_ip': '10.0.0.73',   # port :6379 None if no redis path present, localhost if redis iself-contained
     'site_is_single_host':  False,   # A simple single computer ASCOM site.
 
     'name': "Apache Ridge Observatory, Santa Fe, NM, USA. 2194m",
@@ -107,9 +104,10 @@ wema_config = {
     'check_time': 300,
     'maximum_roof_opens_per_evening' : 4,
     'roof_open_safety_base_time' : 15, # How many minutes to use as the default retry time to open roof. This will be progressively multiplied as a back-off function.
-    'site_enclosures_default_mode': "Automatic",   # ["Manual", "Shutdown", "Automatic"]  Was "Simulated' as o 10/14/2023 Wer
     
+    'site_enclosures_default_mode': "Automatic",   # ["Manual", "Shutdown", "Automatic"]  Was "Simulated' as o 10/14/2023 We
     'automatic_detail_default': "Enclosures are initially set to Automatic by ARO site_config.",
+    
     'observing_check_period' : 2,    # How many minutes between weather checks
     'enclosure_check_period' : 2,    # How many minutes between enclosure checks
     
@@ -123,6 +121,8 @@ wema_config = {
     # NB NB THe following two entries are relevant for SRO
     'morn_close_and_park': 45.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowband flats
     'eve_cool_down_open': -60.0, # How many minutes before sunset to open. Default -65 = an hour-ish before sunset. Gives time to cool and get narrowband flats
+    # WEMA can not have local_weather_info sometimes.. e.g. ECO
+    'has_local_weather_info' : True,
     
     'bias_dark interval':  105.,   # Takes 102 minutes as of 11/1/23 @ ARO
     'eve_sky_flat_sunset_offset': -40.,  # Before Sunset Minutes  neg means before, + after. Takes about 33 min @ ARO 110123
@@ -133,8 +133,6 @@ wema_config = {
     'morn_flat_end_offset':  +40,        #min from Sunrise
     'end_night_processing_time':  90,   #  A guess#'eve_sky_flat_sunset_offset': -60.0,  # Minutes  neg means before, + after.
 
-    # WEMA can not have local_weather_info sometimes.. e.g. ECO
-    'has_local_weather_info' : True,
 
     # Whether these limits are on by default
     'rain_limit_on': True,  #Right now Skyalert Babbles.

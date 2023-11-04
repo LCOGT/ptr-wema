@@ -450,7 +450,7 @@ class WxEncAgent:
         
         # Enclosure and Weather Status
         if time.time() > self.enclosure_status_check_timer + self.enclosure_status_check_period:
-            breakpoint()
+            #breakpoint()
             self.enclosure_status_check_timer = time.time()
             status = {}
             status["timestamp"] = round(time.time(), 1)
@@ -667,7 +667,7 @@ class WxEncAgent:
                 enc_status = g_dev['enc'].get_status()
             else:
                 enc_status = get_enc_status_custom()
-            breakpoint()
+            #breakpoint()
             if ocn_status==None:
                 self.local_weather_ok = None
             else:
@@ -738,7 +738,7 @@ class WxEncAgent:
             
             # Safety checks here
             if not g_dev['debug'] and self.open_and_enabled_to_observe:
-                breakpoint()
+                #breakpoint()
                 if enc_status is not None:
                     if enc_status['shutter_status'] == 'Software Fault':
                         plog("Software Fault Detected. Will alert the authorities!")

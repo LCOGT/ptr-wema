@@ -1072,7 +1072,7 @@ class Enclosure:
 
         #  NB NB NB Gather some facts:
 
-        breakpoint()
+        #breakpoint()
         ops_window_start, sunset, sunrise, ephem_now = self.astro_events.getSunEvents()
        
         az_opposite_sun = g_dev['evnt'].sun_az_now()
