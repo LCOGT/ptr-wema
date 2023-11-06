@@ -955,6 +955,9 @@ class WxEncAgent:
                     #while True:
                     enc_status = g_dev['enc'].get_status()
                     if not enc_status['shutter_status'] in ['Open', 'open']:
+# =============================================================================
+                        g_dev['enc'].open_roof_directly({}, {})
+# =============================================================================
                         time.sleep(self.config['period_of_time_to_wait_for_roof_to_open'])
                    
                     #This is where successive opens get stretched out.

@@ -82,34 +82,35 @@ wema_config = {
 
     'TZ_database_name':  'America/Denver',
     'mpc_code':  'ZZ24',    # This is made up for now.
-    'time_offset':  -6.0,   # These two keys w static values may be obsolete give the new TZ stuff
-    'timezone': 'MDT',      # This was meant to be coloquial Time zone abbreviation, alternate for "TZ_data..."
+    'time_offset':  -7.0,   # These two keys w static values may be obsolete give the new TZ stuff
+    'timezone': 'MST',      # This was meant to be coloquial Time zone abbreviation, alternate for "TZ_data..."
     'latitude': 35.554298,     # Decimal degrees, North is Positive  Meant to be Wx Station coordinates
     'longitude': -105.870197,   # Decimal degrees, West is negative
     'elevation': 2194,    # meters above sea level.  Meant to be elevation of main temp sensor 20' off ground.
     'reference_ambient':  10.0,  # Degrees Celsius.  Alternately 12 entries, one for every - mid month.
     'reference_pressure':  794.0,    #mbar   A rough guess 20200315
 
-    'OWM_active': True,
+    'OWM_active': False,
     'local_weather_active': True,
-    'local_weather_always_overrides_OWM': True,  ##WERE changed 10/14//2023
+    'local_weather_always_overrides_OWM': True,  #  This needs inspecting, probably not implemented wer 20231105
     'enclosure_status_check_period': 30,
     'weather_status_check_period': 30,
     'safety_status_check_period': 30,
+    'observing_check_period' : 2,    # How many minutes between weather checks   Are these redundant or unused?
+    'enclosure_check_period' : 2,    # How many minutes between enclosure checks
     'wema_has_control_of_roof': True,
     'wema_allowed_to_open_roof': True,
     #next few are enclosure parameteers
-    'period_of_time_to_wait_for_roof_to_open' : 90, # seconds - needed to check if the roof ACTUALLY opens. 
+    'period_of_time_to_wait_for_roof_to_open' : 90, # seconds - needed to check if the roof ACTUALLY opens. ARO takes ~35 seconds as of 20231101
     'only_scope_that_controls_the_roof': True, # If multiple scopes control the roof, set this to False
     'check_time': 300,
-    'maximum_roof_opens_per_evening' : 4,
+    'maximum_roof_opens_per_evening' : 4,   #WER I am not sure counting roof opens is as good as weather flaps.
     'roof_open_safety_base_time' : 15, # How many minutes to use as the default retry time to open roof. This will be progressively multiplied as a back-off function.
     
     'site_enclosures_default_mode': "Automatic",   # ["Manual", "Shutdown", "Automatic"]  Was "Simulated' as o 10/14/2023 We
     'automatic_detail_default': "Enclosures are initially set to Automatic by ARO site_config.",
     
-    'observing_check_period' : 2,    # How many minutes between weather checks
-    'enclosure_check_period' : 2,    # How many minutes between enclosure checks
+
     
     #Sequencing keys and value, sets up Events
     'auto_eve_bias_dark': True,
@@ -154,17 +155,17 @@ wema_config = {
     'sky_temperature_limit': -1,  #It must be colder than this
     'cloud_cover_limit': 51,
     'lowest_ambient_temperature': 1,
-    'highest_ambient_temperature': 45,
+    'highest_ambient_temperature': 40,
 
     # Local weather warning limits, will send a warning, but leave the roof alone
     'warning_rain_limit': 3,
     'warning_humidity_limit': 75,
     'warning_windspeed_limit': 15,
-    'warning_lightning_limit' : 10,
+    'warning_lightning_limit' : 20, #km
     'warning_temperature_minus_dewpoint_limit': 2,
     'warning_sky_temperature_limit': -17,
     'warning_cloud_cover_limit': 25,
-    'warning_lowest_ambient_temperature': 5,
+    'warning_lowest_ambient_temperature': 4,
     'warning_highest_ambient_temperature': 35,
     
     'get_ocn_status': None,
