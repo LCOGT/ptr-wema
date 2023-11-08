@@ -90,7 +90,7 @@ wema_config = {
     'reference_ambient':  10.0,  # Degrees Celsius.  Alternately 12 entries, one for every - mid month.
     'reference_pressure':  794.0,    #mbar   A rough guess 20200315
 
-    'OWM_active': False,
+    'OWM_active': True,   #  Consider splitting out rain and wind from high clouds. Former should usuall always be on.
     'local_weather_active': True,
     'local_weather_always_overrides_OWM': True,  #  This needs inspecting, probably not implemented wer 20231105
     'enclosure_status_check_period': 30,
@@ -101,17 +101,15 @@ wema_config = {
     'wema_has_control_of_roof': True,
     'wema_allowed_to_open_roof': True,
     #next few are enclosure parameteers
-    'period_of_time_to_wait_for_roof_to_open' : 90, # seconds - needed to check if the roof ACTUALLY opens. ARO takes ~35 seconds as of 20231101
+    'period_of_time_to_wait_for_roof_to_open' : 45, # seconds - needed to check if the roof ACTUALLY opens. ARO takes ~35 seconds as of 20231101
     'only_scope_that_controls_the_roof': True, # If multiple scopes control the roof, set this to False
-    'check_time': 300,
+    'check_time': 300,    #   20231106   Unused WER
     'maximum_roof_opens_per_evening' : 4,   #WER I am not sure counting roof opens is as good as weather flaps.
     'roof_open_safety_base_time' : 15, # How many minutes to use as the default retry time to open roof. This will be progressively multiplied as a back-off function.
     
     'site_enclosures_default_mode': "Automatic",   # ["Manual", "Shutdown", "Automatic"]  Was "Simulated' as o 10/14/2023 We
     'automatic_detail_default': "Enclosures are initially set to Automatic by ARO site_config.",
-    
-
-    
+     
     #Sequencing keys and value, sets up Events
     'auto_eve_bias_dark': True,
     'auto_eve_sky_flat': True,
@@ -120,18 +118,20 @@ wema_config = {
     'auto_morn_bias_dark': True,
 
     # NB NB THe following two entries are relevant for SRO
-    'morn_close_and_park': 45.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowband flats
-    'eve_cool_down_open': -60.0, # How many minutes before sunset to open. Default -65 = an hour-ish before sunset. Gives time to cool and get narrowband flats
+   
     # WEMA can not have local_weather_info sometimes.. e.g. ECO
     'has_local_weather_info' : True,
     
-    'bias_dark interval':  105.,   # Takes 102 minutes as of 11/1/23 @ ARO
-    'eve_sky_flat_sunset_offset': -40.,  # Before Sunset Minutes  neg means before, + after. Takes about 33 min @ ARO 110123
+    'bias_dark interval':  110.,   # Takes 102 minutes as of 11/1/23 @ ARO
+    'eve_cool_down_open': -55.0, # How many minutes before sunset to open. Default -65 = an hour-ish before sunset. Gives time to cool and get narrowband flats
+                                 #  Note 15 minutes of cool down provided.     
+    'eve_sky_flat_sunset_offset': -40.,  # Before Sunset Minutes  neg means before, + after. Flats take about 33 min @ ARO 110123
     'end_eve_sky_flats_offset': -1 ,      # How many minutes after civilDusk to do....
     'clock_and_auto_focus_offset':-10,   #min before start of observing
     'astro_dark_buffer': 30,   #Min before and after AD to extend observing window
     'morn_flat_start_offset': -10,       #min from Sunrise
     'morn_flat_end_offset':  +40,        #min from Sunrise
+    'morn_close_and_park': 45.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowband flats
     'end_night_processing_time':  90,   #  A guess#'eve_sky_flat_sunset_offset': -60.0,  # Minutes  neg means before, + after.
 
 
@@ -262,15 +262,7 @@ wema_config = {
                                                                         #First Entry is always default condition.
                 'roof_shutter':  ['Auto', 'Open', 'Close', 'Lock Closed', 'Unlock'],
             },
-           # # Not sure why these are here and not part of the site.
-           #  'eve_bias_dark_dur':  1.5,   # hours Duration, prior to next.
-           #  'eve_screen_flat_dur': 0.0,   # hours Duration, prior to next.
-           #  'operations_begin':  -1.0,   # - hours from Sunset
-           #  'eve_cooldown_offset': -.99,   # - hours beforeSunset
-           #  'eve_sky_flat_offset':  1,   # - hours beforeSunset   Only THis is used in PTR events
-           #  'morn_sky_flat_offset':  0.4,   # + hours after Sunrise
-           #  'morning_close_offset':  0.41,   # + hours after Sunrise
-           #  'operations_end':  0.42,
+
         },
     },
 

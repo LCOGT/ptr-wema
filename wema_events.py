@@ -584,7 +584,7 @@ class Events:
 
 
         self.evnt = [('Eve Bias Dark      ', ephem.Date(self.cool_down_open - self.config['bias_dark interval']/1440)),
-                     ('End Eve Bias Dark  ', ephem.Date(self.cool_down_open - (1.25*6)/1440)),
+                     ('End Eve Bias Dark  ', ephem.Date(self.cool_down_open - 6/1440)),
                      ('Ops Window Start   ', ephem.Date(self.cool_down_open)),  # Enclosure may open.
                      ('Cool Down, Open    ', ephem.Date(self.cool_down_open)),
                      ('Eve Sky Flats      ', ephem.Date(self.sunset + self.config['eve_sky_flat_sunset_offset']/1440)),  # Nominally -35 for SRO

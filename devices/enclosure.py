@@ -303,7 +303,7 @@ class Enclosure:
             #  assuming the transducers are connected to the WEMA.
             self.obsid_is_generic = True
             if driver == 'X322_http':
-                plog('X322 http exeperimaneta driver is connected. ')
+                plog('X322 http exeperimental driver is connected. ')
                 self.http_driver = True
                 
                 
