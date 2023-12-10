@@ -154,7 +154,7 @@ wema_config = {
     'temperature_minus_dewpoint_limit': 2,
     'sky_temperature_limit': -1,  #It must be colder than this
     'cloud_cover_limit': 51,
-    'lowest_ambient_temperature': 1,
+    'lowest_ambient_temperature': -10,
     'highest_ambient_temperature': 40,
 
     # Local weather warning limits, will send a warning, but leave the roof alone
@@ -165,7 +165,7 @@ wema_config = {
     'warning_temperature_minus_dewpoint_limit': 2,
     'warning_sky_temperature_limit': -17,
     'warning_cloud_cover_limit': 25,
-    'warning_lowest_ambient_temperature': 4,
+    'warning_lowest_ambient_temperature': -5,
     'warning_highest_ambient_temperature': 35,
     
     'get_ocn_status': None,

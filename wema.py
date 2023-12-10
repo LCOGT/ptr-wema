@@ -543,7 +543,7 @@ class WxEncAgent:
 
             #breakpoint()
             if self.enclosure_next_open_time - time.time() > 0:
-                ocn_status['observing_conditions']['observing_conditions1']['hold_duration'] = self.enclosure_next_open_time - time.time()
+                ocn_status['observing_conditions']['observing_conditions1']['hold_duration'] = round(self.enclosure_next_open_time - time.time(), 1)
             else:
                 ocn_status['observing_conditions']['observing_conditions1']['hold_duration'] = 0
             
