@@ -265,6 +265,7 @@ class ObservingConditions:
                 self.time_since = int((float(bw1[13]) + float(sa_nw[13])) / 2.)
                 self.time_of_update = round((float(bw1[14]) + float(sa_nw[14])) / 2., 5)
                 self.rain_wet_current = max(int(bw1[11]), int(sa_nw[12]), int(bw1[11]), int(sa_nw[12]))
+                breakpoint()
                 self.cloud_condition = max(int(bw1[15]), int(sa_nw[15]))
                 self.rain_wet_condition = max(int(bw1[16]), int(sa_nw[16]), int(bw1[17]), int(sa_nw[17]))
                 self.daylight_condition = max(int(bw1[18]), int(sa_nw[18]))

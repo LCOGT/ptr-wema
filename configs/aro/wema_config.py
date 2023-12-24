@@ -11,7 +11,7 @@ aro-0m30      10.0.0.73
 aro-wema      10.0.0.50
 Power Control 10.0.0.100   admin arot******
 Roof Control  10.0.0.200   admin arot******
-Redis         10.0.0.73:6379
+Redis         10.0.0.174:6379
 '''
 #                                                                                                  1         1         1
 #        1         2         3         4         5         6         7         8         9         0         1         2
@@ -63,7 +63,8 @@ wema_config = {
     'site_IPC_mechanism':  'shares',   # ['None', shares', 'shelves', 'redis']
     'wema_write_share_path':  'W:/', #Meant to be a share with to by the Obsp TCS computer
     'dome_on_wema':  True,  #Temporary assignment   20230617 WER
-    'redis_ip': '10.0.0.73',   # port :6379 None if no redis path present, localhost if redis iself-contained
+    'redis_available':  True, 
+    'redis_ip': "10.0.0.174:6379",   # port :6379 None if no redis path present, localhost if redis iself-contained
     'site_is_single_host':  False,   # A simple single computer ASCOM site.
 
     'name': "Apache Ridge Observatory, Santa Fe, NM, USA. 2194m",

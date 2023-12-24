@@ -699,7 +699,7 @@ class WxEncAgent:
             if g_dev['enc'].mode == 'Manual':
                 plog ("Weather Considerations overriden due to being in Manual or debug mode: ")
             
-            plog("Weather Report Good to Observe: " + str(self.weather_report_open_at_start))
+            plog("OWM Weather Report Good to Observe: " + str(self.weather_report_open_at_start))
             plog("Time until Cool and Open      : " + str(round(( g_dev['events']['Cool Down, Open'] - ephem_now) * 24,2)) + " hours")
             plog("Time until Close and Park     : "+ str(round(( g_dev['events']['Close and Park'] - ephem_now) * 24,2)) + " hours")
             plog("Time until Nightly Reset      : " + str(round((g_dev['events']['Nightly Reset'] - ephem_now) * 24, 2)) + " hours")
