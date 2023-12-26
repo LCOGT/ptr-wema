@@ -261,20 +261,22 @@ class ObservingConditions:
                 self.sky_minus_ambient = round(self.sky_temp - self.temperature, 2)
                 self.humidity = round((float(bw1[8]) + float(sa_nw[8])) / 2., 1)
                 self.dewpoint = round((float(bw1[9]) + float(sa_nw[9])) / 2., 2)
-                self.windspeed = round(1.60934 * (float(bw1[7]) + float(sa_nw[7])) / 2., 2)  # incoming mph output km/hs
+                #Fixed gross error mixing mph and m/s 20231226 WER
+                self.windspeed = round((float(bw1[7]) + float(sa_nw[7])*0.2778) / 2., 2)  # incoming mph output km/hs
                 self.time_since = int((float(bw1[13]) + float(sa_nw[13])) / 2.)
                 self.time_of_update = round((float(bw1[14]) + float(sa_nw[14])) / 2., 5)
                 self.rain_wet_current = max(int(bw1[11]), int(sa_nw[12]), int(bw1[11]), int(sa_nw[12]))
-                breakpoint()
+
                 self.cloud_condition = max(int(bw1[15]), int(sa_nw[15]))
                 self.rain_wet_condition = max(int(bw1[16]), int(sa_nw[16]), int(bw1[17]), int(sa_nw[17]))
                 self.daylight_condition = max(int(bw1[18]), int(sa_nw[18]))
                 self.req_close = bool(bw1[19])
+                #Note the rates and cover are synthesized by a lookup.
                 self.rain_rate = rate[self.rain_wet_condition]
                 self.cloud_cover = cover[self.cloud_condition]
-                # At this point cloud is grossly different from reality based on the Clarity app reporting.
+                # At this point cloud vover report may be grossly different from reality based on the Clarity app reporting.
 
-                # breakpoint()
+                #
                 status = {}
                 illum, mag = self.astro_events.illuminationNow()
                 # illum = float(redis_monitor["illum lux"])
@@ -613,7 +615,7 @@ class ObservingConditions:
             #             tries += 1
 
             # Only write when around dark, put in CSV format, used to calibrate Unihedron.
-            # breakpoint()
+            #
             sunZ88Op, sunZ88Cl, sunrise, ephemNow = g_dev[
                 "wema"
             ].astro_events.getSunEvents()
