@@ -204,6 +204,7 @@ class ObservingConditions:
         status = None
         # This is purely generic code for a generic site.
         # It may be overwritten with a monkey patch found in the appropriate config.py.
+        #breakpoint()
         if not self.is_wema: #and self.site_is_custom:  # EG., this was written first for SRO.                                        #  system is a proxoy for having a WEMA
             # This is NOT the normal ARO path
             if self.config["site_IPC_mechanism"] == "shares":
@@ -262,7 +263,7 @@ class ObservingConditions:
                 self.humidity = round((float(bw1[8]) + float(sa_nw[8])) / 2., 1)
                 self.dewpoint = round((float(bw1[9]) + float(sa_nw[9])) / 2., 2)
                 #Fixed gross error mixing mph and m/s 20231226 WER
-                self.windspeed = round((float(bw1[7]) + float(sa_nw[7])*0.2778) / 2., 2)  # incoming mph output km/hs
+                self.windspeed = round((float(bw1[7]) + float(sa_nw[7])*0.2778 ) / 2., 2)  # incoming mph output km/hs
                 self.time_since = int((float(bw1[13]) + float(sa_nw[13])) / 2.)
                 self.time_of_update = round((float(bw1[14]) + float(sa_nw[14])) / 2., 5)
                 self.rain_wet_current = max(int(bw1[11]), int(sa_nw[12]), int(bw1[11]), int(sa_nw[12]))
@@ -270,11 +271,11 @@ class ObservingConditions:
                 self.cloud_condition = max(int(bw1[15]), int(sa_nw[15]))
                 self.rain_wet_condition = max(int(bw1[16]), int(sa_nw[16]), int(bw1[17]), int(sa_nw[17]))
                 self.daylight_condition = max(int(bw1[18]), int(sa_nw[18]))
-                self.req_close = bool(bw1[19])
+                self.req_close = bool(bw1[19] or sa_nw[19])
                 #Note the rates and cover are synthesized by a lookup.
                 self.rain_rate = rate[self.rain_wet_condition]
                 self.cloud_cover = cover[self.cloud_condition]
-                # At this point cloud vover report may be grossly different from reality based on the Clarity app reporting.
+                # At this point cloud cover report may be grossly different from reality based on the Clarity app reporting.
 
                 #
                 status = {}
@@ -344,7 +345,9 @@ class ObservingConditions:
 
                 rain_limit_setting = self.config['rain_limit']
                 humidity_limit_setting = self.config['humidity_limit']
+                
                 windspeed_limit_setting = self.config['windspeed_limit']
+                
                 temp_minus_dew_setting = self.config['temperature_minus_dewpoint_limit']
                 sky_temp_limit_setting = self.config['sky_temperature_limit']
                 cloud_cover_limit_setting = self.config['cloud_cover_limit']
@@ -524,7 +527,7 @@ class ObservingConditions:
                 }
 
             wx_reasons = []
-
+            #breakpoint()
             rain_limit = self.sky_monitor.RainRate > self.rain_limit_setting
             if rain_limit:
                 plog("Reported rain rate in mm/hr:  ", self.sky_monitor.RainRate)
@@ -532,8 +535,9 @@ class ObservingConditions:
             humidity_limit = self.sky_monitor.Humidity < self.humidity_limit_setting
             if not humidity_limit:
                 wx_reasons.append('Humidity >= ' + str(self.humidity_limit_setting) + '%')
+            
             wind_limit = (
-                    self.sky_monitor.WindSpeed < self.windspeed_limit_setting
+                    self.sky_monitor.WindSpeed*0.2778 < self.windspeed_limit_setting
             )  # sky_monitor reports km/h, Clarity may report in MPH
             if not wind_limit:
                 wx_reasons.append('Wind > ' + str(self.windspeed_limit_setting) + ' km/h')

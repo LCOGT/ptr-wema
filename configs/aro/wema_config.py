@@ -102,11 +102,11 @@ wema_config = {
     'wema_has_control_of_roof': True,
     'wema_allowed_to_open_roof': True,
     #next few are enclosure parameteers
-    'period_of_time_to_wait_for_roof_to_open' : 45, # seconds - needed to check if the roof ACTUALLY opens. ARO takes ~35 seconds as of 20231101
+    'period_of_time_to_wait_for_roof_to_open' : 55, # seconds - needed to check if the roof ACTUALLY opens. ARO takes ~35 seconds as of 20231101
     'only_scope_that_controls_the_roof': True, # If multiple scopes control the roof, set this to False
     'check_time': 300,    #   20231106   Unused WER
     'maximum_roof_opens_per_evening' : 4,   #WER I am not sure counting roof opens is as good as weather flaps.
-    'roof_open_safety_base_time' : 15, # How many minutes to use as the default retry time to open roof. This will be progressively multiplied as a back-off function.
+    'roof_open_safety_base_time' : 2, # How many minutes to use as the default retry time to open roof. This will be progressively multiplied as a back-off function.
     
     'site_enclosures_default_mode': "Automatic",   # ["Manual", "Shutdown", "Automatic"]  Was "Simulated' as o 10/14/2023 We
     'automatic_detail_default': "Enclosures are initially set to Automatic by ARO site_config.",
@@ -129,7 +129,7 @@ wema_config = {
     'eve_sky_flat_sunset_offset': -40.,  # Before Sunset Minutes  neg means before, + after. Flats take about 33 min @ ARO 110123
     'end_eve_sky_flats_offset': -1 ,      # How many minutes after civilDusk to do....
     'clock_and_auto_focus_offset':-10,   #min before start of observing
-    'astro_dark_buffer': 30,   #Min before and after AD to extend observing window
+    'astro_dark_buffer': 15,   #Min before and after AD to extend observing window
     'morn_flat_start_offset': -10,       #min from Sunrise
     'morn_flat_end_offset':  +40,        #min from Sunrise
     'morn_close_and_park': 45.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowband flats
@@ -150,23 +150,23 @@ wema_config = {
     # Local weather limits   #NB we should move these into OCN config section
     'rain_limit': 1.0,         # NO we shouldn't because it will be different per site
     'humidity_limit': 75,   # With multiple elements etc. I think.
-    'windspeed_limit': 15,  #  Units? Some of this could be OWM stuff e.g.
+    'windspeed_limit': 8,  #  8 m/s per Neyle 20231226 Units? Some of this could be OWM stuff e.g.
     'lightning_limit' : 15, #km
     'temperature_minus_dewpoint_limit': 2,
     'sky_temperature_limit': -1,  #It must be colder than this
     'cloud_cover_limit': 51,
-    'lowest_ambient_temperature': -10,
+    'lowest_ambient_temperature': -20,
     'highest_ambient_temperature': 40,
 
     # Local weather warning limits, will send a warning, but leave the roof alone
     'warning_rain_limit': 3,
-    'warning_humidity_limit': 75,
-    'warning_windspeed_limit': 15,
+    'warning_humidity_limit': 72,
+    'warning_windspeed_limit': 6,   #m/s
     'warning_lightning_limit' : 20, #km
     'warning_temperature_minus_dewpoint_limit': 2,
     'warning_sky_temperature_limit': -17,
     'warning_cloud_cover_limit': 25,
-    'warning_lowest_ambient_temperature': -5,
+    'warning_lowest_ambient_temperature': -10,
     'warning_highest_ambient_temperature': 35,
     
     'get_ocn_status': None,

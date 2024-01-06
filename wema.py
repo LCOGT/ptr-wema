@@ -79,6 +79,29 @@ def send_status(obsy, column, status_to_send):
 
 class WxEncAgent:
     """A class for weather enclosure functionality."""
+    
+    """
+    Re-working ARO Weather 20231226 WER.  Currently the Wema-attached external 
+    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert 
+    provided by a reflection from AWS -- and we have an inside skyalert which
+    measures the underside roof temp during the day!  Unfortunately the AWS
+    style reflection gets stale so I am putting in a redis based way to pass
+    the ARO-0m30 weather information over to the Wema.  No Weather decisions
+    are made at ARO-0m30 except to convert to metric and compute the 15 minute 
+    wind-gust value.
+    
+    In the event the redis data is stale -- we may use the AWS supplied data if
+    we can figure out how to verify it is not stale.
+    
+    NOTE  ARO-0m30 passes its weaterh line through skyalert\weatherdata_nw.txt
+    
+    Status as sent to GUI does go through AWS however.
+    
+    The whole Weather Hold system has been bypassed and semi-replaced with the OWM
+    rework.  I plan to revisit this once I am satsified it serves a useful purpose.
+    for ARO late afternoon winds are common but they tend to abate.  Some wind-
+    shake during eve skyflats causes no harm so we can be more tolerant.
+    """
 
     def __init__(self, name, config):
 
@@ -659,6 +682,7 @@ class WxEncAgent:
                 self.nightly_reset_complete = False
 
             #This is used to access SRO weather and Enclosure shares.
+
             if self.ocn_status_custom==False:                            
                 ocn_status = g_dev['ocn'].get_status()
             else:
@@ -671,6 +695,7 @@ class WxEncAgent:
             if ocn_status==None:
                 self.local_weather_ok = None
             else:
+               
                 if 'wx_ok' in ocn_status:
                     if ocn_status['wx_ok'] == 'Yes':
                         self.local_weather_ok = True
@@ -683,7 +708,9 @@ class WxEncAgent:
 
             plog("***************************************************************")
             plog("Current time             : " + str(time.asctime()))
+            plog("Enclosure Mode           : " + str(enc_status['enclosure_mode']))
             plog("Shutter Status           : " + str(enc_status['shutter_status']))
+            
             if ocn_status == None:
                 plog("This WEMA does not report observing conditions")
             else:
@@ -927,6 +954,7 @@ class WxEncAgent:
                 try:
 
                     plog("Attempting to open the roof.")
+                    
 
                     if ocn_status == None:
                         if not enc_status['shutter_status'] in ['Open', 'open','Opening','opening'] and \
@@ -964,6 +992,7 @@ class WxEncAgent:
                     self.enclosure_next_open_time = time.time() + (self.config['roof_open_safety_base_time'] * 60) * self.opens_this_evening
 
                     enc_status = g_dev['enc'].get_status()
+
                     if enc_status['shutter_status'] in ['Open', 'open']:
                         self.open_and_enabled_to_observe = True
 
