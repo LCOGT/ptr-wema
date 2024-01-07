@@ -450,12 +450,7 @@ class Enclosure:
         #status['enclosure_message']: self.state
         #status['enclosure_synchronized']= True
 
-        #this is older code, now done in wema.update()
-        # try:
-        #     self.manager()  # There be monsters here. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        # except:
-        #     plog("Enclosure Manager faulted.")
-        #     plog(traceback.format_exc())
+
 
         self.status = status
         self.prior_status = status
