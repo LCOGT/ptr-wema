@@ -59,8 +59,8 @@ wema_config = {
     'wema_is_active': True,
     'wema_hostname': 'MRC-WEMA',
     'host_wema_site_name':  'MRC',   #do we need this? 
-    'wema_path':  'Q:/ptr/',  # '/wema_transfer/',
-    'plog_path':  'Q:/ptr/mrc/',  # place where night logs can be found.
+    'wema_path':  'C:/ptr/',  # '/wema_transfer/',
+    'plog_path':  'C:/ptr/mrc/',  # place where night logs can be found.
     'encl_coontrolled_by_wema':  True,
     'site_IPC_mechanism':  'shares',   # ['None', shares', 'shelves', 'redis']
     'wema_write_share_path':  'W:/',
