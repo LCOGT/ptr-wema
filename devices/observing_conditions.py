@@ -408,11 +408,13 @@ class ObservingConditions:
                 # the notion of Obs OK should bring in Sun Elevation and or ambient light.
 
                 if self.sky_monitor.RainRate > 0.0:
-                    plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
-                    plog("Rain Rate is 1.0")
-                    # plog('Rain > ' + str(rain_limit_setting))
-                    plog("This is usually a glitch so ignoring. Higher rain rates will trigger roof.")
-                    plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
+                    # plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
+                    # plog("Rain Rate is 1.0")
+                    # # plog('Rain > ' + str(rain_limit_setting))
+                    # plog("This is usually a glitch so ignoring. Higher rain rates will trigger roof.")
+                    # plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
+                    plog("Rain Flag is 1: This is usually a glitch so ignoring.")
+                    plog("May be unevaporated rain, ice, or a bird dropping.")
 
                 if self.wx_is_ok:
                     wx_str = "Yes"
@@ -581,11 +583,12 @@ class ObservingConditions:
             # the notion of Obs OK should bring in Sun Elevation and or ambient light.
 
             if self.sky_monitor.RainRate > 0.0:
-                plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
-                plog("Rain Rate is 1.0")
+                #plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
+                #plog("Rain Rate is 1.0")
                 # plog('Rain > ' + str(rain_limit_setting))
-                plog("This is usually a glitch so ignoring. Higher rain rates will trigger roof.")
-                plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
+                plog("Rain Flag is 1: This is usually a glitch so ignoring.")
+                plog("May be unevaporated rain, ice, or a bird dropping.")
+                #plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
 
             if self.wx_is_ok:
                 wx_str = "Yes"
