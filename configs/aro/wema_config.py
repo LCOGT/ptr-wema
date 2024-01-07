@@ -3,12 +3,16 @@
 
 Created on Fri Feb 07,  11:57:41 2020
 Updated 20220914 WER   This version does not support color camera channel.
+Updates 20231102 WER   This is meant to clean up and refactor wema/obsp architecture.
 
 @author: wrosing
 
-NB NB NB  If we have one config file then paths need to change depending upon which host does what job.
+aro-0m30      10.0.0.73
+aro-wema      10.0.0.50
+Power Control 10.0.0.100   admin arot******
+Roof Control  10.0.0.200   admin arot******
+Redis         10.0.0.174:6379
 '''
-
 #                                                                                                  1         1         1
 #        1         2         3         4         5         6         7         8         9         0         1         2
 #23456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
@@ -34,17 +38,10 @@ wema_config = {
     'wema_name': 'aro',
     'instance_type': 'wema',
     'obsp_ids': ['aro1'], #, 'aro2','aro3', 'aro4']  #Possible hint to site about who are its children.  
-    # These are just the bootup default values.
-    'OWM_active': True,
-    'local_weather_active': True,
-       
+      
     'debug_mode': False,
     'debug_duration_sec': 80000, 
     'admin_owner_commands_only': False,
-    'local_weather_always_overrides_OWM': True,  ##WERE changed 10/14//2023
-    'enclosure_status_check_period': 30,
-    'weather_status_check_period': 30,
-    'safety_status_check_period': 30,
 
     'owner':  ['google-oauth2|102124071738955888216',
                'google-oauth2|112401903840371673242'],  #    WER and  Neyle,
@@ -55,7 +52,7 @@ wema_config = {
     'site_desc': "Apache Ridge Observatory, Santa Fe, NM, USA. 2194m",  #Chg name to site_location?
     'airport_codes':  ['SAF', 'ABQ', 'LSN'],   #  Meant to bracket the site so we can probe Obsy Wx reports
     
-    'client_hostname':"ARO-0m30",     # This should be a list corresponding to obsp ID's and maybe an parallel ip# list.
+    'client_hostnames': ["ARO-0m30"],     # This should be a list corresponding to obsp ID's and maybe an parallel ip# list.
     
     'wema_is_active':  True,     # True if an agent (ie a wema) is used at a site.   # Wemas are split sites -- at least two CPS's sharing the control.
     'wema_hostname':  'ARO-WEMA',
@@ -66,7 +63,8 @@ wema_config = {
     'site_IPC_mechanism':  'shares',   # ['None', shares', 'shelves', 'redis']
     'wema_write_share_path':  'W:/', #Meant to be a share with to by the Obsp TCS computer
     'dome_on_wema':  True,  #Temporary assignment   20230617 WER
-    'redis_ip': None,   # None if no redis path present, localhost if redis iself-contained
+    'redis_available':  True, 
+    'redis_ip': "10.0.0.174:6379",   # port :6379 None if no redis path present, localhost if redis iself-contained
     'site_is_single_host':  False,   # A simple single computer ASCOM site.
 
     'name': "Apache Ridge Observatory, Santa Fe, NM, USA. 2194m",
@@ -85,51 +83,58 @@ wema_config = {
 
     'TZ_database_name':  'America/Denver',
     'mpc_code':  'ZZ24',    # This is made up for now.
-    'time_offset':  -6.0,   # These two keys w static values may be obsolete give the new TZ stuff
-    'timezone': 'MDT',      # This was meant to be coloquial Time zone abbreviation, alternate for "TZ_data..."
+    'time_offset':  -7.0,   # These two keys w static values may be obsolete give the new TZ stuff
+    'timezone': 'MST',      # This was meant to be coloquial Time zone abbreviation, alternate for "TZ_data..."
     'latitude': 35.554298,     # Decimal degrees, North is Positive  Meant to be Wx Station coordinates
     'longitude': -105.870197,   # Decimal degrees, West is negative
     'elevation': 2194,    # meters above sea level.  Meant to be elevation of main temp sensor 20' off ground.
     'reference_ambient':  10.0,  # Degrees Celsius.  Alternately 12 entries, one for every - mid month.
     'reference_pressure':  794.0,    #mbar   A rough guess 20200315
 
+    'OWM_active': True,   #  Consider splitting out rain and wind from high clouds. Former should usuall always be on.
+    'local_weather_active': True,
+    'local_weather_always_overrides_OWM': True,  #  This needs inspecting, probably not implemented wer 20231105
+    'enclosure_status_check_period': 30,
+    'weather_status_check_period': 30,
+    'safety_status_check_period': 30,
+    'observing_check_period' : 2,    # How many minutes between weather checks   Are these redundant or unused?
+    'enclosure_check_period' : 2,    # How many minutes between enclosure checks
     'wema_has_control_of_roof': True,
     'wema_allowed_to_open_roof': True,
     #next few are enclosure parameteers
-    'period_of_time_to_wait_for_roof_to_open' : 90, # seconds - needed to check if the roof ACTUALLY opens. 
+    'period_of_time_to_wait_for_roof_to_open' : 55, # seconds - needed to check if the roof ACTUALLY opens. ARO takes ~35 seconds as of 20231101
     'only_scope_that_controls_the_roof': True, # If multiple scopes control the roof, set this to False
-    'check_time': 300,
-    'maximum_roof_opens_per_evening' : 4,
-    'roof_open_safety_base_time' : 15, # How many minutes to use as the default retry time to open roof. This will be progressively multiplied as a back-off function.
-    'site_enclosure_default_mode': "Automatic",   # ["Manual", "Shutdown", "Automatic"]  Was "Simulated' as o 10/14/2023 Wer
+    'check_time': 300,    #   20231106   Unused WER
+    'maximum_roof_opens_per_evening' : 4,   #WER I am not sure counting roof opens is as good as weather flaps.
+    'roof_open_safety_base_time' : 2, # How many minutes to use as the default retry time to open roof. This will be progressively multiplied as a back-off function.
     
-    'automatic_detail_default': "Enclosure is initially set to Automatic by ARO site_config.",
-    'observing_check_period' : 2,    # How many minutes between weather checks
-    'enclosure_check_period' : 2,    # How many minutes between enclosure checks
-    
+    'site_enclosures_default_mode': "Automatic",   # ["Manual", "Shutdown", "Automatic"]  Was "Simulated' as o 10/14/2023 We
+    'automatic_detail_default': "Enclosures are initially set to Automatic by ARO site_config.",
+     
     #Sequencing keys and value, sets up Events
     'auto_eve_bias_dark': True,
     'auto_eve_sky_flat': True,
-
     'auto_midnight_moonless_bias_dark': False,
     'auto_morn_sky_flat': True,
     'auto_morn_bias_dark': True,
 
     # NB NB THe following two entries are relevant for SRO
-    'morn_close_and_park': 45.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowband flats
-    'eve_cool_down_open': -60.0, # How many minutes before sunset to open. Default -65 = an hour-ish before sunset. Gives time to cool and get narrowband flats
-    
-    'bias_dark interval':  105.,   #minutes
-    'eve_sky_flat_sunset_offset': -45.,  # Before Sunset Minutes  neg means before, + after.
-    'end_eve_sky_flats_offset': -1 ,      # How many minutes after civilDusk to do....
-    'clock_and_auto_focus_offset':-10,   #min before start of observing
-    'astro_dark_buffer': 30,   #Min before and after AD to extend observing window
-    'morn_flat_start_offset': -10,       #min from Sunrise
-    'morn_flat_end_offset':  +45,        #min from Sunrise
-    'end_night_processing_time':  90,   #  A guess#'eve_sky_flat_sunset_offset': -60.0,  # Minutes  neg means before, + after.
-
+   
     # WEMA can not have local_weather_info sometimes.. e.g. ECO
     'has_local_weather_info' : True,
+    
+    'bias_dark interval':  110.,   # Takes 102 minutes as of 11/1/23 @ ARO
+    'eve_cool_down_open': -55.0, # How many minutes before sunset to open. Default -65 = an hour-ish before sunset. Gives time to cool and get narrowband flats
+                                 #  Note 15 minutes of cool down provided.     
+    'eve_sky_flat_sunset_offset': -40.,  # Before Sunset Minutes  neg means before, + after. Flats take about 33 min @ ARO 110123
+    'end_eve_sky_flats_offset': -1 ,      # How many minutes after civilDusk to do....
+    'clock_and_auto_focus_offset':-10,   #min before start of observing
+    'astro_dark_buffer': 15,   #Min before and after AD to extend observing window
+    'morn_flat_start_offset': -10,       #min from Sunrise
+    'morn_flat_end_offset':  +40,        #min from Sunrise
+    'morn_close_and_park': 45.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowband flats
+    'end_night_processing_time':  90,   #  A guess#'eve_sky_flat_sunset_offset': -60.0,  # Minutes  neg means before, + after.
+
 
     # Whether these limits are on by default
     'rain_limit_on': True,  #Right now Skyalert Babbles.
@@ -141,27 +146,27 @@ wema_config = {
     'cloud_cover_limit_on': True,
     'lowest_ambient_temperature_on': True,
     'highest_ambient_temperature_on': True,
-    
+    'has_inside_weather_station': False, 
     # Local weather limits   #NB we should move these into OCN config section
     'rain_limit': 1.0,         # NO we shouldn't because it will be different per site
     'humidity_limit': 75,   # With multiple elements etc. I think.
-    'windspeed_limit': 15,  #  Units? Some of this could be OWM stuff e.g.
+    'windspeed_limit': 8,  #  8 m/s per Neyle 20231226 Units? Some of this could be OWM stuff e.g.
     'lightning_limit' : 15, #km
     'temperature_minus_dewpoint_limit': 2,
     'sky_temperature_limit': -1,  #It must be colder than this
     'cloud_cover_limit': 51,
-    'lowest_ambient_temperature': 1,
-    'highest_ambient_temperature': 45,
+    'lowest_ambient_temperature': -20,
+    'highest_ambient_temperature': 40,
 
     # Local weather warning limits, will send a warning, but leave the roof alone
     'warning_rain_limit': 3,
-    'warning_humidity_limit': 75,
-    'warning_windspeed_limit': 15,
-    'warning_lightning_limit' : 10,
+    'warning_humidity_limit': 72,
+    'warning_windspeed_limit': 6,   #m/s
+    'warning_lightning_limit' : 20, #km
     'warning_temperature_minus_dewpoint_limit': 2,
     'warning_sky_temperature_limit': -17,
     'warning_cloud_cover_limit': 25,
-    'warning_lowest_ambient_temperature': 5,
+    'warning_lowest_ambient_temperature': -10,
     'warning_highest_ambient_temperature': 35,
     
     'get_ocn_status': None,
@@ -239,9 +244,9 @@ wema_config = {
             'directly_connected': False, # For ECO and EC2, they connect directly to the enclosure, whereas WEMA are different.
             'hostIP':  '10.0.0.50',
             'driver': 'X322_http',  #     Dragonfly.Dome,  #  'ASCOMDome.Dome',  #ASCOMDome.Dome',  # ASCOM.DeviceHub.Dome',  # ASCOM.DigitalDomeWorks.Dome',  #"  ASCOMDome.Dome',
-            "encl_IP": '10.0.0.103',    #New
+            "encl_ip": '10.0.0.200',    #'10.0.0.103'Used to be the Drangonfly, no longer used.
             'has_lights':  False,
-            'controlled_by': 'mount1',
+            'controlled_by': 'mount1',   #This is an obsolete concept.
             #"serving_obsp's": ['aro1', 'aro2', 'aro3'],
 			'encl_is_dome': False,   #otherwise a Rool off or Clamshel
             'encl_radius':  None,  #  inches Ok for now.
@@ -252,21 +257,13 @@ wema_config = {
             #'common_offset_east': -19.5,  # East is negative.  These will vary per telescope. ARO AO1600
             #'common_offset_south': -8,  # South is negative.   So think of these as default.
 
-            'cool_down': 65.0,     # Minutes prior to sunset.
+            #'cool_down': 65.0,     # Minutes prior to sunset.
             'settings': {
                 'lights':  ['Auto', 'White', 'Red', 'IR', 'Off'],       #A way to encode possible states or options???
                                                                         #First Entry is always default condition.
                 'roof_shutter':  ['Auto', 'Open', 'Close', 'Lock Closed', 'Unlock'],
             },
-           # Not sure why these are here and not part of the site.
-            'eve_bias_dark_dur':  1.5,   # hours Duration, prior to next.
-            'eve_screen_flat_dur': 0.0,   # hours Duration, prior to next.
-            'operations_begin':  -1.0,   # - hours from Sunset
-            'eve_cooldown_offset': -.99,   # - hours beforeSunset
-            'eve_sky_flat_offset':  1,   # - hours beforeSunset   Only THis is used in PTR events
-            'morn_sky_flat_offset':  0.4,   # + hours after Sunrise
-            'morning_close_offset':  0.41,   # + hours after Sunrise
-            'operations_end':  0.42,
+
         },
     },
 
