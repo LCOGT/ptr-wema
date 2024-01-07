@@ -21,7 +21,7 @@ import traceback
 from wema_utility import plog
 
 '''
-Curently this module interfaces to a Dome (az control) or a pop-top roof style enclosure.
+Curently this module interfaces to a Dome (az control) or a roll-off roof style enclosure.
 
 This module contains a Manager, which is called during a normal status scan which emits
 Commands to Open and close based on Events and the weather condition. Call the manager
@@ -32,7 +32,7 @@ is possible.  The event phases are found in g_dev['events'].  The basic window i
 with respect to Sunset and Sunrise so it varies each day.
 
 NB,  Dome refers to a rotating roof that presumably needs azimuth alignmnet of some form
-Shutter, Roof, Slit, etc., are the same things.
+Shutter, Roof, Slit, etc., are the same names and mean the same thing.
 '''
 
 # =============================================================================
@@ -254,7 +254,7 @@ class Enclosure:
         g_dev['enc'] = self
         self.slew_latch = False
         self.dome_open = None  # Just initialising this variable
-        self.mode = self.config['site_enclosure_default_mode'] # Just initialising this variable
+        self.mode = self.config['site_enclosures_default_mode'] # Just initialising this variable
         self.roof_open = None
         #if self.config['site_in_automatic_default'] == "Automatic":
 
@@ -450,12 +450,7 @@ class Enclosure:
         #status['enclosure_message']: self.state
         #status['enclosure_synchronized']= True
 
-        try:
-            pass
-            #self.manager()  # There be monsters here. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        except:
-            plog("Enclosure Manager faulted.")
-            plog(traceback.format_exc())
+
 
         self.status = status
         self.prior_status = status

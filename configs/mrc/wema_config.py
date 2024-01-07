@@ -14,15 +14,22 @@ Refactored on 20230407
 
 
 @author: wrosing
-'''
-import json
 
+
+MRC-0m35      10.0.0.??
+MRC-WEMA      10.15.0.42
+Power Control 10.15.0.100   admin mrct******
+Roof Control  10.15.0.200   admin mrct******
+Redis         10.15.0.73:6379
+'''
 '''
          0         0         0         0         0         0         0         0         0         1         1         1       1
          1         2         3         4         5         6         7         8         9         0         1         2       2
 12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678
 '''
-
+import json
+import time
+from pprint import pprint
 
 # NB NB NB json is not bi-directional with tuples (), instead, use lists [], nested if tuples are needed.
 degree_symbol = "°"
@@ -31,49 +38,44 @@ instance_type = 'wema'
 
 
 wema_config = {
-    #'site': 'mrc',
+
     'wema_name': 'mrc',
     'instance_type': 'wema',
-    
     'obsp_ids': ['mrc1', 'mrc2'],  # a list of the obsp's in an enclosure.  
 
-    'debug_flag': False,   #Need to resolve
     'debug_mode': False,
-    'debug_duration_sec': 3600,
-
-    # These are just the bootup default values.
-    'OWM_active': True,
-    'local_weather_active': True,
-
-    'enclosure_status_check_period': 30,
-    'weather_status_check_period': 30,
-    'safety_status_check_period': 30,
-
-    'admin_owner_commands_only': False,   #This probably should be True once control is sorted out
+    'debug_duration_sec': 80000,
+    'admin_owner_commands_only': False,
+    
     'owner':  ['google-oauth2|112401903840371673242'],  # Wayne  Can be a list
+    'owner_alias': ['WER', 'TELOPS'],
+    'admin_aliases': ["ANS", "WER", 'KVH', "TELOPS", "TB", "DH", "KVH", 'KC' , 'MF'],
+    
+    'site_desc': "Mountain Ranch Camp Observatory, Santa Barbara, CA, USA. 318m",
+    'airport_codes': ['SBA', 'SQA', 'OXN'],
+    
+    'client_hostnames': ["MRC-0m35", "MRC-0m60"],     # This should be a list corresponding to obsp ID's and maybe an parallel ip# list.
 
-    'host_path':  'Q:/ptr/',
-    'plog_path':  'Q:/ptr/mrc/',  # place where night logs can be found.
-    'alt_path':  'Q:/ptr/',  # Alternative place for this host to stash misc stuff
-    'save_to_alt_path': 'no',
-    'archive_path':  'Q:/ptr/',
-    'archive_age': 99,  # Number of days to keep files in the local archive before deletion. Negative means never delete
-    'aux_archive_path':  None,  # NB NB we might want to put Q: here for MRC
-    'wema_is_a_process':  False,   #Indicating WEMA runs as an independent OS process on Obsp platform computer
-    'wema_hostname': 'MRC-WEMA',   # Prefer the shorter version
+    'wema_is_active': True,
+    'wema_hostname': 'MRC-WEMA',
+    'host_wema_site_name':  'MRC',   #do we need this? 
     'wema_path':  'Q:/ptr/',  # '/wema_transfer/',
-
-    # 'wema_write_share_path': 'Q:/ptr/',  # Meant to be where Wema puts status data.
-    # 'client_read_share_path':  'Q:/ptr/',  # NB these are all very confusing names.
-    # 'client_write_share_path': 'Q:/ptr/',
+    'plog_path':  'Q:/ptr/mrc/',  # place where night logs can be found.
+    'encl_coontrolled_by_wema':  True,
+    'site_IPC_mechanism':  'shares',   # ['None', shares', 'shelves', 'redis']
+    'wema_write_share_path':  'W:/',
+    #'alt_path':  'Q:/ptr/',  # Alternative place for this host to stash misc stuff
+    #'save_to_alt_path': 'no',
+    #'archive_path':  'Q:/ptr/',
+    #'archive_age': 99,  # Number of days to keep files in the local archive before deletion. Negative means never delete
+    #'aux_archive_path':  None,  # NB NB we might want to put Q: here for MRC
+    #'wema_is_a_process':  False,   #Indicating WEMA runs as an independent OS process on Obsp platform computer
+    'dome_on_wema':  False,  #Temporary assignment   20230617 WER
+    'redis_ip': None,   # None if no redis path present, localhost if redis iself-contained
+    'site_is_single_host':  False, 
     
-    # MTF - 'wema_is_custom' isn't used anymore. we have custom for enc and ocn specifically now
-    #'wema_is_custom':  False,  # Indicates some special code for a site, found at end of wema_config. Set True if SRO
-    
-    'name': 'Mountain Ranch Camp Observatory',
-    'airport_code': 'SBA',
+    'name': 'Mountain Ranch Camp Observatory, Santa Barbara, CA, USA. 318m',
     'location': 'Near Santa Barbara CA,  USA',
-#   'telescope_description': '0m35 f7.2 Planewave CDK',
     'observatory_url': 'https://starz-r-us.sky/clearskies',
     'observatory_logo': None,
     'dedication':  '''
@@ -90,32 +92,53 @@ wema_config = {
     'mpc_code':  'ZZ23',  # This is made up for now.
     'time_offset': -8,     # NB these two should be derived from Python libs so change is automatic
     'timezone': 'PST',
-    
     'latitude': 34.459375,  # Decimal degrees, North is Positive
     'longitude': -119.681172,  # Decimal degrees, West is negative
     'elevation': 317.75,    # meters above sea level
     'reference_ambient':  10.0,  # Degrees Celsius.  Alternately 12 entries, one for every - mid month.
     'reference_pressure':  977.83,  # mbar Alternately 12 entries, one for every - mid month.
     
+    'OWM_active': True,  #  Cosider breaking this up into Rain and Wind vs Cloud cover.
+    'local_weather_active': True,
+    'local_weather_always_overrides_OWM': True,  ##WERE changed 10/14//2023
+    'enclosure_status_check_period': 30,
+    'weather_status_check_period': 30,
+    'safety_status_check_period': 30,
     'wema_has_control_of_roof': True,
     'wema_allowed_to_open_roof': True,
 
-    'period_of_time_to_wait_for_roof_to_open': 180,  # seconds - needed to check if the roof ACTUALLY opens.
-    'check_time': 300,  # MF's original setting.
+    'period_of_time_to_wait_for_roof_to_open': 120,  # seconds - needed to check if the roof ACTUALLY opens.
+    'only_scope_that_controls_the_roof': True, # If multiple scopes control the roof, set this to False
+    'check_time': 300,  # MF's original setting.  WER No longer used 20231106
     'maximum_roof_opens_per_evening': 4,
-    'roof_open_safety_base_time': 15,
-    'site_enclosure_default_mode': "Automatic",  # "Manual", "Shutdown", "Automatic"
+    'roof_open_safety_base_time': 15,  #first 'Wx-hold" alternative devinition, time
+    
+    'site_enclosures_default_mode': "Automatic",  # "Manual", "Shutdown", "Automatic"
     'automatic_detail_default': "Enclosure is set to Automatic mode.",
 
-    'observing_check_period': 1,    # How many minutes between weather checks
-    'enclosure_check_period': 1,    # How many minutes between enclosure checks
-
-    'eve_cool_down_open': -45.0,
-    'morn_close_and_park': 32.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowban
-
+    'observing_check_period': 2,    # How many minutes between weather checks
+    'enclosure_check_period': 2,    # How many minutes between enclosure checks
+    
+    #Sequencing keys and value, sets up Events
+    'auto_eve_bias_dark': True,
+    'auto_eve_sky_flat': True,
+    'auto_midnight_moonless_bias_dark': False,
+    'auto_morn_sky_flat': True,
+    'auto_morn_bias_dark': True,
+    
+    'morn_close_and_park': 45.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowban
+    'eve_cool_down_open': -60.0,
     # WEMA can not have local_weather_info sometimes.. e.g. ECO
     'has_local_weather_info' : True,
 
+    'bias_dark interval':  105.,   # Takes 102 minutes as of 11/1/23 @ ARO
+    'eve_sky_flat_sunset_offset': -40.,  # Before Sunset Minutes  neg means before, + after. Takes about 33 min @ ARO 110123
+    'end_eve_sky_flats_offset': -1 ,      # How many minutes after civilDusk to do....
+    'clock_and_auto_focus_offset':-10,   #min before start of observing
+    'astro_dark_buffer': 30,   #Min before and after AD to extend observing window
+    'morn_flat_start_offset': -10,       #min from Sunrise
+    'morn_flat_end_offset':  +40,        #min from Sunrise
+    'end_night_processing_time':  90,   #  A guess#'eve_sky_flat_sunset_offset': -60.0,  # Minutes  neg means before, + after.
     # Whether these limits are on by default
     'rain_limit_on': False,
     'humidity_limit_on': True,
@@ -123,32 +146,37 @@ wema_config = {
     'lightning_limit_on': True,
     'temperature_minus_dewpoint_limit_on': True,
     'sky_temperature_limit_on': True,
-    'cloud_cover_limit_on': False,
+    'cloud_cover_limit_on': True,
     'lowest_ambient_temperature_on': True,
     'highest_ambient_temperature_on': True,
+    'has_inside_weather_station': False,
 
     # Local weather DANGER limits - will cause the roof to shut
-    'rain_limit': 3,
-    'humidity_limit': 80,
-    'windspeed_limit': 25,
+    'rain_limit': 1,
+    'humidity_limit': 7580,
+    'windspeed_limit': 15,
     'lightning_limit' : 15,
     'temperature_minus_dewpoint_limit': 2,
-    'sky_temperature_limit': -12,
-    'cloud_cover_limit': 50,
-    'lowest_ambient_temperature': -5,
-    'highest_ambient_temperature': 40,
+    'sky_temperature_limit': -1,
+    'cloud_cover_limit': 51,
+    'lowest_ambient_temperature': 1,
+    'highest_ambient_temperature': 43,
     
     # Local weather warning limits, will send a warning, but leave the roof alone
-    'warning_rain_limit': 2,
+    'warning_rain_limit': 3,
     'warning_humidity_limit': 75,
     'warning_windspeed_limit': 15,
-    'warning_lightning_limit' : 20,
+    'warning_lightning_limit' : 10,
     'warning_temperature_minus_dewpoint_limit': 3,   #This Should be measured by a radiating metal surface.
     'warning_sky_temperature_limit': -17,
     'warning_cloud_cover_limit': 25,
     'warning_lowest_ambient_temperature': 2,
     'warning_highest_ambient_temperature': 35,
-    
+ 
+    'get_ocn_status': None,
+    'get_enc_status': None,
+    'not_used_variable': None,
+
 
     'defaults': {
         'observing_conditions': 'observing_conditions1',
