@@ -584,40 +584,42 @@ class Events:
                 self.cool_down_open = self.cool_down_open - 24*ephem.hour
 
 
-        self.evnt = [('Eve Bias Dark      ', ephem.Date(self.cool_down_open - self.config['bias_dark interval']/1440)),
-                     ('End Eve Bias Dark  ', ephem.Date(self.cool_down_open - 6/1440)),
+        self.evnt = [#('Eve Bias Dark      ', ephem.Date(self.cool_down_open - self.config['bias_dark interval']/1440)),
+                     #('End Eve Bias Dark  ', ephem.Date(self.cool_down_open - 6/1440)),
                      ('Ops Window Start   ', ephem.Date(self.cool_down_open)),  # Enclosure may open.
                      ('Cool Down, Open    ', ephem.Date(self.cool_down_open)),
-                     ('Eve Sky Flats      ', ephem.Date(self.sunset + self.config['eve_sky_flat_sunset_offset']/1440)),  # Nominally -35 for SRO
+                     ('Eve Sky Flats      ', ephem.Date(self.sunset + self.eve_skyFlatBegin/1440)),  # Nominally -35 for SRO
                      ('Sun Set            ', ephem.Date(self.sunset)),
                      ('Civil Dusk         ', ephem.Date(self.civilDusk)),
-                     #('End Eve Sky Flats  ', ephem.Date(self.nauticalDusk - 10/1440)),
-                     ('End Eve Sky Flats  ', ephem.Date(self.civilDusk + self.config['end_eve_sky_flats_offset']/1440)),
+                     ('End Eve Sky Flats  ', ephem.Date(self.nauticalDusk - 10/1440)),
+                     #('End Eve Sky Flats  ', ephem.Date(self.civilDusk + self.config['end_eve_sky_flats_offset']/1440)),
                      #('Clock & Auto Focus ', ephem.Date(self.nautDusk_plus_half - 8/1440.)),
                      
                      #('Observing Begins   ', ephem.Date(self.nautDusk_plus_half)),
-                     ('Observing Begins   ', ephem.Date(obs_window := self.astroDark - self.config['astro_dark_buffer']/1440)),
-                     ('Clock & Auto Focus ', ephem.Date(obs_window + self.config['clock_and_auto_focus_offset']/1440)),
+                     #('Observing Begins   ', ephem.Date(obs_window := self.astroDark - self.config['astro_dark_buffer']/1440)),
+                     #('Clock & Auto Focus ', ephem.Date(obs_window + self.config['clock_and_auto_focus_offset']/1440)),
                      ('Naut Dusk          ', ephem.Date(self.nauticalDusk)),
                      ('Astro Dark         ', ephem.Date(self.astroDark)),
                      ('Middle of Night    ', ephem.Date(self.middleNight)),
                      ('End Astro Dark     ', ephem.Date(self.astroEnd)),
                      #('Observing Ends     ', ephem.Date(self.nautDawn_minus_half)),
-                     ('Observing Ends     ', ephem.Date(self.astroEnd + self.config['astro_dark_buffer']/1440)),
+                     #('Observing Ends     ', ephem.Date(self.astroEnd + self.config['astro_dark_buffer']/1440)),
                      ('Naut Dawn          ', ephem.Date(self.nauticalDawn)),
                      ('Civil Dawn         ', ephem.Date(self.civilDawn)),
-                     ('Morn Sky Flats     ', ephem.Date(self.sunrise + self.config['morn_flat_start_offset']/1440.)),
+                     #('Morn Sky Flats     ', ephem.Date(self.sunrise + self.config['morn_flat_start_offset']/1440.)),
                      ('Sun Rise           ', ephem.Date(self.sunrise)), 
-                     ('End Morn Sky Flats ', ephem.Date(self.sunrise  + self.config['morn_flat_end_offset']/1440.)),                    # Enclosure must close 5 min after sunrise
+                     #('End Morn Sky Flats ', ephem.Date(self.sunrise  + self.config['morn_flat_end_offset']/1440.)),                    # Enclosure must close 5 min after sunrise
 
                      ('Ops Window Closes  ', ephem.Date(self.close_and_park - 2/1440.)),
 
                      ('Close and Park     ', ephem.Date(self.close_and_park)),
 
-                     ('Morn Bias Dark     ', ephem.Date(self.close_and_park + 2/1440.)),  #I guess this is warm-up time!
-                     ('End Morn Bias Dark ', ephem.Date(night_reset := self.close_and_park +  self.config['bias_dark interval']/1440.)),
-                     ('Nightly Reset      ', ephem.Date(night_reset + 2/1440.)),
-                     ('End Nightly Reset  ', ephem.Date(night_reset + self.config['end_night_processing_time']/1440.)),  #Just a Guess
+                     #('Morn Bias Dark     ', ephem.Date(self.close_and_park + 2/1440.)),  #I guess this is warm-up time!
+                     #('End Morn Bias Dark ', ephem.Date(night_reset := self.close_and_park +  self.config['bias_dark interval']/1440.)),
+                     ('Nightly Reset      ', ephem.Date(self.close_and_park + 20/1440.)),
+                     #('End Nightly Reset  ', ephem.Date(night_reset + self.config['end_night_processing_time']/1440.)),  #Just a Guess
+                     # ('Nightly Reset      ', ephem.Date(night_reset + 2/1440.)),
+                     # ('End Nightly Reset  ', ephem.Date(night_reset + self.config['end_night_processing_time']/1440.)),  #Just a Guess
                      ('Prior Moon Rise    ', ephem.Date(self.last_moonrise)),
                      ('Prior Moon Transit ', ephem.Date(self.last_moontransit)),
                      ('Prior Moon Set     ', ephem.Date(self.last_moonset)),

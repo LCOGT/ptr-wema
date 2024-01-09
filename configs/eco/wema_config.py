@@ -129,7 +129,7 @@ wema_config = {
     'roof_open_safety_base_time': 15,
 
 
-    'site_enclosure_default_mode': "Automatic",  # "Manual", "Shutdown"
+    'site_enclosures_default_mode': "Automatic",  # "Manual", "Shutdown"
     'automatic_detail_default': "Enclosure is set to Automatic mode.",
 
     # =============================================================================
