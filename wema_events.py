@@ -617,7 +617,7 @@ class Events:
                      #('Morn Bias Dark     ', ephem.Date(self.close_and_park + 2/1440.)),  #I guess this is warm-up time!
                      #('End Morn Bias Dark ', ephem.Date(night_reset := self.close_and_park +  self.config['bias_dark interval']/1440.)),
                      ('Nightly Reset      ', ephem.Date(self.close_and_park + 20/1440.)),
-                     #('End Nightly Reset  ', ephem.Date(night_reset + self.config['end_night_processing_time']/1440.)),  #Just a Guess
+                     ('End Nightly Reset  ', ephem.Date(self.close_and_park + 60/1440.)),  #Just a Guess
                      # ('Nightly Reset      ', ephem.Date(night_reset + 2/1440.)),
                      # ('End Nightly Reset  ', ephem.Date(night_reset + self.config['end_night_processing_time']/1440.)),  #Just a Guess
                      ('Prior Moon Rise    ', ephem.Date(self.last_moonrise)),
