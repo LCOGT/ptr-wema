@@ -602,7 +602,7 @@ class Events:
                      ('Astro Dark         ', ephem.Date(self.astroDark)),
                      ('Middle of Night    ', ephem.Date(self.middleNight)),
                      ('End Astro Dark     ', ephem.Date(self.astroEnd)),
-                     #('Observing Ends     ', ephem.Date(self.nautDawn_minus_half)),
+                     ('Observing Ends     ', ephem.Date(self.nautDawn_minus_half)),
                      #('Observing Ends     ', ephem.Date(self.astroEnd + self.config['astro_dark_buffer']/1440)),
                      ('Naut Dawn          ', ephem.Date(self.nauticalDawn)),
                      ('Civil Dawn         ', ephem.Date(self.civilDawn)),
