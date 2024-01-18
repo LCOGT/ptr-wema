@@ -172,6 +172,7 @@ class WxEncAgent:
         self.safety_status_check_period = config['safety_status_check_period']
         self.scan_requests_check_period = 4
         self.wema_settings_upload_period = 10
+        self.error_fault_clear_timer=time.time()
 
         # Timers rather than time.sleeps
         self.enclosure_status_check_timer=time.time() - 2*self.enclosure_status_check_period
@@ -891,6 +892,32 @@ class WxEncAgent:
                             
                 else:
                     plog("Enclosure roof status probably not reporting correctly. WEMA down?")
+
+            # Error / Fault Clear timer.
+            # If the ASCOM status is in Error of Software Fault,
+            # It generally needs a close command to clear it out.
+            # This periodically checks for that and sends a close
+            # every now and then to try and clear it. 
+            if self.error_fault_clear_timer-time.time() > 120:
+                self.error_fault_clear_timer=time.time()
+                if enc_status['shutter_status'] == 'Software Fault':
+                    
+                    plog("Software Fault Detected. Will alert the authorities!")
+                    self.open_and_enabled_to_observe = False
+                    self.park_enclosure_and_close()
+                    self.enclosure_next_open_time = time.time(
+                    ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
+                     
+                
+                if enc_status['shutter_status'] == 'Error':
+                    
+                    plog("Detected an Error in the Roof Status. Packing up for safety.")
+                    self.open_and_enabled_to_observe = False
+                    self.park_enclosure_and_close()
+                    self.enclosure_next_open_time = time.time(
+                    ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
+                     
+
 
             roof_should_be_shut = False
 
