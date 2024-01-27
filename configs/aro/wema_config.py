@@ -26,8 +26,7 @@ g_dev = None    #???
 #MF: Comments Marked #>>  Imply I think should be moved, deleted, renamed, don-not apply to a site, etc.
 #    Second, I imagine an obsy_config is created by concationating a site_config + an obsp_config. A
 #    specific offset in meters) is in the latter to define exact lat, long, alt for the vertex of the primary.
-
-
+#10.0.0.200/setup.html    admin arotoo1
 
 degree_symbol = "°"
 wema_name = 'aro'
