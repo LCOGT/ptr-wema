@@ -100,11 +100,12 @@ wema_config = {
     'enclosure_check_period' : 2,    # How many minutes between enclosure checks
     'wema_has_control_of_roof': True,
     'wema_allowed_to_open_roof': True,
+    "ARO_wema_patch": True,
     #next few are enclosure parameteers
-    'period_of_time_to_wait_for_roof_to_open' : 55, # seconds - needed to check if the roof ACTUALLY opens. ARO takes ~35 seconds as of 20231101
+    'period_of_time_to_wait_for_roof_to_open' : 125, # seconds - needed to check if the roof ACTUALLY opens. ARO takes ~35 seconds as of 20231101
     'only_scope_that_controls_the_roof': True, # If multiple scopes control the roof, set this to False
     'check_time': 300,    #   20231106   Unused WER
-    'maximum_roof_opens_per_evening' : 4,   #WER I am not sure counting roof opens is as good as weather flaps.
+    'maximum_roof_opens_per_evening' : 6,   #WER I am not sure counting roof opens is as good as weather flaps.
     'roof_open_safety_base_time' : 2, # How many minutes to use as the default retry time to open roof. This will be progressively multiplied as a back-off function.
     
     'site_enclosures_default_mode': "Automatic",   # ["Manual", "Shutdown", "Automatic"]  Was "Simulated' as o 10/14/2023 We

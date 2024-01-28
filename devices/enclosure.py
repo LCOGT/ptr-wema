@@ -365,6 +365,7 @@ class Enclosure:
             except:
                 plog("X322 http ShutterStatus -- Faulted. ")
                 shutter_status = 5
+            #
             if relay_state == 0 and input_state == 0:
                stat_string = 'Indeterminate!'
                self.shutter_is_closed = False          
@@ -383,9 +384,13 @@ class Enclosure:
             elif relay_state == 0  and input_state == 10:
                 stat_string = 'Open'
                 self.shutter_is_closed = False
+            elif self.config['ARO_wema_patch'] and relay_state == 0  and input_state == 0 and not self.shutter_is_closed:
+                stat_string = 'Open'
+                self.shutter_is_closed = False
             else:
                 stat_string = "Software Fault"
                 self.shutter_is_closed = False
+            
 
 
 
