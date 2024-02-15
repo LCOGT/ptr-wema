@@ -150,7 +150,7 @@ wema_config = {
     # Local weather limits   #NB we should move these into OCN config section
     'rain_limit': 1.0,         # NO we shouldn't because it will be different per site
     'humidity_limit': 75,   # With multiple elements etc. I think.
-    'windspeed_limit': 8,  #  8 m/s per Neyle 20231226 Units? Some of this could be OWM stuff e.g.
+    'windspeed_limit': 24,  #  8 m/s per Neyle 20231226 Units? Some of this could be OWM stuff e.g.
     'lightning_limit' : 15, #km
     'temperature_minus_dewpoint_limit': 2,
     'sky_temperature_limit': -1,  #It must be colder than this
