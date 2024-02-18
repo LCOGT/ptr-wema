@@ -255,8 +255,8 @@ class ObservingConditions:
                 print(bw1)
                 print(sa_nw)
                 rate = [0, 0, 1, 2]
-                # cover = ['Clear', 'Cloudy', 'Very Cloudy']
-                cover = [0.0, 50.0, 100.0]
+                #cover_str = ['Clear', 'Cloudy', 'Very Cloudy', 'Clouded Up']
+                cover = [0.0, 50.0, 75.0, 100.0]
                 self.temperature = round((float(bw1[5]) + float(sa_nw[5])) / 2., 1)
                 self.sky_temp = round((float(bw1[4]) + float(sa_nw[4])) / 2., 2)
                 self.sky_minus_ambient = round(self.sky_temp - self.temperature, 2)
