@@ -166,7 +166,6 @@ class WxEncAgent:
         self.weather_report_run_timer=time.time()-3600
         self.local_pytz_timezone=pytz.timezone(self.config['TZ_database_name'])
         
-        self.open_and_enabled_to_observe = False
 
         self.owm_active=config['OWM_active']
         self.local_weather_active=config['local_weather_active']
@@ -1134,7 +1133,7 @@ class WxEncAgent:
         # Checking roof shouldn't be shut due to local clock hour
         current_local_time=datetime.datetime.now(self.local_pytz_timezone)
         current_local_decimal_hour=current_local_time.hour + (current_local_time.minute/60)
-        if current_local_decimal_hour > self.config['absolute_earliest_opening_hour']:
+        if current_local_decimal_hour > self.config['absolute_earliest_opening_hour']  and not g_dev['enc'].mode in ['Manual']:
             plog ("Not opening roof as it is before the absolute earliest opening hour.")
             return
 
