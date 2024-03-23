@@ -113,6 +113,11 @@ wema_config = {
     'maximum_roof_opens_per_evening': 4,
     'roof_open_safety_base_time': 15,  #first 'Wx-hold" alternative devinition, time
     
+    # For some sites like schools, we need roof to be shut during work hours so balls don't fall into observatories.
+    # 24 hour time in decimal local time according to TZ_database_name
+    'absolute_earliest_opening_hour': 15.5, # School definitely closed by then.
+    'absolute_latest_shutting_hour' : 10.0, # Kids start arriving after this.
+    
     'site_enclosures_default_mode': "Automatic",  # "Manual", "Shutdown", "Automatic"
     'automatic_detail_default': "Enclosure is set to Automatic mode.",
 

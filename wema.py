@@ -36,6 +36,9 @@ from pyowm.utils import timestamps
 from wema_config import get_enc_status_custom
 from wema_config import get_ocn_status_custom
 
+import pytz
+import datetime
+
 # FIXME: This needs attention once we figure out the restart_obs script.
 def terminate_restart_observer(site_path, no_restart=False):
     """Terminates obs-platform code if running and restarts obs."""
@@ -161,6 +164,7 @@ class WxEncAgent:
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
         self.nightly_weather_report_complete = False
         self.weather_report_run_timer=time.time()-3600
+        self.local_pytz_timezone=pytz.timezone(self.config['TZ_database_name'])
         
         self.open_and_enabled_to_observe = False
 
@@ -219,6 +223,10 @@ class WxEncAgent:
         self.manual_weather_hold_set = False
         self.manual_weather_hold_duration = -1.0    
         self.wema_has_roof_control=config['wema_has_control_of_roof']
+        
+        # Obs under WEMA guidance
+        self.obs_ids=self.config['obsp_ids']
+        self.morning_flats_finished=False
 
         # This prevents commands from previous nights/runs suddenly running
         # when wema.py is booted (has happened a bit!)
@@ -978,7 +986,56 @@ class WxEncAgent:
                 if not ('closed' in enc_status['shutter_status'].lower()):
                     plog("Found shutter open after Close and Park, shutting up the shutter")
                     self.park_enclosure_and_close()
+        
+            if (g_dev['events']['Observing Ends'] <= ephem_now < g_dev['events']['Nightly Reset']) \
+                    and g_dev['enc'].mode == 'Automatic':
+                        
+                # Checking roof shouldn't be shut due to local clock hour
+                current_local_time=datetime.datetime.now(self.local_pytz_timezone)
+                current_local_decimal_hour=current_local_time.hour + (current_local_time.minute/60)
+                if current_local_decimal_hour > self.config['absolute_latest_shutting_hour']:
+                    plog ("Shutting roof as it is after the absolute latest shutting hour")
+                    self.park_enclosure_and_close()            
 
+            # If it is in the morning, check whether obs have finished morning flats
+            # If finished, close the shutter            
+            if ephem_now > g_dev['events']['Naut Dawn']: # Start checking towards Dawn                
+                plog ("Morning Flats Done: " + str(self.morning_flats_finished))
+                if not self.morning_flats_finished:
+                    completed=[]
+                    for obsid in self.obs_ids:
+                        uri_status = f"https://status.photonranch.org/status/{obsid}/obs_settings/"
+                        obs_settings=requests.get(uri_status, timeout=20)
+                        if '[200]' in str(obs_settings): # If reading successful
+                            obs_settings=obs_settings.json()['status']['obs_settings']
+                            if 'morning_flats_done' in obs_settings:
+                            #breakpoint()
+                                flats_done=obs_settings['morning_flats_done']
+                                plog (str(obsid) + " Flats Done: " + str(flats_done))
+                                last_communication=time.time()-obs_settings['timedottime_of_last_upload']
+                                plog (str(obsid) + " Last Communication: " + str(last_communication))
+                                # If last communication with obs was more than 10 minutes ago
+                                # OR it is reporting flats_done, then it is ready to close
+                                if last_communication > 600 or flats_done:
+                                    completed.append(True)
+                                else:
+                                    completed.append(False)
+                            else:
+                                plog (str(obsid) + " isn't reporting flats done status yet")
+                                completed.append(False)
+                        else:
+                            # If fail to get status, assume it isn't done.
+                            completed.append(False)
+                    # If there is a False in completed then it is still waiting, otherwise close up
+                    if False in completed:
+                        plog ("Still waiting for flats to finish")
+                    else:
+                        plog ("Flats all done, closing up the shutter")
+                        self.park_enclosure_and_close()
+                        self.morning_flats_finished=True
+
+                
+                      
 
     def nightly_reset_script(self, enc_status):
         
@@ -1016,6 +1073,8 @@ class WxEncAgent:
         self.specific_utc_when_to_open = -1.0  
         self.manual_weather_hold_set = False
         self.manual_weather_hold_duration = -1.0
+        
+        self.morning_flats_finished=False
         
         return
 
@@ -1070,6 +1129,13 @@ class WxEncAgent:
 
         if self.keep_closed_all_night and not g_dev['enc'].mode in ['Manual']:
             plog ("Observatory set to be closed all night. Not opening enclosure.")
+            return
+        
+        # Checking roof shouldn't be shut due to local clock hour
+        current_local_time=datetime.datetime.now(self.local_pytz_timezone)
+        current_local_decimal_hour=current_local_time.hour + (current_local_time.minute/60)
+        if current_local_decimal_hour > self.config['absolute_earliest_opening_hour']:
+            plog ("Not opening roof as it is before the absolute earliest opening hour.")
             return
 
         # Only send an enclosure open command if the weather
