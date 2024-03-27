@@ -1136,7 +1136,7 @@ class WxEncAgent:
         # Checking roof shouldn't be shut due to local clock hour
         current_local_time=datetime.datetime.now(self.local_pytz_timezone)
         current_local_decimal_hour=current_local_time.hour + (current_local_time.minute/60)
-        if current_local_decimal_hour < self.config['absolute_earliest_opening_hour']  and not g_dev['enc'].mode in ['Manual']:
+        if current_local_decimal_hour < self.config['absolute_earliest_opening_hour']  and not g_dev['enc'].mode in ['Manual'] and ephem_now < g_dev['events']['Naut Dusk']:
             plog ("Not opening roof as it is before the absolute earliest opening hour.")
             return
 
