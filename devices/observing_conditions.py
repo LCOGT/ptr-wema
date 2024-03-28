@@ -246,6 +246,7 @@ class ObservingConditions:
 
         elif self.config['observing_conditions']['observing_conditions1']["name"] == 'Boltwood Custom for ARO':
             #This is the normal path for ARO
+            #NB NB NB 20240218  Boltwood bw1[15] reporting 3 all the time. WE may need to mask this out.
 
             try:
                 with open("C:\ptr\wema_transfer\\boltwood.txt", 'r') as bw_rec:
@@ -408,13 +409,17 @@ class ObservingConditions:
                 # the notion of Obs OK should bring in Sun Elevation and or ambient light.
 
                 if self.sky_monitor.RainRate > 0.0:
-                    # plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
-                    # plog("Rain Rate is 1.0")
-                    # # plog('Rain > ' + str(rain_limit_setting))
-                    # plog("This is usually a glitch so ignoring. Higher rain rates will trigger roof.")
-                    # plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
-                    plog("Rain Flag is 1: This is usually a glitch so ignoring.")
-                    plog("May be unevaporated rain, ice, or a bird dropping.")
+                    if self.sky_monitor.RainRate == 1:
+                        # plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
+                        # plog("Rain Rate is 1.0")
+                        # # plog('Rain > ' + str(rain_limit_setting))
+                        # plog("This is usually a glitch so ignoring. Higher rain rates will trigger roof.")
+                        # plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
+                        plog("Rain Flag is 1: This is usually a glitch so ignoring.")
+                        plog("May be unevaporated rain, ice, or a bird dropping.")
+                    else:
+                        plog ("Rain rate is currently above 1. Saying that it is not ok.")
+                        self.wx_is_ok=False
 
                 if self.wx_is_ok:
                     wx_str = "Yes"
