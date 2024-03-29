@@ -990,7 +990,7 @@ class WxEncAgent:
                     self.park_enclosure_and_close()
         
             if (g_dev['events']['Observing Ends'] <= ephem_now < g_dev['events']['Nightly Reset']) \
-                    and g_dev['enc'].mode == 'Automatic':
+                    and g_dev['enc'].mode == 'Automatic' and enc_status['shutter_status'] in ['Open', 'open', 'Opening', 'opening']:
                         
                 # Checking roof shouldn't be shut due to local clock hour
                 current_local_time=datetime.datetime.now(self.local_pytz_timezone)
