@@ -1060,7 +1060,7 @@ class WxEncAgent:
         Send the config to aws.
         '''
         uri = f"{self.config['wema_name']}/config/"
-        self.config['events'] = g_dev['events']
+        # self.config['events'] = g_dev['events']
         response = self.api.authenticated_request("PUT", uri, self.config)
         if response:
             plog("Config uploaded successfully.")
@@ -1095,21 +1095,21 @@ class WxEncAgent:
             self.stopped = True
             return
 
-    # def send_to_user(self, p_log, p_level="INFO"):
-    #     """ """
-    #     url_log = "https://logs.photonranch.org/logs/newlog"
-    #     body = json.dumps(
-    #         {
-    #             "site": self.config["site"],
-    #             "log_message": str(p_log),
-    #             "log_level": str(p_level),
-    #             "timestamp": time.time(),
-    #         }
-    #     )
-    #     try:
-    #         response = requests.post(url_log, body, timeout=20)
-    #     except Exception:
-    #         print("Log did not send, usually not fatal.")
+    def send_to_user(self, p_log, p_level="INFO"):
+        """ """
+        url_log = "https://logs.photonranch.org/logs/newlog"
+        body = json.dumps(
+            {
+                "site": self.config["obsp_ids"][0],
+                "log_message": str(p_log),
+                "log_level": str(p_level),
+                "timestamp": time.time(),
+            }
+        )
+        try:
+            response = requests.post(url_log, body, timeout=20)
+        except Exception:
+            print("Log did not send, usually not fatal.")
 
     def park_enclosure_and_close(self):
 
@@ -1135,14 +1135,15 @@ class WxEncAgent:
         
         # Checking roof shouldn't be shut due to local clock hour
         current_local_time=datetime.datetime.now(self.local_pytz_timezone)
+        #plog('*******WER MOD At line 1138 in wema*******')
         current_local_decimal_hour=current_local_time.hour + (current_local_time.minute/60)
-        if current_local_decimal_hour < self.config['absolute_earliest_opening_hour']  and not g_dev['enc'].mode in ['Manual'] and ephem_now < g_dev['events']['Naut Dusk']:
+        if  current_local_decimal_hour < self.config['absolute_earliest_opening_hour']  and not g_dev['enc'].mode in ['Manual'] and ephem_now < g_dev['events']['Naut Dusk']:
             plog ("Not opening roof as it is before the absolute earliest opening hour.")
             return
 
         # Only send an enclosure open command if the weather
         if (self.weather_report_open_at_start or not self.owm_active or g_dev['enc'].mode == "Manual"):
-
+            #plog('WER debug line 1146 in wema')
             if not g_dev['debug'] and not g_dev['enc'].mode in ['Manual'] and (
                     ephem_now < g_dev['events']['Cool Down, Open']) or \
                     (g_dev['events']['Close and Park'] < ephem_now < g_dev['events']['Nightly Reset']):

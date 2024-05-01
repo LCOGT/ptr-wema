@@ -88,16 +88,16 @@ wema_config = {
     'longitude': -105.870197,   # Decimal degrees, West is negative
     'elevation': 2194,    # meters above sea level.  Meant to be elevation of main temp sensor 20' off ground.
     'reference_ambient':  10.0,  # Degrees Celsius.  Alternately 12 entries, one for every - mid month.
-    'reference_pressure':  794.0,    #mbar   A rough guess 20200315
+    'reference_pressure':  775.0,    #mbar   A rough guess 20200315
 
     'OWM_active': True,   #  Consider splitting out rain and wind from high clouds. Former should usuall always be on.
     'local_weather_active': True,
     'local_weather_always_overrides_OWM': True,  #  This needs inspecting, probably not implemented wer 20231105
-    'enclosure_status_check_period': 30,
+    'enclosure_status_check_period': 10,
     'weather_status_check_period': 30,
     'safety_status_check_period': 30,
-    'observing_check_period' : 2,    # How many minutes between weather checks   Are these redundant or unused?
-    'enclosure_check_period' : 2,    # How many minutes between enclosure checks
+    'observing_check_period' : 1,    # How many minutes between weather checks   Are these redundant or unused?
+    'enclosure_check_period' : 1,    # How many minutes between enclosure checks
     'wema_has_control_of_roof': True,
     'wema_allowed_to_open_roof': True,
     "ARO_wema_patch": True,
@@ -105,7 +105,7 @@ wema_config = {
     'period_of_time_to_wait_for_roof_to_open' : 125, # seconds - needed to check if the roof ACTUALLY opens. ARO takes ~35 seconds as of 20231101
     'only_scope_that_controls_the_roof': True, # If multiple scopes control the roof, set this to False
     'check_time': 300,    #   20231106   Unused WER
-    'maximum_roof_opens_per_evening' : 6,   #WER I am not sure counting roof opens is as good as weather flaps.
+    'maximum_roof_opens_per_evening' : 6,   
 
     'roof_open_safety_base_time' : 10, # How many minutes to use as the default retry time to open roof. This will be progressively multiplied as a back-off function.
     
@@ -160,6 +160,7 @@ wema_config = {
     'rain_limit': 1.0,         # NO we shouldn't because it will be different per site
     'humidity_limit': 75,   # With multiple elements etc. I think.
     'windspeed_limit': 24,  #  8 m/s per Neyle 20231226 Units? Some of this could be OWM stuff e.g.
+    'gust_decay_rate': 0.98,    #20240426 Totally experimental
     'lightning_limit' : 15, #km
     'temperature_minus_dewpoint_limit': 2,
     'sky_temperature_limit': -1,  #It must be colder than this
@@ -234,8 +235,8 @@ wema_config = {
     'observing_conditions' : {     #for SAF
         'observing_conditions1': {
             'ocn_is_custom':  False,  
-            'name': 'Boltwood Custom for ARO',
-            'driver': 'ASCOM.Boltwood.ObservingConditions',
+            'name': 'SkyAlert Custom for ARO',
+            'driver': 'ASCOM.SkyAlert.ObservingConditions',  #  'ASCOM.Boltwood.ObservingConditions',
             'driver_2':  None,
             'driver_3':  None,
             'redis_ip': '127.0.0.1',   #None if no redis path present
