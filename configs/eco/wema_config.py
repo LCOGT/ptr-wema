@@ -30,7 +30,7 @@ wema_config = {
     #'observatory_location': site_name.lower(),  # in LCO case, an airport code such as OGG
 
     # These are just the bootup default values.
-    'OWM_active': True,
+    'OWM_active': False,
     'local_weather_active': False,
     #'debug_site_mode': False,
 
