@@ -251,17 +251,17 @@ class ObservingConditions:
         #This is the normal path for ARO
         #NB NB NB 20240218  Boltwood bw1[15] reporting 3 all the time. WE may need to mask this out.
         #DO NOT RELY ON THE BOLTWOOD FOR SKY TEMP
-        #DO NOT rely on sa_in, it does not connect as of 20240426.  Data is stale.
+        
             try:
                 with open("W:\\skyalert\\boltwood.txt", 'r') as bw_rec:
                     bw1 = bw_rec.readline().split()
-                with open('W:\\skyalert\\weatherdata_nw.txt', 'r') as sa_rec:
+                with open('W:\\skyalert\\weatherdata_wema.txt', 'r') as sa_rec:
                     sa_nw = sa_rec.readline().split()
-                with open('W:\\skyalert\\weatherdata_in.txt', 'r') as sa_rec:
-                    sa_in = sa_rec.readline().split()
-                print('Boltwood:     ', bw1, '\n')
+                with open('W:\\skyalert\\weatherdata_0m30.txt', 'r') as sa_rec:
+                    sa_ne = sa_rec.readline().split()
+                #print('Boltwood:     ', bw1, '\n')
+                print('SkyAlert NE:  ', sa_ne, '\n')
                 print('SkyAlert NW:  ', sa_nw, '\n')
-                print('SkyAlert in:  ', sa_in, '\n')
                 
                 #The datetime for the data above needs to be verified as current,
                 #if not current go directly to commanding a close.
@@ -341,6 +341,10 @@ class ObservingConditions:
                     self.new_pressure = round(float(self.pressure[0]), 2)  # was [0]), 2)
                 except:
                     self.new_pressure = round(float(self.pressure), 2)
+                    
+                '''
+                #Now let us check for lightning:  Read a file from ARO-0m30
+                '''
     
                 status = {
                     "temperature_C": self.temperature,

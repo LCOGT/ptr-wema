@@ -82,8 +82,8 @@ wema_config = {
 
     'TZ_database_name':  'America/Denver',
     'mpc_code':  'ZZ24',    # This is made up for now.
-    'time_offset':  -7.0,   # These two keys w static values may be obsolete give the new TZ stuff
-    'timezone': 'MST',      # This was meant to be coloquial Time zone abbreviation, alternate for "TZ_data..."
+    'time_offset':  -6.0,   # -7 Std time, - 6 Daylight Slaving
+    'timezone': 'MDT',      # This was meant to be coloquial Time zone abbreviation, alternate for "TZ_data..."
     'latitude': 35.554298,     # Decimal degrees, North is Positive  Meant to be Wx Station coordinates
     'longitude': -105.870197,   # Decimal degrees, West is negative
     'elevation': 2194,    # meters above sea level.  Meant to be elevation of main temp sensor 20' off ground.
