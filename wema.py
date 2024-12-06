@@ -234,8 +234,12 @@ class WxEncAgent:
         # when wema.py is booted (has happened a bit!)
         url_job = "https://jobs.photonranch.org/jobs/getnewjobs"
         body = {"site": self.config['wema_name']}
+        
+        try:
 
-        requests.request("POST", url_job, data=json.dumps(body), timeout=30).json()
+            requests.request("POST", url_job, data=json.dumps(body), timeout=30).json()
+        except:
+            plog ("Connection glitch in getnewjobs")
 
         
         if not os.path.exists(self.wema_path):
@@ -1007,7 +1011,10 @@ class WxEncAgent:
                     completed=[]
                     for obsid in self.obs_ids:
                         uri_status = f"https://status.photonranch.org/status/{obsid}/obs_settings/"
-                        obs_settings=requests.get(uri_status, timeout=20)
+                        try:
+                            obs_settings=requests.get(uri_status, timeout=20)
+                        except:
+                            plog("Glitch during asking obs for its setting.")
                         if '[200]' in str(obs_settings): # If reading successful
                             obs_settings=obs_settings.json()['status']['obs_settings']
                             if 'morning_flats_done' in obs_settings:
@@ -1339,7 +1346,10 @@ class WxEncAgent:
                     "statusType": "forecast",
                     "status": { "forecast": forecast_status }
                 })
-                response = requests.request("POST", url, data=payload)
+                try:
+                    response = requests.request("POST", url, data=payload)
+                except:
+                    plog ("Connection glitch on the forecast request")
 
             
             # Fitzgerald weather number calculation.
