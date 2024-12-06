@@ -1011,10 +1011,14 @@ class WxEncAgent:
                     completed=[]
                     for obsid in self.obs_ids:
                         uri_status = f"https://status.photonranch.org/status/{obsid}/obs_settings/"
+
+                        
                         try:
                             obs_settings=requests.get(uri_status, timeout=20)
                         except:
-                            plog("Glitch during asking obs for its setting.")
+                            plog ("Some error in getting the obs_settings")
+                            obs_settings='nope'
+
                         if '[200]' in str(obs_settings): # If reading successful
                             obs_settings=obs_settings.json()['status']['obs_settings']
                             if 'morning_flats_done' in obs_settings:
