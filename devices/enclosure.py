@@ -354,7 +354,7 @@ class Enclosure:
         #if not self.is_dome:
             #plog("we got a direct connect status!")
 
-        #breakpoint()
+
         if self.http_driver:
 
             try:
@@ -365,15 +365,33 @@ class Enclosure:
             except:
                 plog("X322 http ShutterStatus -- Faulted. ")
                 shutter_status = 5
-            #
+            #breakpoint()
+            if input_state > 9999:
+                input_state -= 10000
+            if input_state > 999:
+                input_state -= 1000
+            if input_state > 99:
+                input_state -= 100
             if relay_state == 0 and input_state == 0:
                stat_string = 'Indeterminate!'
                self.shutter_is_closed = False          
             if relay_state == 11 or input_state == 11:
                 stat_string = "Error"
                 self.shutter_is_closed = False             
+            elif relay_state == 10 and input_state == 10:
+                 stat_string = "Open Complete"
+                 #Turn off Open relay
+                 requests.get('http://10.0.0.200/state.xml?relay2State=0')
+                 plog("Opening relay state -> Open")
+                 self.shutter_is_closed = False
             elif relay_state == 10:
                 stat_string = "Opening"
+                self.shutter_is_closed = False
+            elif relay_state == 1 and input_state == 1:
+                stat_string = "Close Completed"
+                #Turn off close relay.
+                requests.get('http://10.0.0.200/state.xml?relay1State=0')
+                plog("Cllosinging relay state -> Closed")
                 self.shutter_is_closed = False
             elif relay_state == 1:
                 stat_string = "Closing"
@@ -460,6 +478,7 @@ class Enclosure:
         self.status = status
         self.prior_status = status
         g_dev['enc'].status = status
+        #self.manager()   #Added this in 20240426. Why was it missing?
         return status
 
 
@@ -1110,7 +1129,8 @@ class Enclosure:
         if self.mode == "Automatic" and (open_cmd or close_cmd):
             g_dev['obs'].send_to_user("User enclosure requests not honored in Automatic mode.", p_level='INFO')
 
-        if self.mode == 'Shutdown':
+        if self.mode == 'Shutdown' or g_dev['ocn'].wet_flag and self.mode != 'Shutdown':
+           
             #  NB in this situation we should always Park telescope, rotators, etc.
             #  NB This code is weak
             if self.is_dome and self.enclosure.CanSlave:
@@ -1126,6 +1146,9 @@ class Enclosure:
                 self.close_roof_directly( {}, {} )
                 self.dome_open = False
                 self.dome_home = True
+                if g_dev['ocn'].wet_flag:
+                    plog("Close Roof has been issued for rest of this observing night.")
+                    g_dev['wema'].send_to_user("Close for balance of night has been triggered by rain.")
             except:
                 plog('Dome refused close command.')
 
