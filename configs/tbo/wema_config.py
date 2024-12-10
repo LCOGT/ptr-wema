@@ -49,11 +49,11 @@ wema_config = {
 
     'client_hostname':  'MRC-0m35',  # This is also the long-name  Client is confusing!
     # NB NB disk D at mrc may be faster for temp storage
-    'client_path':  'D:/ptr/',  # Generic place for client host to stash misc stuff
-    'alt_path':  'D:/ptr/',  # Generic place for this host to stash misc stuff
-    'plog_path':  'D:/ptr/tbo/',  # place where night logs can be found.
+    'client_path':  'C:/ptr/',  # Generic place for client host to stash misc stuff
+    'alt_path':  'C:/ptr/',  # Generic place for this host to stash misc stuff
+    'plog_path':  'C:/ptr/tbo/',  # place where night logs can be found.
     'save_to_alt_path': 'no',
-    'archive_path':  'D:/ptr/',
+    'archive_path':  'C:/ptr/',
 
     'archive_age': -99.9,  # Number of days to keep files in the local archive before deletion. Negative means never delete
     # For low bandwidth sites, do not send up large files until the end of the night. set to 'no' to disable
@@ -74,7 +74,7 @@ wema_config = {
     'aux_archive_path':  None,  # NB NB we might want to put Q: here for MRC
     'wema_is_active':  True,          # True if the split computers used at a site.  NB CHANGE THE DAMN NAME!
     'wema_hostname': 'ECO-WMS-ENC',   # Prefer the shorter version
-    'wema_path':  'D:/ptr/',  # '/wema_transfer/',
+    'wema_path':  'C:/ptr/',  # '/wema_transfer/',
 
     #'site_is_custom': False,  # Indicates some special code for this site, found at end of config. Set True if SRO
 
@@ -82,9 +82,9 @@ wema_config = {
     'dome_on_wema':   True,
     #'site_IPC_mechanism':  'redis',   # ['None', shares', 'shelves', 'redis']  Pick One
     'site_IPC_mechanism':  'aws',   # ['None', 'aws', shares', 'shelves', 'redis']  Pick One
-    'wema_write_share_path': 'D:/ptr/',  # Meant to be where Wema puts status data.
-    'client_read_share_path':  'D:/ptr/',  # NB these are all very confusing names.
-    'client_write_share_path': 'D:/ptr/',
+    'wema_write_share_path': 'C:/ptr/',  # Meant to be where Wema puts status data.
+    'client_read_share_path':  'C:/ptr/',  # NB these are all very confusing names.
+    'client_write_share_path': 'C:/ptr/',
     #'redis_ip': '10.15.0.109',  # '127.0.0.1', None if no redis path present,
     'redis_ip': None,  # '127.0.0.1', None if no redis path present,
     #'obsid_is_generic':  False,   # A simply  single computer ASCOM site.
