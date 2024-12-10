@@ -263,7 +263,14 @@ class Enclosure:
 
 
         #if self.config['site_in_automatic_default'] == "Automatic":
+        # Set the dummy flag
+        if driver == 'dummy':
+            self.dummy=True
+            
+        else:
+            self.dummy=False
 
+        self.dummy_status='Open'
 
         #    self.site_in_automatic = False
         #    self.site_mode = 'Shutdown'
@@ -307,7 +314,7 @@ class Enclosure:
                 self.http_driver = True
                 
                 
-            else:
+            elif not self.dummy:
                 self.http_driver = False
                 win32com.client.pythoncom.CoInitialize()
     
@@ -320,6 +327,9 @@ class Enclosure:
                     plog("ASCOM enclosure connected.")
                 except:
                     plog("ASCOM enclosure NOT connected, proabably the App is not connected to telescope.")
+            else:
+                self.enclosure='dummy'
+                self.http_driver = False
         else:
             self.obsid_is_generic = False  # NB NB Changed to False for MRC from SRO where True
         
@@ -418,37 +428,49 @@ class Enclosure:
             
         else:
             
-            try:
-                shutter_status = self.enclosure.ShutterStatus
-            except:
-                plog("self.enclosure.Roof.ShutterStatus -- Faulted. ")
-                shutter_status = 5
-    
-            if shutter_status == 0:
-                stat_string = "Open"
-                self.shutter_is_closed = False
-                #g_dev['redis'].set('Shutter_is_open', True)
-            elif shutter_status == 1:
-                stat_string = "Closed"
-                self.shutter_is_closed = True
-                #g_dev['redis'].set('Shutter_is_open', False)
-            elif shutter_status == 2:
-                stat_string = "Opening"
-                self.shutter_is_closed = False
-                #g_dev['redis'].set('Shutter_is_open', False)
-            elif shutter_status == 3:
-                stat_string = "Closing"
-                self.shutter_is_closed = False
-                #g_dev['redis'].set('Shutter_is_open', False)
-            elif shutter_status == 4:
-                # breakpoint()
-                stat_string = "Error"
-                self.shutter_is_closed = False
-                #g_dev['redis'].set('Shutter_is_open', False)
+            # For the moment if it is a dummy
+            if self.dummy:                
+                if self.dummy_status=='Open':
+                    shutter_status=0    
+                    stat_string = "Open"
+                    self.shutter_is_closed = False
+                elif self.dummy_status=='Closed':
+                    shutter_status=1
+                    stat_string = "Closed"
+                    self.shutter_is_closed = True
+                    
             else:
-                stat_string = "Software Fault"
-                self.shutter_is_closed = False
-                #g_dev['redis'].set('Shutter_is_open', False)
+                try:
+                    shutter_status = self.enclosure.ShutterStatus
+                except:
+                    plog("self.enclosure.Roof.ShutterStatus -- Faulted. ")
+                    shutter_status = 5
+        
+                if shutter_status == 0:
+                    stat_string = "Open"
+                    self.shutter_is_closed = False
+                    #g_dev['redis'].set('Shutter_is_open', True)
+                elif shutter_status == 1:
+                    stat_string = "Closed"
+                    self.shutter_is_closed = True
+                    #g_dev['redis'].set('Shutter_is_open', False)
+                elif shutter_status == 2:
+                    stat_string = "Opening"
+                    self.shutter_is_closed = False
+                    #g_dev['redis'].set('Shutter_is_open', False)
+                elif shutter_status == 3:
+                    stat_string = "Closing"
+                    self.shutter_is_closed = False
+                    #g_dev['redis'].set('Shutter_is_open', False)
+                elif shutter_status == 4:
+                    # breakpoint()
+                    stat_string = "Error"
+                    self.shutter_is_closed = False
+                    #g_dev['redis'].set('Shutter_is_open', False)
+                else:
+                    stat_string = "Software Fault"
+                    self.shutter_is_closed = False
+                    #g_dev['redis'].set('Shutter_is_open', False)
             self.status_string = stat_string
 
         status = {'shutter_status': stat_string}  #Re-enabled 10142023 WER
@@ -966,26 +988,27 @@ class Enclosure:
 
     def open_roof_directly(self, req: dict, opt: dict):
         # if g_dev['enc'].status['shutter_status'] != 'Open' or not self.dome_open:
-        if self.http_driver:
-            resp =requests.get('http://10.0.0.200/state.xml?relay2State=2')  #A 45 second pulse to open, takes 35 sec
-            plog("A http shutter open command has been issued:", resp)
-
+        if not self.dummy:
             
-            
-        else:
-            
-            self.enclosure.OpenShutter()
-            plog("A shutter open command has been issued.")
+            if self.http_driver:
+                resp =requests.get('http://10.0.0.200/state.xml?relay2State=2')  #A 45 second pulse to open, takes 35 sec
+                plog("A http shutter open command has been issued:", resp)
+            else:
+                
+                self.enclosure.OpenShutter()
+                plog("A shutter open command has been issued.")
+        
 
     def close_roof_directly(self, req: dict, opt: dict):
         # if g_dev['enc'].status['shutter_status'] != 'Open' or not self.dome_open:
-        if self.http_driver:
-            resp =requests.get('http://10.0.0.200/state.xml?relay1State=2')  #A 45 second pulse to open, takes 35 sec
-            plog("A http shutter close command has been issued:", resp)
-            
-        else:
-            self.enclosure.CloseShutter()
-        plog("A shutter close command has been issued.")
+        if not self.dummy:
+            if self.http_driver:
+                resp =requests.get('http://10.0.0.200/state.xml?relay1State=2')  #A 45 second pulse to open, takes 35 sec
+                plog("A http shutter close command has been issued:", resp)
+                
+            else:
+                self.enclosure.CloseShutter()
+            plog("A shutter close command has been issued.")
 
     # def open_command(self, req: dict, opt: dict):
     #     #     ''' open the enclosure '''

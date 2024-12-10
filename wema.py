@@ -325,7 +325,8 @@ class WxEncAgent:
                     device=None
                     self.ocn_status_custom=True
                     
-                    
+                
+                
                 elif dev_type == "enclosure" and not self.config['enclosure']['enclosure1']['encl_is_custom']:
                     device = Enclosure(driver, name, self.config, self.astro_events)
                     self.enc_status_custom=False
@@ -1125,7 +1126,10 @@ class WxEncAgent:
     def park_enclosure_and_close(self):
 
         self.open_and_enabled_to_observe = False
-        g_dev['enc'].close_roof_directly({}, {})
+        if not g_dev['enc'].dummy:
+            g_dev['enc'].close_roof_directly({}, {})
+        else:
+            g_dev['enc'].dummy_status='Closed'
         
         return
 
@@ -1172,8 +1176,10 @@ class WxEncAgent:
                                 g_dev['enc'].mode == 'Automatic' or g_dev['enc'].mode == 'Manual':
                             self.opens_this_evening = self.opens_this_evening + 1
 
-                            g_dev['enc'].open_roof_directly({}, {})
-                           
+                            if not g_dev['enc'].dummy:
+                                g_dev['enc'].open_roof_directly({}, {})
+                            else:
+                                g_dev['enc'].dummy_status='Open'
 
                     elif  not enc_status['shutter_status'] in ['Open', 'open','Opening','opening'] and \
                             g_dev['enc'].mode == 'Automatic' \
@@ -1181,13 +1187,19 @@ class WxEncAgent:
 
                         self.opens_this_evening = self.opens_this_evening + 1
 
-                        g_dev['enc'].open_roof_directly({}, {})
+                        if not g_dev['enc'].dummy:
+                            g_dev['enc'].open_roof_directly({}, {})
+                        else:
+                            g_dev['enc'].dummy_status='Open'
 
                     elif not enc_status['shutter_status'] in ['Open', 'open', 'Opening', 'opening'] and \
                             g_dev['enc'].mode == 'Manual':
                         self.opens_this_evening = self.opens_this_evening + 1
 
-                        g_dev['enc'].open_roof_directly({}, {})
+                        if not g_dev['enc'].dummy:
+                            g_dev['enc'].open_roof_directly({}, {})
+                        else:
+                            g_dev['enc'].dummy_status='Open'
 
                         
                     plog("Attempting to Open Shutter. Waiting until shutter opens")
@@ -1195,7 +1207,10 @@ class WxEncAgent:
                     enc_status = g_dev['enc'].get_status()
                     if not enc_status['shutter_status'] in ['Open', 'open']:
 # =============================================================================
-                        g_dev['enc'].open_roof_directly({}, {})
+                        if not g_dev['enc'].dummy:
+                            g_dev['enc'].open_roof_directly({}, {})
+                        else:
+                            g_dev['enc'].dummy_status='Open'
 # =============================================================================
                         time.sleep(self.config['period_of_time_to_wait_for_roof_to_open'])
                    
@@ -1222,7 +1237,10 @@ class WxEncAgent:
                         plog("opens this eve: " + str(self.opens_this_evening))
                         plog("minutes until next open attempt ALLOWED: " + str(
                             (self.enclosure_next_open_time - time.time()) / 60))
-                        g_dev['enc'].close_roof_directly({}, {})
+                        if not g_dev['enc'].dummy:
+                            g_dev['enc'].close_roof_directly({}, {})
+                        else:
+                            g_dev['enc'].dummy_status='Closed'
 
                         return
 
