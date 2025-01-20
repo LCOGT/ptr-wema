@@ -78,8 +78,9 @@ class Events:
             except:
                 plog ("Failed to get obs_config for " + str(obsid))
                 plog(traceback.format_exc())
-            
-            temp_dark_exposure=obs_config['configuration']['camera']['camera_1_1']['settings']['dark_exposure']
+            #breakpoint()
+            #temp_dark_exposure=obs_config['configuration']['camera']['camera_1_1']['settings']['dark_exposure']
+            temp_dark_exposure=180
             plog (obsid + " dark exposure: " + str(temp_dark_exposure))
             if temp_dark_exposure < (self.dark_exposure_in_minutes):
                 self.dark_exposure_in_minutes = temp_dark_exposure
