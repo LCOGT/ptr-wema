@@ -100,7 +100,7 @@ wema_config = {
     
     'OWM_active': True,  #  Cosider breaking this up into Rain and Wind vs Cloud cover.
     'local_weather_active': True,
-    'local_weather_always_overrides_OWM': True,  ##WERE changed 10/14//2023
+    'local_weather_always_overrides_OWM': False,  ## WER changed to False 20240227  WER changed to True 10/14//2023 Shame on him!
     'enclosure_status_check_period': 30,
     'weather_status_check_period': 30,
     'safety_status_check_period': 30,
@@ -135,9 +135,10 @@ wema_config = {
     'eve_cool_down_open': -60.0,
     # WEMA can not have local_weather_info sometimes.. e.g. ECO
     'has_local_weather_info' : True,
+    "has_ligntning_detector": False, 
 
-    'bias_dark interval':  105.,   # Takes 102 minutes as of 11/1/23 @ ARO
-    'eve_sky_flat_sunset_offset': -40.,  # Before Sunset Minutes  neg means before, + after. Takes about 33 min @ ARO 110123
+    'bias_dark interval':  115.,   # Takes 102 minutes as of 11/1/23 @ ARO
+    'eve_sky_flat_sunset_offset': -50.,  # Before Sunset Minutes  neg means before, + after. Takes about 33 min @ ARO 110123
     'end_eve_sky_flats_offset': -1 ,      # How many minutes after civilDusk to do....
     'clock_and_auto_focus_offset':-10,   #min before start of observing
     'astro_dark_buffer': 30,   #Min before and after AD to extend observing window
@@ -158,7 +159,7 @@ wema_config = {
 
     # Local weather DANGER limits - will cause the roof to shut
     'rain_limit': 1,
-    'humidity_limit': 7580,
+    'humidity_limit': 75,  # % presumably
     'windspeed_limit': 15,
     'lightning_limit' : 15,
     'temperature_minus_dewpoint_limit': 2,

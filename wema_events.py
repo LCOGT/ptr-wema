@@ -34,7 +34,7 @@ from global_yard import *
 from astropy.time import Time
 from wema_utility import plog
 import traceback
-
+from pprint import pprint
 import requests
 from requests.adapters import HTTPAdapter, Retry
 reqs = requests.Session()
@@ -68,6 +68,7 @@ class Events:
 
         self.dark_exposure_in_minutes = 99999
         self.eve_skyFlatBegin = 99999
+        #THis code grabs the recent values from the various observatories that the wema covers.
         for obsid in config['obsp_ids']:
             # Grab relevant info from OBS
             #obsconfig = config['wema_name']
@@ -78,7 +79,7 @@ class Events:
             except:
                 plog ("Failed to get obs_config for " + str(obsid))
                 plog(traceback.format_exc())
-            
+
             temp_dark_exposure=obs_config['configuration']['camera']['camera_1_1']['settings']['dark_exposure']
             plog (obsid + " dark exposure: " + str(temp_dark_exposure))
             if temp_dark_exposure < (self.dark_exposure_in_minutes):

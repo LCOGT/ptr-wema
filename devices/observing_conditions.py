@@ -208,6 +208,9 @@ class ObservingConditions:
         # This is purely generic code for a generic site.
         # It may be overwritten with a monkey patch found in the appropriate config.py.
 
+        #breakpoint()
+
+
         if not self.is_wema: #and self.site_is_custom:  # EG., this was written first for SRO.                                        #  system is a proxoy for having a WEMA
             # This is NOT the normal ARO path
             if self.config["site_IPC_mechanism"] == "shares":
@@ -407,20 +410,24 @@ class ObservingConditions:
                     dewpoint_gap = True
                 if self.sky_minus_ambient > sky_temp_limit_setting :
                     wx_reasons.append('(sky - amb) > ' + str(sky_temp_limit_setting) + 'C')
-                    sky_gap = True
-                # try:
-                #     cloud_cover_value = float(self.sky_monitor.CloudCover)
-                #     status['cloud_cover_%'] = round(cloud_cover_value, 0)
-                #     if cloud_cover_value <= cloud_cover_limit_setting:
-                #         cloud_cover = False
-                #     else:
-                #         cloud_cover = True
-                #         wx_reasons.append('>=' + str(cloud_cover_limit_setting) + '% Cloudy')
-                # except:
-                #     status['cloud_cover_%'] = "no report"
-                #     cloud_cover = True  # We cannot use this signal to force a wX hold or close
-               
-                if self.temperature < lowest_temperature_setting or self.temperature > highest_temperature_setting :
+
+                try:
+                    #breakpoint()
+                    cloud_cover_value = float(self.sky_monitor.CloudCover)
+                    status['cloud_cover_%'] = round(cloud_cover_value, 0)
+                    if cloud_cover_value <= cloud_cover_limit_setting:
+                        cloud_cover = False
+                    else:
+                        cloud_cover = True
+                        wx_reasons.append('>=' + str(cloud_cover_limit_setting) + '% Cloudy')
+                except:
+                    status['cloud_cover_%'] = "no report"
+                    cloud_cover = True  # We cannot use this signal to force a wX hold or close
+                self.current_ambient = round(self.temperature, 2)
+                temp_bounds = lowest_temperature_setting < self.sky_monitor.Temperature < highest_temperature_setting
+
+                if not temp_bounds:
+
                     wx_reasons.append('amb temp out of range')
 
                 self.wx_is_ok = not (
@@ -468,7 +475,8 @@ class ObservingConditions:
             return status
 
         elif self.is_wema:  # These operations are common to a generic single computer or wema site.
-            ## Here we get the status from local devices
+            ## Here we get the status from local devices, including MRC
+            
             status = {}
             illum, mag = self.astro_events.illuminationNow()
             # illum = float(redis_monitor["illum lux"])
@@ -504,9 +512,11 @@ class ObservingConditions:
                 self.pressure = self.config["reference_pressure"]
     
             # NB NB NB This is a very odd problem which showed up at MRC.
+
     
             try:
                 self.new_pressure = round(float(self.pressure[0]), 2)  # was [0]), 2)  #NB this is an unfinished lame attempt to index by month.
+
             except:
                 self.new_pressure = round(float(self.pressure), 2)
             try:
