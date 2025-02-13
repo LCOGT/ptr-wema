@@ -36,33 +36,33 @@ wema_config = {
 
     'wema_name': 'aro',
     'instance_type': 'wema',
-    'obsp_ids': ['aro1'], #, 'aro2','aro3', 'aro4']  #Possible hint to site about who are its children.  
-      
+    'obsp_ids': ['aro1'], #, 'aro2','aro3', 'aro4']  #Possible hint to site about who are its children.
+
     'debug_mode': False,
-    'debug_duration_sec': 80000, 
+    'debug_duration_sec': 80000,
     'admin_owner_commands_only': False,
 
     'owner':  ['google-oauth2|102124071738955888216',
                'google-oauth2|112401903840371673242'],  #    WER and  Neyle,
     'owner_alias': ['ANS', 'WER', 'TELOPS'],
     'admin_aliases': ["ANS", "WER", 'KVH', "TELOPS", "TB", "DH", "KVH", 'KC' , 'MF'],
-    
+
     #'observatory_location': site_name.lower(),  # Not sure what this has to do with a *site!*.
     'site_desc': "Apache Ridge Observatory, Santa Fe, NM, USA. 2194m",  #Chg name to site_location?
     'airport_codes':  ['SAF', 'ABQ', 'LSN'],   #  Meant to bracket the site so we can probe Obsy Wx reports
-    
+
     'client_hostnames': ["ARO-0m30"],     # This should be a list corresponding to obsp ID's and maybe an parallel ip# list.
-    
-    'wema_is_active':  True,     # True if an agent (ie a wema) is used at a site.   # Wemas are split sites -- at least two CPS's sharing the control.
-    'wema_hostname':  'ARO-WEMA',
-    'host_wema_site_name':  'ARO',   #do we need this? 
+
+    'wema_is_active':  True,     # True if an agent (ie a wema) is used at a site.   # Wemas are split sites -- at least two CPU's sharing the control.
+    'wema_hostname':  'ARO1-0m30',  #'ARO-WEMA',
+    'host_wema_site_name':  'ARO',   #do we need this?
     'wema_path': 'C:/ptr/',      #Local storage on Wema disk.
     'plog_path': 'C:/ptr/',
     'encl_coontrolled_by_wema':  True,       #NB NB NB CHange this confusing name. 'dome_controlled_by_wema'
     'site_IPC_mechanism':  'shares',   # ['None', shares', 'shelves', 'redis']
     'wema_write_share_path':  'W:/', #Meant to be a share with to by the Obsp TCS computer
     'dome_on_wema':  True,  #Temporary assignment   20230617 WER
-    'redis_available':  True, 
+    'redis_available':  True,
     'redis_ip': "10.0.0.174:6379",   # port :6379 None if no redis path present, localhost if redis iself-contained
     'site_is_single_host':  False,   # A simple single computer ASCOM site.
 
@@ -105,21 +105,21 @@ wema_config = {
     'period_of_time_to_wait_for_roof_to_open' : 125, # seconds - needed to check if the roof ACTUALLY opens. ARO takes ~35 seconds as of 20231101
     'only_scope_that_controls_the_roof': True, # If multiple scopes control the roof, set this to False
     'check_time': 300,    #   20231106   Unused WER
-    'maximum_roof_opens_per_evening' : 6,   
+    'maximum_roof_opens_per_evening' : 3,
 
-    'roof_open_safety_base_time' : 10, # How many minutes to use as the default retry time to open roof. This will be progressively multiplied as a back-off function.
-    
-    
+    'roof_open_safety_base_time' : 15, # How many minutes to use as the default retry time to open roof. This will be progressively multiplied as a back-off function.
+
+
     # For some sites like schools, we need roof to be shut during work hours so balls don't fall into observatories.
     # 24 hour time in decimal local time according to TZ_database_name
     'absolute_earliest_opening_hour': 15.5, # School definitely closed by then.
     'absolute_latest_shutting_hour' : 10.0, # Kids start arriving after this.
-    
 
-    
+
+
     'site_enclosures_default_mode': "Automatic",   # ["Manual", "Shutdown", "Automatic"]  Was "Simulated' as o 10/14/2023 We
     'automatic_detail_default': "Enclosures are initially set to Automatic by ARO site_config.",
-     
+
     #Sequencing keys and value, sets up Events
     'auto_eve_bias_dark': True,
     'auto_eve_sky_flat': True,
@@ -128,13 +128,13 @@ wema_config = {
     'auto_morn_bias_dark': True,
 
     # NB NB THe following two entries are relevant for SRO
-   
+
     # WEMA can not have local_weather_info sometimes.. e.g. ECO
     'has_local_weather_info' : True,
-    
+
     'bias_dark interval':  110.,   # Takes 102 minutes as of 11/1/23 @ ARO
     'eve_cool_down_open': -55.0, # How many minutes before sunset to open. Default -65 = an hour-ish before sunset. Gives time to cool and get narrowband flats
-                                 #  Note 15 minutes of cool down provided.     
+                                 #  Note 15 minutes of cool down provided.
     'eve_sky_flat_sunset_offset': -40.,  # Before Sunset Minutes  neg means before, + after. Flats take about 33 min @ ARO 110123
     'end_eve_sky_flats_offset': -1 ,      # How many minutes after civilDusk to do....
     'clock_and_auto_focus_offset':-10,   #min before start of observing
@@ -155,7 +155,7 @@ wema_config = {
     'cloud_cover_limit_on': True,
     'lowest_ambient_temperature_on': True,
     'highest_ambient_temperature_on': True,
-    'has_inside_weather_station': False, 
+    'has_inside_weather_station': False,
     # Local weather limits   #NB we should move these into OCN config section
     'rain_limit': 1.0,         # NO we shouldn't because it will be different per site
     'humidity_limit': 75,   # With multiple elements etc. I think.
@@ -178,7 +178,7 @@ wema_config = {
     'warning_cloud_cover_limit': 25,
     'warning_lowest_ambient_temperature': -10,
     'warning_highest_ambient_temperature': 35,
-    
+
     'get_ocn_status': None,
     'get_enc_status': None,
     'not_used_variable': None,
@@ -234,14 +234,14 @@ wema_config = {
 
     'observing_conditions' : {     #for SAF
         'observing_conditions1': {
-            'ocn_is_custom':  False,  
+            'ocn_is_custom':  False,
             'name': 'SkyAlert Custom for ARO',
             'driver': 'ASCOM.SkyAlert.ObservingConditions',  #  'ASCOM.Boltwood.ObservingConditions',
             'driver_2':  None,
             'driver_3':  None,
             'redis_ip': '127.0.0.1',   #None if no redis path present
             'has_unihedron':  True,
-            'have_local_unihedron': True,  
+            'have_local_unihedron': True,
             'uni_driver': 'ASCOM.SQM.serial.ObservingConditions',
             'unihedron_port':  10    # False, None or numeric of COM port.
         },
@@ -250,9 +250,9 @@ wema_config = {
     'enclosure': {
         'enclosure1': {
             'name': 'Roll Top',
-            'encl_is_custom':  False,  ##if custom this config would have routines to monkey patch 
+            'encl_is_custom':  False,  ##if custom this config would have routines to monkey patch
             'directly_connected': False, # For ECO and EC2, they connect directly to the enclosure, whereas WEMA are different.
-            'hostIP':  '10.0.0.50',
+            'hostIP':  '10.0.0.73',
             'driver': 'X322_http',  #     Dragonfly.Dome,  #  'ASCOMDome.Dome',  #ASCOMDome.Dome',  # ASCOM.DeviceHub.Dome',  # ASCOM.DigitalDomeWorks.Dome',  #"  ASCOMDome.Dome',
             "encl_ip": '10.0.0.200',    #'10.0.0.103'Used to be the Drangonfly, no longer used.
             'has_lights':  False,

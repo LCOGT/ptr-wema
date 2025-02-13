@@ -46,8 +46,8 @@ reqs.mount('http://', HTTPAdapter(max_retries=retries))
 
 EVESCREENFLATDURATION = 0/1440  # 0.0 hours
 BIASDARKDURATION = 120/1440  # 2.0 hours
-#EVESKYFLATDURATION = 75/1440  # 1.25 hours THESE ARE OBS SPECIFIC 
-#MORNSKYFLATDURATION = 75/1440  # 1.25 hours  THESE ARE OBS SPECIFIC 
+#EVESKYFLATDURATION = 75/1440  # 1.25 hours THESE ARE OBS SPECIFIC
+#MORNSKYFLATDURATION = 75/1440  # 1.25 hours  THESE ARE OBS SPECIFIC
 MORNBIASDARKDURATION = 120/1440  # 1.5 min
 
 LONGESTSCREEN = 0/1440  # 1 min
@@ -65,7 +65,6 @@ class Events:
         self.config = config
         g_dev['evnt'] = self
 
-
         self.dark_exposure_in_minutes = 99999
         self.eve_skyFlatBegin = 99999
         #THis code grabs the recent values from the various observatories that the wema covers.
@@ -80,24 +79,25 @@ class Events:
                 plog ("Failed to get obs_config for " + str(obsid))
                 plog(traceback.format_exc())
 
-            #breakpoint()
-            #temp_dark_exposure=obs_config['configuration']['camera']['camera_1_1']['settings']['dark_exposure']
+
+            #temp_dark_exposure=obs_config['configuration']['camera']['sq003ms']['settings']['dark_exposure']
+
             temp_dark_exposure=180
             plog (obsid + " dark exposure: " + str(temp_dark_exposure))
             if temp_dark_exposure < (self.dark_exposure_in_minutes):
                 self.dark_exposure_in_minutes = temp_dark_exposure
-            
-            
-            
+
+
+
             temp_eve_offset = obs_config['configuration']['eve_sky_flat_sunset_offset']
             plog (obsid + " eve flat offset: " + str(temp_eve_offset))
             #breakpoint()
             if temp_eve_offset < self.eve_skyFlatBegin:
                 self.eve_skyFlatBegin = temp_eve_offset
-                
-            
+
+
         plog ("Used dark exposure: " + str(self.dark_exposure_in_minutes))
-        plog ("Used eve flat time: " + str(self.eve_skyFlatBegin ))  
+        plog ("Used eve flat time: " + str(self.eve_skyFlatBegin ))
         #breakpoint()
 
         self.dark_exposure_in_minutes = self.dark_exposure_in_minutes / 60
@@ -476,7 +476,7 @@ class Events:
         DAY_Directory = str(now_here.year) + str(nowheremonth) + str(nowhereday)
         #plog('Day_Directory:  ', DAY_Directory)
         g_dev['day'] = DAY_Directory
-        
+
         g_dev['dayhyphened'] = str(now_here.year) + '-' + str(nowheremonth) + '-' + str(nowhereday)
 
         return DAY_Directory
@@ -554,7 +554,7 @@ class Events:
         # then needs to be pulled back a day. Primarily because it sometimes does weird things.....
         self.endNightTime = ephem.Date(self.sunrise + 120/1440.)
         #endNightTime = ephem.Date(nautDawn_minus_half + 10/1440.)
-        self.cool_down_open = self.sunset + self.config['eve_cool_down_open']/1440        
+        self.cool_down_open = self.sunset + self.config['eve_cool_down_open']/1440
         self.close_and_park = self.sunrise + self.config['morn_close_and_park']/1440
 
 
@@ -597,7 +597,7 @@ class Events:
                      ('End Eve Sky Flats  ', ephem.Date(self.nauticalDusk - 10/1440)),
                      #('End Eve Sky Flats  ', ephem.Date(self.civilDusk + self.config['end_eve_sky_flats_offset']/1440)),
                      #('Clock & Auto Focus ', ephem.Date(self.nautDusk_plus_half - 8/1440.)),
-                     
+
                      #('Observing Begins   ', ephem.Date(self.nautDusk_plus_half)),
                      #('Observing Begins   ', ephem.Date(obs_window := self.astroDark - self.config['astro_dark_buffer']/1440)),
                      #('Clock & Auto Focus ', ephem.Date(obs_window + self.config['clock_and_auto_focus_offset']/1440)),
@@ -610,7 +610,7 @@ class Events:
                      ('Naut Dawn          ', ephem.Date(self.nauticalDawn)),
                      ('Civil Dawn         ', ephem.Date(self.civilDawn)),
                      #('Morn Sky Flats     ', ephem.Date(self.sunrise + self.config['morn_flat_start_offset']/1440.)),
-                     ('Sun Rise           ', ephem.Date(self.sunrise)), 
+                     ('Sun Rise           ', ephem.Date(self.sunrise)),
                      #('End Morn Sky Flats ', ephem.Date(self.sunrise  + self.config['morn_flat_end_offset']/1440.)),                    # Enclosure must close 5 min after sunrise
 
                      ('Ops Window Closes  ', ephem.Date(self.close_and_park - 2/1440.)),
@@ -630,7 +630,7 @@ class Events:
                      ('Moon Transit       ', ephem.Date(self.next_moontransit)),
                      ('Moon Set           ', ephem.Date(self.next_moonset))]
 
-        
+
         # self.evnt = [('Eve Bias Dark      ', ephem.Date(self.cool_down_open- 125/1440)),
         #              ('End Eve Bias Dark  ', ephem.Date(self.cool_down_open - (2*self.dark_exposure_in_minutes)/1440)),
         #              ('Ops Window Start   ', ephem.Date(self.eve_skyFlatBegin)),  # Enclosure may open.

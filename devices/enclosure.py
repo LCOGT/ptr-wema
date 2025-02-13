@@ -237,12 +237,12 @@ KINGRATE = 15.029
 
 
 # =============================================================================
-# 
+#
 # # =============================================================================
 # # UPDATE 20231023 WER:  ARO has an expeimental roof controller based on a Xylogics X322 IO controller.
 # # So the code is ver experimental and change at your own risk!   WER
 # # =============================================================================
-# 
+#
 # =============================================================================
 class Enclosure:
 
@@ -266,7 +266,7 @@ class Enclosure:
         # Set the dummy flag
         if driver == 'dummy':
             self.dummy=True
-            
+
         else:
             self.dummy=False
 
@@ -279,10 +279,13 @@ class Enclosure:
 
         self.time_of_next_slew = time.time()
         self.hostname = socket.gethostname()
-        #if self.hostname in self.config['wema_hostname']:
-        self.is_wema = True
 
-        
+        if self.hostname in self.config['wema_hostname']:
+            self.is_wema = True
+        else:
+            self.is_wema = False
+
+
         self.dome_on_wema = True
 
 
@@ -309,17 +312,18 @@ class Enclosure:
             #  instance that can be accessed by a simple site or by the WEMA,
             #  assuming the transducers are connected to the WEMA.
             self.obsid_is_generic = True
+            self.http_driver = True   #Hack alert 20250118 WER
             if driver == 'X322_http':
                 plog('X322 http exeperimental driver is connected. ')
                 self.http_driver = True
-                
-                
+
+
             elif not self.dummy:
-                self.http_driver = False
+                #self.http_driver = False
                 win32com.client.pythoncom.CoInitialize()
-    
+
                 self.enclosure = win32com.client.Dispatch(driver)
-    
+
                 plog(self.enclosure)
                 try:
                     if not self.enclosure.Connected:
@@ -332,7 +336,7 @@ class Enclosure:
                 self.http_driver = False
         else:
             self.obsid_is_generic = False  # NB NB Changed to False for MRC from SRO where True
-        
+
         self.last_current_az = 0. # Holdover from Home Dome at ARO
         self.last_slewing = False
         self.prior_status = {'enclosure_mode': 'Manual'}  # Just to initialze this rarely used variable.
@@ -341,29 +345,28 @@ class Enclosure:
         self.guarded_roof_open_timer = time.time()
 
 
-    def get_status(self) -> dict:        
-        '''NB this routine is used many ways.  If it is run from a wema for a 
+    def get_status(self) -> dict:
+        '''NB this routine is used many ways.  If it is run from a wema for a
         specific enclosure, it reads the enclosure status and posts that to
         the site IPC then it also checks the enclosure manager to see if it
         needs to do anything.
-        
+
          IF not a wema but an obs platform
               Get status from  the right IPC source
-        
+
         if wema connected to an enclosure:
             get status directly
         elif wema connected to autonomous:
             get status from IPC source (share at SRO, redis?)
-        
+
         If wema go to manager
             if manager updates status with any enc command, update status
-        
+
         now return accurate status. '''
 
 
         #if not self.is_dome:
             #plog("we got a direct connect status!")
-
 
         if self.http_driver:
 
@@ -384,10 +387,10 @@ class Enclosure:
                 input_state -= 100
             if relay_state == 0 and input_state == 0:
                stat_string = 'Indeterminate!'
-               self.shutter_is_closed = False          
+               self.shutter_is_closed = False
             if relay_state == 11 or input_state == 11:
                 stat_string = "Error"
-                self.shutter_is_closed = False             
+                self.shutter_is_closed = False
             elif relay_state == 10 and input_state == 10:
                  stat_string = "Open Complete"
                  #Turn off Open relay
@@ -418,34 +421,34 @@ class Enclosure:
             else:
                 stat_string = "Software Fault"
                 self.shutter_is_closed = False
-            
 
 
 
-            
-            
-                
-            
+
+
+
+
+
         else:
-            
+
             # For the moment if it is a dummy
-            if self.dummy:                
+            if self.dummy:
                 if self.dummy_status=='Open':
-                    shutter_status=0    
+                    shutter_status=0
                     stat_string = "Open"
                     self.shutter_is_closed = False
                 elif self.dummy_status=='Closed':
                     shutter_status=1
                     stat_string = "Closed"
                     self.shutter_is_closed = True
-                    
+
             else:
                 try:
                     shutter_status = self.enclosure.ShutterStatus
                 except:
                     plog("self.enclosure.Roof.ShutterStatus -- Faulted. ")
                     shutter_status = 5
-        
+
                 if shutter_status == 0:
                     stat_string = "Open"
                     self.shutter_is_closed = False
@@ -490,7 +493,7 @@ class Enclosure:
         status['ladder_stowed'] = 'n/a'
         status['end_wall'] = 'n/a'
         status['lights_on'] = 'Off'
-        
+
         #status['enclosure_mode'] = self.mode
         #status['enclosure_message']: self.state
         #status['enclosure_synchronized']= True
@@ -597,7 +600,7 @@ class Enclosure:
 #             status['access_door'] = "Open"
 #             status['end_wall'] = 'n/a'
 #             status['lights_on'] = 'Red'
-            
+
 #             # g_dev['redis'].set('enc_status', status, ex=3600)  #This is occasionally used by mouning.
 
 #             if self.is_dome:
@@ -989,15 +992,15 @@ class Enclosure:
     def open_roof_directly(self, req: dict, opt: dict):
         # if g_dev['enc'].status['shutter_status'] != 'Open' or not self.dome_open:
         if not self.dummy:
-            
+
             if self.http_driver:
                 resp =requests.get('http://10.0.0.200/state.xml?relay2State=2')  #A 45 second pulse to open, takes 35 sec
                 plog("A http shutter open command has been issued:", resp)
             else:
-                
+
                 self.enclosure.OpenShutter()
                 plog("A shutter open command has been issued.")
-        
+
 
     def close_roof_directly(self, req: dict, opt: dict):
         # if g_dev['enc'].status['shutter_status'] != 'Open' or not self.dome_open:
@@ -1005,7 +1008,7 @@ class Enclosure:
             if self.http_driver:
                 resp =requests.get('http://10.0.0.200/state.xml?relay1State=2')  #A 45 second pulse to open, takes 35 sec
                 plog("A http shutter close command has been issued:", resp)
-                
+
             else:
                 self.enclosure.CloseShutter()
             plog("A shutter close command has been issued.")
@@ -1062,7 +1065,7 @@ class Enclosure:
     #     if self.config['observing_conditions']['observing_conditions1']['driver'] == None or \
     #         (g_dev['ocn'].status['wx_ok'] in [True, 'Yes']): # and not (g_dev['ocn'].wx_hold \
     #                                       #or g_dev['ocn'].clamp_latch)):     # NB Is Wx ok really the right criterion???
-           
+
     #         try:
     #             if self.wema_allowed_to_open_roof:
     #                 if time.time() > self.guarded_roof_open_timer:
@@ -1116,7 +1119,7 @@ class Enclosure:
 
 
         ops_window_start, sunset, sunrise, ephem_now = self.astro_events.getSunEvents()
-       
+
         az_opposite_sun = g_dev['evnt'].sun_az_now()
         #plog('Sun Az: ', az_opposite_sun)
         az_opposite_sun -= 180.
@@ -1153,7 +1156,7 @@ class Enclosure:
             g_dev['obs'].send_to_user("User enclosure requests not honored in Automatic mode.", p_level='INFO')
 
         if self.mode == 'Shutdown' or g_dev['ocn'].wet_flag and self.mode != 'Shutdown':
-           
+
             #  NB in this situation we should always Park telescope, rotators, etc.
             #  NB This code is weak
             if self.is_dome and self.enclosure.CanSlave:
@@ -1234,7 +1237,7 @@ class Enclosure:
             self.dome_homed = True    #g_dev['events']['Cool Down, Open']  <=
         elif ((g_dev['events']['Cool Down, Open']  <= ephem_now < g_dev['events']['Observing Ends']) and \
                 g_dev['enc'].site_mode == 'Automatic') and not (g_dev['ocn'].wx_hold or g_dev['ocn'].clamp_latch): # and net_connected:
-            
+
 
             try:
                 # if self.status_string in ['Closed']:   #Fails at SRO, attriute not set. 20220806 wer

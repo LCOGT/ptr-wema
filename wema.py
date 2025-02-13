@@ -33,7 +33,7 @@ from pyowm import OWM
 from pyowm.utils import config
 from pyowm.utils import timestamps
 
-from wema_config import get_enc_status_custom
+from wema_config import get_enc_status_custom  #These are particular to SRO therefore obsolete??
 from wema_config import get_ocn_status_custom
 
 import pytz
@@ -62,12 +62,13 @@ def terminate_restart_observer(site_path, no_restart=False):
 
 def send_status(obsy, column, status_to_send):
     """Sends a status update to AWS."""
-    
+
     uri_status = f"https://status.photonranch.org/status/{obsy}/status/"
     # NB None of the strings can be empty. Otherwise this put faults.
     payload = {"statusType": str(column), "status": status_to_send}\
 
     data = json.dumps(payload)
+    #print(data)
     try:
         
         response = requests.post(uri_status, data=data, timeout=20)
@@ -83,24 +84,30 @@ def send_status(obsy, column, status_to_send):
 
 class WxEncAgent:
     """A class for weather enclosure functionality."""
-    
+
     """
-    Re-working ARO Weather 20231226 WER.  Currently the Wema-attached external 
-    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert 
+    Re-working ARO Weather 20231226 WER.  Currently the Wema-attached external
+    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
     provided by a reflection from AWS -- and we have an inside skyalert which
     measures the underside roof temp during the day!  Unfortunately the AWS
     style reflection gets stale so I am putting in a redis based way to pass
     the ARO-0m30 weather information over to the Wema.  No Weather decisions
-    are made at ARO-0m30 except to convert to metric and compute the 15 minute 
+    are made at ARO-0m30 except to convert to metric and compute the 15 minute
     wind-gust value.
-    
+
     In the event the redis data is stale -- we may use the AWS supplied data if
     we can figure out how to verify it is not stale.
+<<<<<<< Updated upstream
     
     NOTE  ARO-0m30 passes its weather line through skyalert\weatherdata_nw.txt
     
+=======
+
+    NOTE  ARO-0m30 passes its weaterh line through skyalert\weatherdata_nw.txt
+
+>>>>>>> Stashed changes
     Status as sent to GUI does go through AWS however.
-    
+
     The whole Weather Hold system has been bypassed and semi-replaced with the OWM
     rework.  I plan to revisit this once I am satsified it serves a useful purpose.
     for ARO late afternoon winds are common but they tend to abate.  Some wind-
@@ -148,12 +155,13 @@ class WxEncAgent:
         self.astro_events.calculate_events()
         self.astro_events.display_events()
 
-        
+
 
         self.wema_pid = os.getpid()
         print("Fresh WEMA_PID:  ", self.wema_pid)
-        
+
         self.update_config()
+
         self.create_devices(config)
         self.time_last_status = time.time() - 60  #forces early status on startup.
         self.loud_status = False
@@ -169,11 +177,11 @@ class WxEncAgent:
         self.nightly_weather_report_complete = False
         self.weather_report_run_timer=time.time()-3600
         self.local_pytz_timezone=pytz.timezone(self.config['TZ_database_name'])
-        
+
 
         self.owm_active=config['OWM_active']
         self.local_weather_active=config['local_weather_active']
-        
+
         self.enclosure_status_check_period=config['enclosure_status_check_period']
         self.weather_status_check_period = config['weather_status_check_period']
         self.safety_status_check_period = config['safety_status_check_period']
@@ -205,28 +213,28 @@ class WxEncAgent:
         else:
             self.ocn_exists=True
 
-        # This variable prevents the roof being called to open every loop...        
+        # This variable prevents the roof being called to open every loop...
         self.enclosure_next_open_time = time.time()
         # This keeps a track of how many times the roof has been open this evening
         # Which is really a measure of how many times the enclosure has
         # attempted to observe but been shut on....
-        # If it is too many, then it shuts down for the whole evening. 
+        # If it is too many, then it shuts down for the whole evening.
         self.opens_this_evening = 0
         self.local_weather_ok = None
-        self.weather_text_report = []       
+        self.weather_text_report = []
         self.times_to_open = []
         self.times_to_close = []
         self.hourly_report_holder=[]
         self.weather_report_open_at_start = False
-        self.nightly_reset_complete = False  
+        self.nightly_reset_complete = False
         self.keep_open_all_night = False
-        self.keep_closed_all_night   = False          
+        self.keep_closed_all_night   = False
         self.open_at_specific_utc = False
-        self.specific_utc_when_to_open = -1.0  
+        self.specific_utc_when_to_open = -1.0
         self.manual_weather_hold_set = False
-        self.manual_weather_hold_duration = -1.0    
+        self.manual_weather_hold_duration = -1.0
         self.wema_has_roof_control=config['wema_has_control_of_roof']
-        
+
         # Obs under WEMA guidance
         self.obs_ids=self.config['obsp_ids']
         self.morning_flats_finished=False
@@ -235,30 +243,30 @@ class WxEncAgent:
         # when wema.py is booted (has happened a bit!)
         url_job = "https://jobs.photonranch.org/jobs/getnewjobs"
         body = {"site": self.config['wema_name']}
-        
+
         try:
 
             requests.request("POST", url_job, data=json.dumps(body), timeout=30).json()
         except:
             plog ("Connection glitch in getnewjobs")
 
-        
+
         if not os.path.exists(self.wema_path):
             os.makedirs(self.wema_path)
         if not os.path.exists(self.wema_path + "ptr_night_shelf"):
             os.makedirs(self.wema_path + "ptr_night_shelf")
-        
+
         self.wema_settings_shelf_filename = self.wema_path + "ptr_night_shelf/" + str(self.config['wema_name'])+"_wema_stored_settings"
-    
-        
-        if os.path.exists(self.wema_settings_shelf_filename + '.dat'):       
-        
+
+
+        if os.path.exists(self.wema_settings_shelf_filename + '.dat'):
+
             wema_settings_shelf = shelve.open(self.wema_settings_shelf_filename)
-            
+
             #print ("woo")
-            
+
             #print (wema_settings_shelf['local_weather_active'])
-            
+
             g_dev['enc'].mode =wema_settings_shelf['mode']
             self.observing_mode=wema_settings_shelf['observing_mode']
             self.local_weather_active=wema_settings_shelf['local_weather_active']
@@ -269,36 +277,36 @@ class WxEncAgent:
                 g_dev['ocn'].rain_limit_on=wema_settings_shelf['rain_limit_on']
                 g_dev['ocn'].warning_rain_limit_setting=wema_settings_shelf['warning_rain_limit_setting']
                 g_dev['ocn'].rain_limit_setting=wema_settings_shelf['rain_limit_setting']
-                
+
                 g_dev['ocn'].cloud_cover_limit_on=wema_settings_shelf['cloud_cover_limit_on']
                 g_dev['ocn'].warning_cloud_cover_limit_setting=wema_settings_shelf['warning_cloud_cover_limit_setting']
                 g_dev['ocn'].cloud_cover_limit_setting=wema_settings_shelf['cloud_cover_limit_setting']
-                
+
                 g_dev['ocn'].humidity_limit_on=wema_settings_shelf['humidity_limit_on']
                 g_dev['ocn'].warning_humidity_limit_setting=wema_settings_shelf['warning_humidity_limit_setting']
                 g_dev['ocn'].humidity_limit_setting=wema_settings_shelf['humidity_limit_setting']
-                
+
                 g_dev['ocn'].windspeed_limit_on=wema_settings_shelf['windspeed_limit_on']
                 g_dev['ocn'].warning_windspeed_limit_setting=wema_settings_shelf['warning_windspeed_limit_setting']
                 g_dev['ocn'].windspeed_limit_setting=wema_settings_shelf['windspeed_limit_setting']
-                
+
                 g_dev['ocn'].lightning_limit_on=wema_settings_shelf['lightning_limit_on']
                 g_dev['ocn'].warning_lightning_limit_setting=wema_settings_shelf['warning_lightning_limit_setting']
                 g_dev['ocn'].lightning_limit_setting=wema_settings_shelf['lightning_limit_setting']
-                
+
                 g_dev['ocn'].temp_minus_dew_on=wema_settings_shelf['temp_minus_dew_on']
                 g_dev['ocn'].warning_temp_minus_dew_setting=wema_settings_shelf['warning_temp_minus_dew_setting']
                 g_dev['ocn'].temp_minus_dew_setting=wema_settings_shelf['temp_minus_dew_setting']
-                
+
                 g_dev['ocn'].sky_temperature_limit_on=wema_settings_shelf['sky_temperature_limit_on']
                 g_dev['ocn'].warning_sky_temp_limit_setting=wema_settings_shelf['warning_sky_temp_limit_setting']
                 g_dev['ocn'].sky_temp_limit_setting=wema_settings_shelf['sky_temp_limit_setting']
             #pid = camShelf["pid_obs"]  # a 9 character string
             wema_settings_shelf.close()
-            
+
             self.update_status()
-        
-        
+
+
 
 
 
@@ -313,8 +321,8 @@ class WxEncAgent:
             if dev_type == "camera":
                 pass
             for name in device_names:
-                driver = devices_of_type[name]["driver"]
- 
+                driver = "ASCOM.Simulator.ObservingConditions" #devices_of_type[name]["driver"]
+
                 if dev_type == "observing_conditions" and not self.config['observing_conditions']['observing_conditions1']['ocn_is_custom']:
 
                     device = ObservingConditions(
@@ -322,20 +330,20 @@ class WxEncAgent:
                     )
                     self.ocn_status_custom=False
                 elif dev_type == "observing_conditions" and self.config['observing_conditions']['observing_conditions1']['ocn_is_custom']:
-                    
+
                     device=None
                     self.ocn_status_custom=True
-                    
-                
-                
+
+
+
                 elif dev_type == "enclosure" and not self.config['enclosure']['enclosure1']['encl_is_custom']:
                     device = Enclosure(driver, name, self.config, self.astro_events)
                     self.enc_status_custom=False
                 elif dev_type == "enclosure" and self.config['enclosure']['enclosure1']['encl_is_custom']:
-                    
+
                     device=None
                     self.enc_status_custom=True
-                   
+
                 else:
                     print(f"Unknown device: {name}")
                 self.all_devices[dev_type][name] = device
@@ -352,10 +360,10 @@ class WxEncAgent:
 
     def scan_requests(self):
         """
-        
-        This can pick up owner/admin Shutdown and Automatic request but it 
+
+        This can pick up owner/admin Shutdown and Automatic request but it
         would need to be a custom api endpoint.
-        
+
         Not too many useful commands: Shutdown, Automatic, Immediate close,
         BadWxSimulate event (ie a 15 min shutdown)
 
@@ -365,7 +373,7 @@ class WxEncAgent:
         This should be changed to look into the site command queue to pick up
         any commands directed at the Wx station, or if the agent is going to
         always exist lets develop a seperate command queue for it.
-        
+
         NB NB NB should this be on some sort of timeout so that if AWS
         connection goes away the code can deal with that case?
         """
@@ -396,40 +404,40 @@ class WxEncAgent:
                         plog(cmd)
                         if cmd['action']=='open':
                             plog ("open enclosure command received")
-                 
+
                             self.open_enclosure({}, {})     #WER added missing dicts 10142023 WER
 
                             self.enclosure_status_check_timer=time.time() - 2*self.enclosure_status_check_period
                             self.update_status()
-                            
+
                         if cmd['action']=='close':
                             plog ("command enclosure command received")
-                           
+
                             self.park_enclosure_and_close()
                             self.enclosure_status_check_timer=time.time() - 2*self.enclosure_status_check_period
                             self.update_status()
-                        
-                        
+
+
                         if cmd['action']=='simulate_weather_hold':
                             plog("simulate weather hold button doesn't do anything yet")
-                        
+
                         if cmd['action']=='open_no_earlier_than_owm_plan':
                             plog("open no earlier than owm button doesn't do anything yet")
-                        
+
                         # Change in Enclosure mode
                         if cmd['action']=='set_enclosure_mode':
                             plog ("set enclosure mode command received")
                             g_dev['enc'].mode = cmd['required_params']['enclosure_mode']
                             self.enclosure_status_check_timer =time.time() - 2* self.enclosure_status_check_period
                             self.update_status()
-                            
-                        
+
+
                         if cmd['action']=='set_observing_mode':
                             plog ("set observing mode command received")
                             self.observing_mode=cmd['required_params']['observing_mode']
                             self.enclosure_status_check_timer =time.time() - 2* self.enclosure_status_check_period
                             self.update_status()
-                            
+
                         if cmd['action']=='configure_active_weather_report':
                             plog ("configure weather settings command received")
                             if cmd['required_params']["weather_type"] == 'local':
@@ -437,81 +445,79 @@ class WxEncAgent:
                                     self.local_weather_active=True
                                 if cmd['required_params']["weather_type_value"] == 'off':
                                     self.local_weather_active=False
-                             
+
                             if cmd['required_params']["weather_type"] == 'owm':
                                 if cmd['required_params']["weather_type_value"] == 'on':
                                     self.owm_active=True
                                 if cmd['required_params']["weather_type_value"] == 'off':
                                     self.owm_active=False
-                            
+
                             self.wema_settings_upload_timer=time.time() -2 * self.wema_settings_upload_period
                             self.update_status()
-                            
-                            
+
+
                         if cmd['action']=='force_roof_state':
                             if cmd['required_params']["force_roof_state"] == 'open':
                                 plog ("keep roof open all night command received")
                                 self.keep_open_all_night = True
                                 self.keep_closed_all_night = False
-                            
+
                             if cmd['required_params']["force_roof_state"] == 'closed':
-                                
                                 plog ("keep roof closed all night command received")
+                                self.keep_open_all_night = False
                                 self.keep_closed_all_night= True
-                                self.keep_open_all_night = False
-                            
+
                             if cmd['required_params']["force_roof_state"] == 'auto':
-                                
                                 plog ("Remove roof force command received")
-                                self.keep_closed_all_night= False
                                 self.keep_open_all_night = False
-                            
+                                self.keep_closed_all_night= False
+
                             self.wema_settings_upload_timer=time.time() -2 * self.wema_settings_upload_period
                             self.update_status()
-                            
-                        if cmd['action']=='set_weather_values': 
+
+                        if cmd['action']=='set_weather_values':
                             tempval=cmd['required_params']['weather_values']
-                            
+
                             g_dev['ocn'].rain_limit_on='on' in tempval['rain']['status']
                             g_dev['ocn'].warning_rain_limit_setting=tempval['rain']['warning_level']
                             g_dev['ocn'].rain_limit_setting=tempval['rain']['danger_level']
-                            
+
                             g_dev['ocn'].cloud_cover_limit_on='on' in tempval['clouds']['status']
                             g_dev['ocn'].warning_cloud_cover_limit_setting=tempval['clouds']['warning_level']
                             g_dev['ocn'].cloud_cover_limit_setting=tempval['clouds']['danger_level']
-                            
+
                             g_dev['ocn'].humidity_limit_on='on' in tempval['humidity']['status']
                             g_dev['ocn'].warning_humidity_limit_setting=tempval['humidity']['warning_level']
                             g_dev['ocn'].humidity_limit_setting=tempval['humidity']['danger_level']
-                            
+
                             g_dev['ocn'].windspeed_limit_on='on' in tempval['windspeed']['status']
                             g_dev['ocn'].warning_windspeed_limit_setting=tempval['windspeed']['warning_level']
                             g_dev['ocn'].windspeed_limit_setting=tempval['windspeed']['danger_level']
-                            
+
                             g_dev['ocn'].lightning_limit_on='on' in tempval['lightning']['status']
                             g_dev['ocn'].warning_lightning_limit_setting=tempval['lightning']['warning_level']
                             g_dev['ocn'].lightning_limit_setting=tempval['lightning']['danger_level']
-                            
+
                             g_dev['ocn'].temp_minus_dew_on='on' in tempval['tempDew']['status']
                             g_dev['ocn'].warning_temp_minus_dew_setting=tempval['tempDew']['warning_level']
                             g_dev['ocn'].temp_minus_dew_setting=tempval['tempDew']['danger_level']
-                            
+
                             g_dev['ocn'].sky_temperature_limit_on='on' in tempval['skyTempLimit']['status']
                             g_dev['ocn'].warning_sky_temp_limit_setting=tempval['skyTempLimit']['warning_level']
                             g_dev['ocn'].sky_temp_limit_setting=tempval['skyTempLimit']['danger_level']
-                            
+
                             self.wema_settings_upload_timer=time.time() -2 * self.wema_settings_upload_period
                             self.update_status()
-                            
+
                     else:
                         plog ("orphanned command?")
                         plog(cmd)
-                
+
                 # Open and store the settings in the wema settings shelf
                 wema_settings_shelf = shelve.open(self.wema_settings_shelf_filename)
-                
-                
-                wema_settings_shelf['mode']=g_dev['enc'].mode 
+
+
+                wema_settings_shelf['mode']=g_dev['enc'].mode
                 wema_settings_shelf['observing_mode']=self.observing_mode
                 wema_settings_shelf['local_weather_active']=self.local_weather_active
                 wema_settings_shelf['owm_active']=self.owm_active
@@ -521,34 +527,34 @@ class WxEncAgent:
                     wema_settings_shelf['rain_limit_on']=g_dev['ocn'].rain_limit_on
                     wema_settings_shelf['warning_rain_limit_setting']=g_dev['ocn'].warning_rain_limit_setting
                     wema_settings_shelf['rain_limit_setting']=g_dev['ocn'].rain_limit_setting
-                    
+
                     wema_settings_shelf['cloud_cover_limit_on']=g_dev['ocn'].cloud_cover_limit_on
                     wema_settings_shelf['warning_cloud_cover_limit_setting']=g_dev['ocn'].warning_cloud_cover_limit_setting
                     wema_settings_shelf['cloud_cover_limit_setting']=g_dev['ocn'].cloud_cover_limit_setting
-                    
+
                     wema_settings_shelf['humidity_limit_on']=g_dev['ocn'].humidity_limit_on
                     wema_settings_shelf['warning_humidity_limit_setting']=g_dev['ocn'].warning_humidity_limit_setting
                     wema_settings_shelf['humidity_limit_setting']=g_dev['ocn'].humidity_limit_setting
-                    
+
                     wema_settings_shelf['windspeed_limit_on']=g_dev['ocn'].windspeed_limit_on
                     wema_settings_shelf['warning_windspeed_limit_setting']=g_dev['ocn'].warning_windspeed_limit_setting
                     wema_settings_shelf['windspeed_limit_setting']=g_dev['ocn'].windspeed_limit_setting
-                    
+
                     wema_settings_shelf['lightning_limit_on']=g_dev['ocn'].lightning_limit_on
                     wema_settings_shelf['warning_lightning_limit_setting']=g_dev['ocn'].warning_lightning_limit_setting
                     wema_settings_shelf['lightning_limit_setting']=g_dev['ocn'].lightning_limit_setting
-                    
+
                     wema_settings_shelf['temp_minus_dew_on']=g_dev['ocn'].temp_minus_dew_on
                     wema_settings_shelf['warning_temp_minus_dew_setting']=g_dev['ocn'].warning_temp_minus_dew_setting
                     wema_settings_shelf['temp_minus_dew_setting']=g_dev['ocn'].temp_minus_dew_setting
-                    
+
                     wema_settings_shelf['sky_temperature_limit_on']=g_dev['ocn'].sky_temperature_limit_on
                     wema_settings_shelf['warning_sky_temp_limit_setting']=g_dev['ocn'].warning_sky_temp_limit_setting
                     wema_settings_shelf['sky_temp_limit_setting']=g_dev['ocn'].sky_temp_limit_setting
-              
+
                 #pid = camShelf["pid_obs"]  # a 9 character string
                 wema_settings_shelf.close()
-                
+
 
             except:
                 if 'Internal server error' in str(unread_commands):
@@ -573,10 +579,10 @@ class WxEncAgent:
         loud = False
         while time.time() < self.time_last_status + self.status_interval:
             return
-        
+
         enc_status = None
         ocn_status = None
-        wema = self.config['wema_name']  
+        wema = self.config['wema_name']
 
         # Hourly Weather Report
         if time.time() > (self.weather_report_run_timer + 3600):
@@ -589,8 +595,8 @@ class WxEncAgent:
                 self.run_nightly_weather_report(enc_status=enc_status['enclosure']['enclosure1'])
             else:
                 self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
-        
-        
+
+
         # Enclosure and Weather Status
         if time.time() > self.enclosure_status_check_timer + self.enclosure_status_check_period:
             #breakpoint()
@@ -650,7 +656,9 @@ class WxEncAgent:
 
                 if enc_status is not None:
                     lane = "enclosure"
-                    try:                        
+                    #wematry = 'aro1'
+                    #print("wema line 650, Send to AWS: ", wema, lane, enc_status)
+                    try:
                         send_status(wema, lane, enc_status)
                     except:
                         plog('could not send enclosure status')
@@ -692,16 +700,17 @@ class WxEncAgent:
                 ocn_status['observing_conditions']['observing_conditions1']['hold_duration'] = round(self.enclosure_next_open_time - time.time(), 1)
             else:
                 ocn_status['observing_conditions']['observing_conditions1']['hold_duration'] = 0
-            
-            
+
+
             ocn_status['observing_conditions']['observing_conditions1']["wx_hold"] = not self.local_weather_ok
-    
+
             if ocn_status is not None:
                 lane = "weather"
                 try:
+
                     send_status(wema, lane, ocn_status)
                 except:
-                    plog('could not send weather status')                  
+                    plog('could not send weather status')
 
             loud = False
             if loud:
@@ -717,68 +726,68 @@ class WxEncAgent:
             status['wema_settings']['local_weather_active']=self.local_weather_active
             status['wema_settings']['keep_roof_open_all_night'] = self.keep_open_all_night
             status['wema_settings']['keep_roof_closed_all_night']  = self.keep_closed_all_night
-            
+
             status['wema_settings']['open_at_specific_utc'] = self.open_at_specific_utc
             status['wema_settings']['specific_utc_when_to_open'] = self.specific_utc_when_to_open
-            
+
             status['wema_settings']['manual_weather_hold_set'] = self.manual_weather_hold_set
             status['wema_settings']['manual_weather_hold_duration'] = self.manual_weather_hold_duration
             status['wema_settings']['observing_mode'] =self.observing_mode
-                    
+
             if self.ocn_exists:
                 # Local Weather Limits
                 status['wema_settings']['rain_limit_on'] = g_dev['ocn'].rain_limit_on
                 status['wema_settings']['rain_limit_quiet'] = self.rain_limit_quiet
                 status['wema_settings']['rain_limit_warning_level'] = g_dev['ocn'].warning_rain_limit_setting
                 status['wema_settings']['rain_limit_danger_level'] = g_dev['ocn'].rain_limit_setting
-                
+
                 status['wema_settings']['cloud_limit_on'] = g_dev['ocn'].cloud_cover_limit_on
                 status['wema_settings']['cloud_limit_quiet'] = self.cloud_limit_quiet
                 status['wema_settings']['cloud_limit_warning_level'] = g_dev['ocn'].warning_cloud_cover_limit_setting
                 status['wema_settings']['cloud_limit_danger_level'] = g_dev['ocn'].cloud_cover_limit_setting
-                
+
                 status['wema_settings']['humidity_limit_on']  = g_dev['ocn'].humidity_limit_on
                 status['wema_settings']['humidity_limit_quiet'] = self.humidity_limit_quiet
                 status['wema_settings']['humidity_limit_warning_level'] = g_dev['ocn'].warning_humidity_limit_setting
                 status['wema_settings']['humidity_limit_danger_level'] = g_dev['ocn'].humidity_limit_setting
-                
+
                 status['wema_settings']['windspeed_limit_on']  = g_dev['ocn'].windspeed_limit_on
                 status['wema_settings']['windspeed_limit_quiet'] = self.windspeed_limit_quiet
                 status['wema_settings']['windspeed_limit_warning_level'] = g_dev['ocn'].warning_windspeed_limit_setting
                 status['wema_settings']['windspeed_limit_danger_level'] = g_dev['ocn'].windspeed_limit_setting
-                
+
                 status['wema_settings']['lightning_limit_on']  = g_dev['ocn'].lightning_limit_on
                 status['wema_settings']['lightning_limit_quiet'] = self.lightning_limit_quiet
                 status['wema_settings']['lightning_limit_warning_level'] = g_dev['ocn'].warning_lightning_limit_setting
                 status['wema_settings']['lightning_limit_danger_level'] =  g_dev['ocn'].lightning_limit_setting
-                
+
                 status['wema_settings']['tempminusdew_limit_on']  = g_dev['ocn'].temp_minus_dew_on
                 status['wema_settings']['tempminusdew_limit_quiet'] = self.temp_minus_dew_quiet
                 status['wema_settings']['tempminusdew_limit_warning_level'] = g_dev['ocn'].warning_temp_minus_dew_setting
                 status['wema_settings']['tempminusdew_limit_danger_level'] = g_dev['ocn'].temp_minus_dew_setting
-                
+
                 status['wema_settings']['skytemp_limit_on']  = g_dev['ocn'].sky_temperature_limit_on
                 status['wema_settings']['skytemp_limit_quiet'] = self.skytemp_limit_quiet
                 status['wema_settings']['skytemp_limit_warning_level'] = g_dev['ocn'].warning_sky_temp_limit_setting
                 status['wema_settings']['skytemp_limit_danger_level'] = g_dev['ocn'].sky_temp_limit_setting
-                
+
                 status['wema_settings']['hightemperature_limit_on']  = g_dev['ocn'].highest_temperature_on
                 status['wema_settings']['hightemperature_limit_quiet'] = self.hightemp_limit_quiet
                 status['wema_settings']['hightemperature_limit_warning_level'] = g_dev['ocn'].warning_highest_temperature_setting
                 status['wema_settings']['hightemperature_limit_danger_level'] = g_dev['ocn'].highest_temperature_setting
-                
+
                 status['wema_settings']['lowtemperature_limit_on']  = g_dev['ocn'].lowest_temperature_on
                 status['wema_settings']['lowtemperature_limit_quiet'] = self.lowtemp_limit_quiet
                 status['wema_settings']['lowtemperature_limit_warning_level'] = g_dev['ocn'].warning_lowest_temperature_setting
                 status['wema_settings']['lowtemperature_limit_danger_level'] = g_dev['ocn'].lowest_temperature_setting
 
             lane = "wema_settings"
-            try:                
+            try:
                 send_status(wema, lane, status)
             except:
-                plog('could not send wema_settings status') 
-            
-            
+                plog('could not send wema_settings status')
+
+
 
     def update(self):     ## NB NB NB This is essentially the Manager/Sequencer for the
         #breakpoint()                 ## enclosures managed by the WEMA
@@ -794,23 +803,23 @@ class WxEncAgent:
 
             # Here it runs through the various checks and decides whether to open or close the roof or not.
             # Check for delayed opening of the enclosure and act accordingly.
-            
-            
+
+
 
             # If the enclosure is simply delayed until opening, then wait until then, then attempt to start up the enclosure
             obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
-            
+
             if (g_dev['events']['Cool Down, Open'] <= ephem_now) or \
                 (g_dev['events']['Close and Park'] <= ephem_now):
                 self.nightly_reset_complete = False
 
             #This is used to access SRO weather and Enclosure shares.
 
-            if self.ocn_status_custom==False:                            
+            if self.ocn_status_custom==False:
                 ocn_status = g_dev['ocn'].get_status()
             else:
                 ocn_status = get_ocn_status_custom()
-            if self.enc_status_custom==False:                
+            if self.enc_status_custom==False:
                 enc_status = g_dev['enc'].get_status()
             else:
                 enc_status = get_enc_status_custom()
@@ -818,7 +827,7 @@ class WxEncAgent:
             if ocn_status==None:
                 self.local_weather_ok = None
             else:
-               
+
                 if 'wx_ok' in ocn_status:
                     if ocn_status['wx_ok'] == 'Yes':
                         self.local_weather_ok = True
@@ -833,22 +842,22 @@ class WxEncAgent:
             plog("Current time             : " + str(time.asctime()))
             plog("Enclosure Mode           : " + str(enc_status['enclosure_mode']))
             plog("Shutter Status           : " + str(enc_status['shutter_status']))
-            
+
             if ocn_status == None:
                 plog("This WEMA does not report observing conditions")
             else:
                 plog("Observing Conditions      : " +str(ocn_status))
-                
+
             if self.local_weather_ok == None:
                 plog("No information on local weather available.")
             else:
                 plog("Local Weather Ok to Observe  : " +str(self.local_weather_ok))
                 if not self.local_weather_active:
                     plog ("However, Local Weather control is set off")
-            
+
             if g_dev['enc'].mode == 'Manual':
                 plog ("Weather Considerations overriden due to being in Manual or debug mode: ")
-            
+
             plog("OWM Weather Report Good to Observe: " + str(self.weather_report_open_at_start))
             plog("Time until Cool and Open      : " + str(round(( g_dev['events']['Cool Down, Open'] - ephem_now) * 24,2)) + " hours")
             plog("Time until Close and Park     : "+ str(round(( g_dev['events']['Close and Park'] - ephem_now) * 24,2)) + " hours")
@@ -859,7 +868,7 @@ class WxEncAgent:
             if len(self.weather_text_report) >0:
                 for line in self.weather_text_report:
                     plog (line)
-        
+
             if not self.owm_active:
                 plog("OWM is off. OWM information is advisory only, it is currently inactive.")
 
@@ -875,7 +884,7 @@ class WxEncAgent:
             if self.keep_open_all_night:
                 plog("Roof is being forced to stay OPEN ALL NIGHT")
 
-            if self.keep_closed_all_night:                
+            if self.keep_closed_all_night:
                 plog("Roof is being forced to stay CLOSED ALL NIGHT")
 
 
@@ -885,7 +894,7 @@ class WxEncAgent:
                 if self.nightly_reset_complete == False:
                     self.nightly_reset_complete = True
                     self.nightly_reset_script(enc_status)
-            
+
             # Safety checks here
             if not g_dev['debug'] and self.open_and_enabled_to_observe:
                 #breakpoint()
@@ -894,7 +903,7 @@ class WxEncAgent:
                         plog("Software Fault Detected. Will alert the authorities!")
                         self.open_and_enabled_to_observe = False
                         self.park_enclosure_and_close()
-                        
+
                     if enc_status['shutter_status'] == 'Closing':
                         plog("Detected Roof Closing.")
                         self.open_and_enabled_to_observe = False
@@ -907,7 +916,7 @@ class WxEncAgent:
                         self.park_enclosure_and_close()
                         self.enclosure_next_open_time = time.time(
                         ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
-                            
+
                 else:
                     plog("Enclosure roof status probably not reporting correctly. WEMA down?")
 
@@ -915,26 +924,26 @@ class WxEncAgent:
             # If the ASCOM status is in Error of Software Fault,
             # It generally needs a close command to clear it out.
             # This periodically checks for that and sends a close
-            # every now and then to try and clear it. 
+            # every now and then to try and clear it.
             if self.error_fault_clear_timer-time.time() > 120:
                 self.error_fault_clear_timer=time.time()
                 if enc_status['shutter_status'] == 'Software Fault':
-                    
+
                     plog("Software Fault Detected. Will alert the authorities!")
                     self.open_and_enabled_to_observe = False
                     self.park_enclosure_and_close()
                     self.enclosure_next_open_time = time.time(
                     ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
-                     
-                
+
+
                 if enc_status['shutter_status'] == 'Error':
-                    
+
                     plog("Detected an Error in the Roof Status. Packing up for safety.")
                     self.open_and_enabled_to_observe = False
                     self.park_enclosure_and_close()
                     self.enclosure_next_open_time = time.time(
                     ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
-                     
+
 
 
             roof_should_be_shut = False
@@ -946,16 +955,16 @@ class WxEncAgent:
             if not (g_dev['events']['Cool Down, Open'] < ephem_now < g_dev['events']['Close and Park']):
                 roof_should_be_shut = True
                 self.open_and_enabled_to_observe = False
-                
+
             if self.keep_closed_all_night:
                 roof_should_be_shut = True
                 self.open_and_enabled_to_observe = False
-                
+
             if enc_status['shutter_status'] == 'Open':
                 if roof_should_be_shut == True and not g_dev['enc'].mode == 'Manual':
                     plog("Safety check notices that the roof was open outside of the normal observing period")
                     self.park_enclosure_and_close()
-                
+
                 if not (self.local_weather_ok == None) and g_dev['enc'].mode == 'Automatic':
                     if (not self.local_weather_ok and self.local_weather_active):
                         plog("Safety check notices that the local weather is not ok. Shutting the roof.")
@@ -996,27 +1005,27 @@ class WxEncAgent:
                 if not ('closed' in enc_status['shutter_status'].lower()):
                     plog("Found shutter open after Close and Park, shutting up the shutter")
                     self.park_enclosure_and_close()
-        
+
             if (g_dev['events']['Observing Ends'] <= ephem_now < g_dev['events']['Nightly Reset']) \
                     and g_dev['enc'].mode == 'Automatic' and enc_status['shutter_status'] in ['Open', 'open', 'Opening', 'opening']:
-                        
+
                 # Checking roof shouldn't be shut due to local clock hour
                 current_local_time=datetime.datetime.now(self.local_pytz_timezone)
                 current_local_decimal_hour=current_local_time.hour + (current_local_time.minute/60)
                 if current_local_decimal_hour > self.config['absolute_latest_shutting_hour']:
                     plog ("Shutting roof as it is after the absolute latest shutting hour")
-                    self.park_enclosure_and_close()            
+                    self.park_enclosure_and_close()
 
             # If it is in the morning, check whether obs have finished morning flats
-            # If finished, close the shutter            
-            if ephem_now > g_dev['events']['Naut Dawn']: # Start checking towards Dawn                
+            # If finished, close the shutter
+            if ephem_now > g_dev['events']['Naut Dawn']: # Start checking towards Dawn
                 plog ("Morning Flats Done: " + str(self.morning_flats_finished))
                 if not self.morning_flats_finished:
                     completed=[]
                     for obsid in self.obs_ids:
                         uri_status = f"https://status.photonranch.org/status/{obsid}/obs_settings/"
 
-                        
+
                         try:
                             obs_settings=requests.get(uri_status, timeout=20)
                         except:
@@ -1051,17 +1060,17 @@ class WxEncAgent:
                         self.park_enclosure_and_close()
                         self.morning_flats_finished=True
 
-                
-                      
+
+
 
     def nightly_reset_script(self, enc_status):
-        
+
         if g_dev['enc'].mode == 'Automatic':
             self.park_enclosure_and_close()
-        
+
         # Set weather report to false because it is daytime anyways.
         self.weather_report_open_at_start=False
-        
+
         #events = g_dev['events']
         obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
 
@@ -1069,7 +1078,7 @@ class WxEncAgent:
         self.astro_events.compute_day_directory()
         self.astro_events.calculate_events()
         self.astro_events.display_events()
-        
+
         # sending this up to AWS
         '''
         Send the config to aws.
@@ -1083,16 +1092,16 @@ class WxEncAgent:
         self.cool_down_latch = False
         self.nightly_reset_complete = True
         self.opens_this_evening=0
-        
+
         self.keep_open_all_night = False
-        self.keep_closed_all_night   = False          
+        self.keep_closed_all_night   = False
         self.open_at_specific_utc = False
-        self.specific_utc_when_to_open = -1.0  
+        self.specific_utc_when_to_open = -1.0
         self.manual_weather_hold_set = False
         self.manual_weather_hold_duration = -1.0
-        
+
         self.morning_flats_finished=False
-        
+
         return
 
 
@@ -1133,7 +1142,7 @@ class WxEncAgent:
             g_dev['enc'].close_roof_directly({}, {})
         else:
             g_dev['enc'].dummy_status='Closed'
-        
+
         return
 
     def open_enclosure(self, enc_status, ocn_status):   # Unused 10142023 wer, no_sky=False):
@@ -1150,7 +1159,7 @@ class WxEncAgent:
         if self.keep_closed_all_night and not g_dev['enc'].mode in ['Manual']:
             plog ("Observatory set to be closed all night. Not opening enclosure.")
             return
-        
+
         # Checking roof shouldn't be shut due to local clock hour
         current_local_time=datetime.datetime.now(self.local_pytz_timezone)
         #plog('*******WER MOD At line 1138 in wema*******')
@@ -1172,7 +1181,7 @@ class WxEncAgent:
                 try:
 
                     plog("Attempting to open the roof.")
-                    
+
 
                     if ocn_status == None:
                         if not enc_status['shutter_status'] in ['Open', 'open','Opening','opening'] and \
@@ -1204,7 +1213,7 @@ class WxEncAgent:
                         else:
                             g_dev['enc'].dummy_status='Open'
 
-                        
+
                     plog("Attempting to Open Shutter. Waiting until shutter opens")
                     #while True:
                     enc_status = g_dev['enc'].get_status()
@@ -1216,7 +1225,7 @@ class WxEncAgent:
                             g_dev['enc'].dummy_status='Open'
 # =============================================================================
                         time.sleep(self.config['period_of_time_to_wait_for_roof_to_open'])
-                   
+
                     #This is where successive opens get stretched out.
                     self.enclosure_next_open_time = time.time() + (self.config['roof_open_safety_base_time'] * 60) * self.opens_this_evening
 
@@ -1257,15 +1266,15 @@ class WxEncAgent:
         return
 
     def run_nightly_weather_report(self,enc_status=None):
-       
+
         events = g_dev['events']
 
         obs_win_begin, sunset, sunrise, ephem_now = self.astro_events.getSunEvents()
-        
+
         self.update_status()
         # First thing to do at the Cool Down, Open time is to calculate the quality of the evening
         # using the broad weather report.
-        try: 
+        try:
             plog("Appraising quality of evening from Open Weather Map.")
             owm = OWM('d5c3eae1b48bf7df3f240b8474af3ed0')
             mgr = owm.weather_manager()
@@ -1277,7 +1286,7 @@ class WxEncAgent:
                 time.sleep(10)
                 return
             self.weather_report_run_timer = time.time()
-            
+
             # Collect relevant info for fitzgerald weather number calculation
             hourcounter=0
             fitzgerald_weather_number_grid=[]
@@ -1286,12 +1295,12 @@ class WxEncAgent:
             if hours_until_start_of_observing < 0:
                 hours_until_start_of_observing = 0
             plog("Hours until end of observing: " + str(hours_until_end_of_observing))
-            
+
             OWM_status_json={}
             OWM_status_json["timestamp"] = round(time.time(), 1)
             for hourly_report in one_call.forecast_hourly:
-                
-                
+
+
                 clock_hour=int(hourly_report.reference_time('iso').split(' ')[1].split(':')[0])
 
                 # Calculate Fitzgerald number for this hour
@@ -1360,9 +1369,10 @@ class WxEncAgent:
                     status_line['weather_quality_number'] = 5
 
                 forecast_status.append(status_line)
-                
+
 
             if forecast_status is not None:
+                #breakpoint()
                 lane = "forecast"
                 obsy = self.config['wema_name']
                 url = f"https://status.photonranch.org/status/{obsy}/status"
@@ -1376,7 +1386,7 @@ class WxEncAgent:
                 except:
                     plog ("Connection glitch on the forecast request")
 
-            
+
             # Fitzgerald weather number calculation.
             hourly_fitzgerald_number=[]
             hourly_fitzgerald_number_by_hour=[]
@@ -1384,22 +1394,22 @@ class WxEncAgent:
             self.hourly_report_holder=[]
             for entry in fitzgerald_weather_number_grid:
                 if hourcounter >= hours_until_start_of_observing and hourcounter <= hours_until_end_of_observing:
-                    
+
                     textdescription= entry[4]+ '   Cloud:   ' + str(entry[1]) + '%     Hum:    ' + str(entry[0]) +   '%    Wind:  ' +str(entry[2])+' m/s      rain: ' + str(entry[9])  # WER changed to make more readable.
 
                     hourly_fitzgerald_number.append(entry[6])
                     hourly_fitzgerald_number_by_hour.append([entry[5],entry[6],textdescription])
                 hourcounter=hourcounter+1
-            
+
             plog ("Hourly Fitzgerald number report")
             self.hourly_report_holder.append("Hourly Fitzgerald number report")
-            
+
             plog ("For Evening of " +str(g_dev['dayhyphened']) )
             self.hourly_report_holder.append("For LOCAL Evening of " +str(g_dev['dayhyphened']) )
-            
+
             plog("Time of Weather Report: " + str(time.asctime()))
             self.hourly_report_holder.append("Time of Weather Report (UTC): " + str(time.asctime()))
-            
+
             plog ("*******************************")
             self.hourly_report_holder.append("*******************************")
             plog ("Hour(UTC) |  FNumber |  Text    ")
@@ -1407,18 +1417,18 @@ class WxEncAgent:
             for line in hourly_fitzgerald_number_by_hour:
                 plog (str(line[0]) + '         | '+ str(line[1]) + '        | ' + str(line[2]))
                 self.hourly_report_holder.append(str(line[0]) + '         | '+ str(line[1]) + '        | ' + str(line[2]))
-            
+
             plog ("Night's total fitzgerald number: " + str(sum(hourly_fitzgerald_number)))
-            
+
 
             self.night_fitzgerald_number = sum(hourly_fitzgerald_number)
             if len(hourly_fitzgerald_number) >= 1:
                 average_fitzn_for_rest_of_night = sum(hourly_fitzgerald_number) / len(hourly_fitzgerald_number)
             else:
                 average_fitzn_for_rest_of_night = 100
-            
+
             plog("Night's average fitzgerald number: " + str(average_fitzn_for_rest_of_night))
-            
+
             # Simplified decision array
             hours_bad_or_good=[]
             for entry in hourly_fitzgerald_number_by_hour:
@@ -1427,7 +1437,7 @@ class WxEncAgent:
                 else:
                     hours_bad_or_good.append([entry[0],1])
 
-           
+
             # If the first three hours are good, then open from the start
             self.weather_report_open_at_start = False
             if (hours_bad_or_good[0][1] + hours_bad_or_good[1][1] +hours_bad_or_good[2][1] ) == 3:
@@ -1442,10 +1452,10 @@ class WxEncAgent:
             self.times_to_open=[]
             self.times_to_close=[]
             for counter in range(len(hours_bad_or_good)):
-                
+
                 # A three hour gap after a bad hour is a good time to open.
-                
-                if (counter - len(hours_bad_or_good)) == -1:                   
+
+                if (counter - len(hours_bad_or_good)) == -1:
                     pass
                 elif (counter - len(hours_bad_or_good)) == -2:
                     sum_of_next_three_hours=int((hours_bad_or_good[counter][1]+hours_bad_or_good[counter+1][1])*1.5)
@@ -1458,7 +1468,7 @@ class WxEncAgent:
                     self.times_to_open.append([hours_bad_or_good[counter][0]])
 
                 # Simply a bad hour is a good time to close.
-                if len(hours_bad_or_good) == counter + 1:                    
+                if len(hours_bad_or_good) == counter + 1:
                     pass
                 elif hours_bad_or_good[counter][1] == 1 and hours_bad_or_good[counter+1][1] == 0:
                     plog ("good time to close")
@@ -1482,14 +1492,14 @@ class WxEncAgent:
 
                                 if int(current_utc_hour) == int(entry[0]) and not firstentry:
                                     self.weather_text_report.append("OWM would plan to open the roof")
-                            
+
                         if len(self.times_to_close) > 0:
                             for entry in self.times_to_close:
-                                
+
                                 if int(current_utc_hour) == int(entry[0]):
                                     self.weather_text_report.append("OWM would plan to close the roof")
                         firstentry = False
-                        
+
                     if 'Hour(UTC)' in line:
                         pasttitle = True
                         self.weather_text_report.append("-----------------------------")
@@ -1503,7 +1513,7 @@ class WxEncAgent:
                     self.weather_text_report.append("Close and Park")
                 self.weather_text_report.append("-----------------------------")
 
-           
+
             status = {}
             status['owm_report'] = json.dumps(self.weather_text_report)
             lane = "owm_report"
@@ -1514,20 +1524,21 @@ class WxEncAgent:
             except:
                 plog('could not send owm_report status')
                 plog(traceback.format_exc())
-                
+
         except Exception as e:
             plog ("OWN failed", e)
             plog ("Usually a connection glitch")
             plog(traceback.format_exc())
-            
+
         # However, if the enclosure is under manual control, leave this switch on.
         if self.enc_status_custom==False:
             enc_status = g_dev['enc'].status
         else:
-            enc_status = get_enc_status_custom()        
-                    
+            enc_status = get_enc_status_custom()
+
         return
-        
+
+
 if __name__ == "__main__":
     wema = WxEncAgent(ptr_config.wema_name, ptr_config.wema_config)
     wema.run()
