@@ -70,7 +70,7 @@ def send_status(obsy, column, status_to_send):
     data = json.dumps(payload)
     #print(data)
     try:
-        
+
         response = requests.post(uri_status, data=data, timeout=20)
 
         if response.ok:
@@ -97,15 +97,7 @@ class WxEncAgent:
 
     In the event the redis data is stale -- we may use the AWS supplied data if
     we can figure out how to verify it is not stale.
-<<<<<<< Updated upstream
-    
-    NOTE  ARO-0m30 passes its weather line through skyalert\weatherdata_nw.txt
-    
-=======
 
-    NOTE  ARO-0m30 passes its weaterh line through skyalert\weatherdata_nw.txt
-
->>>>>>> Stashed changes
     Status as sent to GUI does go through AWS however.
 
     The whole Weather Hold system has been bypassed and semi-replaced with the OWM
@@ -648,7 +640,7 @@ class WxEncAgent:
                     else:
                         enc_status['enclosure']['enclosure1']['shut_reason_daytime'] = False
 
-                # If the observing mode is set to off, append a noobs to prevent the obs from observing   #Why have this in the WEMA?  
+                # If the observing mode is set to off, append a noobs to prevent the obs from observing   #Why have this in the WEMA?
                 #  There is a more intersting thing to deal with -- opening into a night with no observations scheduled, or having
                 #  a long blank spot ofter an early night of observing.
                 if self.observing_mode == 'inactive':
