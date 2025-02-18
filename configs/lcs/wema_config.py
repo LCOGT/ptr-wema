@@ -15,16 +15,16 @@ import json
 
 # NB NB NB json is not bi-directional with tuples (), instead, use lists [], nested if tuples are needed.
 degree_symbol = "°"
-wema_name = 'lcc'
+wema_name = 'lcs'
 instance_type = 'wema'
 
 wema_config = {
 
     #'wema': 'eco',
-    'wema_name': 'lcc',
+    'wema_name': 'lcs',
     'instance_type': 'wema',
 
-    'obsp_ids': ['lcc1'],  # a list of the obsp's in an enclosure.  
+    'obsp_ids': ['lcs1'],  # a list of the obsp's in an enclosure.  
 
     #'obs_id': None,  # a WEMA is not a telescope aka Observatory
     #'observatory_location': site_name.lower(),  # in LCO case, an airport code such as OGG
@@ -286,7 +286,7 @@ wema_config = {
             'directly_connected': True, # For ECO and EC2, they connect directly to the enclosure, whereas WEMA are different.
             'name': 'Dragonfly Roof',
             'hostIP':  None,
-            'driver': 'Dragonfly.Dome',  #'ASCOM.DigitalDomeWorks.Dome',  #  ASCOMDome.Dome',  #  ASCOM.DeviceHub.Dome',  #  ASCOM.DigitalDomeWorks.Dome',  #"  ASCOMDome.Dome',
+            'driver': 'MaxDome64.Dome',  #'ASCOM.DigitalDomeWorks.Dome',  #  ASCOMDome.Dome',  #  ASCOM.DeviceHub.Dome',  #  ASCOM.DigitalDomeWorks.Dome',  #"  ASCOMDome.Dome',
             'has_lights':  False,
             'controlled_by': 'mount1',
 			'encl_is_dome': False,

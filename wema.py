@@ -298,6 +298,8 @@ class WxEncAgent:
             
             self.update_status()
         
+        #breakpoint()
+        
         
 
 
@@ -1134,6 +1136,30 @@ class WxEncAgent:
         else:
             g_dev['enc'].dummy_status='Closed'
         
+        # If it is a dome, then we need to get the dome parked as well
+        # This currently does this. 
+        if 'Dome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
+            plog ("Detected Dome. Now waiting for official close command and then Parking the Dome.")
+            
+            while True:
+                enc_status = g_dev['enc'].get_status()
+                if enc_status['shutter_status'] in ['Closed', 'closed']:
+                    break
+                else:
+                    time.sleep(10)
+                    plog ("still waiting for official closed report")
+                    
+            
+            plog ("Parking Dome")
+            #breakpoint()
+            g_dev['enc'].enclosure.Park()
+            while not g_dev['enc'].enclosure.AtPark:
+                plog ("Waiting for Park")
+                time.sleep(5)
+            
+            plog ("Successfully parked. Ready to go to bed.")
+        
+        
         return
 
     def open_enclosure(self, enc_status, ocn_status):   # Unused 10142023 wer, no_sky=False):
@@ -1221,6 +1247,30 @@ class WxEncAgent:
                     self.enclosure_next_open_time = time.time() + (self.config['roof_open_safety_base_time'] * 60) * self.opens_this_evening
 
                     enc_status = g_dev['enc'].get_status()
+
+                    # If it is a dome, then we need to get the dome setup as well
+                    # This currently does this. 
+                    if 'Dome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
+                        plog ("Detected Dome. Now waiting for official open command and then Homing the Dome.")
+                        
+                        while True:
+                            enc_status = g_dev['enc'].get_status()
+                            if enc_status['shutter_status'] in ['Open', 'open']:
+                                break
+                            else:
+                                time.sleep(10)
+                                plog ("still waiting for official open report")
+                                
+                        
+                        plog ("Homing Dome")
+                        g_dev['enc'].enclosure.FindHome()
+                        while not g_dev['enc'].enclosure.AtHome:
+                            plog ("Waiting for Home")
+                            time.sleep(5)
+                        
+                        plog ("Successfully found Home. Ready to observe")
+                            
+                        #breakpoint()
 
                     if enc_status['shutter_status'] in ['Open', 'open']:
                         self.open_and_enabled_to_observe = True

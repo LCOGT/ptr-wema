@@ -318,6 +318,8 @@ class Enclosure:
                 self.http_driver = False
                 win32com.client.pythoncom.CoInitialize()
     
+                #breakpoint()
+    
                 self.enclosure = win32com.client.Dispatch(driver)
     
                 plog(self.enclosure)

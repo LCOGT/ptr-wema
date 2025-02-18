@@ -88,12 +88,15 @@ class Events:
                 self.dark_exposure_in_minutes = temp_dark_exposure
             
             
-            
-            temp_eve_offset = obs_config['configuration']['eve_sky_flat_sunset_offset']
-            plog (obsid + " eve flat offset: " + str(temp_eve_offset))
-            #breakpoint()
-            if temp_eve_offset < self.eve_skyFlatBegin:
-                self.eve_skyFlatBegin = temp_eve_offset
+            try:
+                temp_eve_offset = obs_config['configuration']['eve_sky_flat_sunset_offset']
+                plog (obsid + " eve flat offset: " + str(temp_eve_offset))
+                #breakpoint()
+                if temp_eve_offset < self.eve_skyFlatBegin:
+                    self.eve_skyFlatBegin = temp_eve_offset
+            except:
+                plog ("Failed to read temp_eve_offset from obs config. Obs may not yet be commissioned")
+                temp_eve_offset=0
                 
             
         plog ("Used dark exposure: " + str(self.dark_exposure_in_minutes))
