@@ -120,7 +120,7 @@ wema_config = {
 
     #'site_roof_control': True,  # MTF entered this in to remove sro specific code  NB 'site_is_specifc' also deals with this
     #'site_allowed_to_open_roof': True,
-    'period_of_time_to_wait_for_roof_to_open': 100,  # seconds - needed to check if the roof ACTUALLY opens.
+    'period_of_time_to_wait_for_roof_to_open': 60,  # seconds - needed to check if the roof ACTUALLY opens.
     #'only_scope_that_controls_the_roof': False,  # If multiple scopes control the roof, set this to False
     'check_time': 300,  # MF's original setting.
     'maximum_roof_opens_per_evening': 4,
@@ -133,7 +133,6 @@ wema_config = {
     'absolute_latest_shutting_hour' : 8.0, # Kids start arriving after this.
 
 
-    'site_enclosures_default_mode': "Automatic",  # "Manual", "Shutdown"
     'automatic_detail_default': "Enclosure is set to Automatic mode.",
 
     # =============================================================================
@@ -268,7 +267,7 @@ wema_config = {
             'ocn_is_custom':  False, 
             # Intention it is found in this file.
             'name': 'SRO File',
-            'driver': None,  # Could be redis, ASCOM, ...
+            'driver': 'aagsolo',  # Could be redis, ASCOM, ...
             'share_path_name': 'F:/ptr/',
             'driver_2':  None,   #' ASCOM.Boltwood.OkToOpen.SafetyMonitor',
             'driver_3':  None,    # 'ASCOM.Boltwood.OkToImage.SafetyMonitor'
@@ -283,7 +282,7 @@ wema_config = {
         'enclosure1': {
             'parent': 'site',
             'encl_is_custom':  False,   #SRO needs sorting, presuambly with this flag.
-            'directly_connected': True, # For ECO and EC2, they connect directly to the enclosure, whereas WEMA are different.
+            #'directly_connected': True, # For ECO and EC2, they connect directly to the enclosure, whereas WEMA are different.
             'name': 'Dragonfly Roof',
             'hostIP':  None,
             'driver': 'MaxDome64.Dome',  #'ASCOM.DigitalDomeWorks.Dome',  #  ASCOMDome.Dome',  #  ASCOM.DeviceHub.Dome',  #  ASCOM.DigitalDomeWorks.Dome',  #"  ASCOMDome.Dome',
@@ -292,6 +291,15 @@ wema_config = {
 			'encl_is_dome': False,
             'encl_is_rolloff': False,
             'rolloff_has_endwall': False,
+            
+            'home_dome_after_opening' : True,
+            'dome_home_azimuth' : 194,
+            
+            'use_park_command_rather_than_slew_to_park': False,
+            'slew_park_azimuth' : 100,
+            
+            
+            
             'mode': 'Automatic',
             #'cool_down': -90.0,    #  Minutes prior to sunset.
             'settings': {

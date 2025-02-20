@@ -29,6 +29,9 @@ from global_yard import g_dev
 # from site_config import get_ocn_status
 from wema_utility import plog
 
+import requests
+import json
+
 
 def linearize_unihedron(uni_value):  # Need to be coefficients in config.
     #  Based on 20180811 data
@@ -79,13 +82,13 @@ class ObservingConditions:
         #         Note site_in_automatic found in the Enclosure object.
         # =============================================================================
 
-        if self.hostname in self.config["wema_hostname"]:
+        # if self.hostname in self.config["wema_hostname"]:
 
-            self.is_wema = True
-            self.is_process = False
-        else:
-            self.is_wema = False
-            self.is_process = True
+        #     self.is_wema = True
+        #     self.is_process = False
+        # else:
+        #     self.is_wema = False
+        #     self.is_process = True
 
         # self.site_is_custom = False
 
@@ -106,57 +109,66 @@ class ObservingConditions:
         # self.obsid_is_generic = True
 
         if driver is not None:
+            
+            
+            
+            self.aagsolo=False
+            if driver == 'aagsolo':
+                self.aagsolo=True
 
-            win32com.client.pythoncom.CoInitialize()
-            self.sky_monitor = win32com.client.Dispatch(driver)
-            self.sky_monitor.connected = True
-            try:
-                driver_2 = config["observing_conditions"]["observing_conditions1"][
-                    "driver_2"
-                ]
-                self.sky_monitor_oktoopen = win32com.client.Dispatch(driver_2)
-                self.sky_monitor_oktoopen.Connected = True
-                driver_3 = config["observing_conditions"]["observing_conditions1"][
-                    "driver_3"
-                ]
-
-            except:
-                plog('ocn Drivers 2 or 3 not present.')
-                driver_2 = None
-                driver_3 = None
-            if driver_3 is not None:
-                self.sky_monitor_oktoimage = win32com.client.Dispatch(driver_3)
-                self.sky_monitor_oktoimage.Connected = True
-                plog("observing_conditions: sky_monitors connected = True")
-
-            if config["observing_conditions"]["observing_conditions1"]["has_unihedron"]:
-
-                unihedron_path = self.config['wema_path'] + self.config['wema_name'] + "/unihedron"
-                if not os.path.exists(unihedron_path):
-                    os.makedirs(unihedron_path)
-
-                self.unihedron_connected = True
+            #breakpoint() 
+            
+            if not self.aagsolo:
+                win32com.client.pythoncom.CoInitialize()
+                self.sky_monitor = win32com.client.Dispatch(driver)
+                self.sky_monitor.connected = True
                 try:
-                    driver = config["observing_conditions"]["observing_conditions1"][
-                        "uni_driver"
+                    driver_2 = config["observing_conditions"]["observing_conditions1"][
+                        "driver_2"
                     ]
-                    port = config["observing_conditions"]["observing_conditions1"][
-                        "unihedron_port"
+                    self.sky_monitor_oktoopen = win32com.client.Dispatch(driver_2)
+                    self.sky_monitor_oktoopen.Connected = True
+                    driver_3 = config["observing_conditions"]["observing_conditions1"][
+                        "driver_3"
                     ]
-                    self.unihedron = win32com.client.Dispatch(driver)
-                    self.unihedron.Connected = True
-                    plog(
-                        "observing_conditions: Unihedron is connected, on COM"
-                        + str(port)
-                    )
+    
                 except:
-                    plog(
-                        "Unihedron on Port COM" + str(port) + " is disconnected. Observing will proceed."
-                    )
+                    plog('ocn Drivers 2 or 3 not present.')
+                    driver_2 = None
+                    driver_3 = None
+                if driver_3 is not None:
+                    self.sky_monitor_oktoimage = win32com.client.Dispatch(driver_3)
+                    self.sky_monitor_oktoimage.Connected = True
+                    plog("observing_conditions: sky_monitors connected = True")
+    
+                if config["observing_conditions"]["observing_conditions1"]["has_unihedron"]:
+    
+                    unihedron_path = self.config['wema_path'] + self.config['wema_name'] + "/unihedron"
+                    if not os.path.exists(unihedron_path):
+                        os.makedirs(unihedron_path)
+    
+                    self.unihedron_connected = True
+                    try:
+                        driver = config["observing_conditions"]["observing_conditions1"][
+                            "uni_driver"
+                        ]
+                        port = config["observing_conditions"]["observing_conditions1"][
+                            "unihedron_port"
+                        ]
+                        self.unihedron = win32com.client.Dispatch(driver)
+                        self.unihedron.Connected = True
+                        plog(
+                            "observing_conditions: Unihedron is connected, on COM"
+                            + str(port)
+                        )
+                    except:
+                        plog(
+                            "Unihedron on Port COM" + str(port) + " is disconnected. Observing will proceed."
+                        )
+                        self.unihedron_connected = False
+                        # NB NB if no unihedron is installed the status code needs to not report it.
+                else:
                     self.unihedron_connected = False
-                    # NB NB if no unihedron is installed the status code needs to not report it.
-            else:
-                self.unihedron_connected = False
 
         self.rain_limit_setting = self.config['rain_limit']
         self.humidity_limit_setting = self.config['humidity_limit']
@@ -211,43 +223,141 @@ class ObservingConditions:
         #breakpoint()
 
 
-        if not self.is_wema: #and self.site_is_custom:  # EG., this was written first for SRO.                                        #  system is a proxoy for having a WEMA
-            # This is NOT the normal ARO path
-            if self.config["site_IPC_mechanism"] == "shares":
-                try:
-                    weather = open(g_dev["wema_share_path"] + "weather.txt", "r")
-                    status = json.loads(weather.readline())
-                    weather.close()
-                    self.status = status
-                    self.prior_status = status
-                    g_dev["ocn"].status = status
-                    return status
-                except:
+        # if not self.is_wema: #and self.site_is_custom:  # EG., this was written first for SRO.                                        #  system is a proxoy for having a WEMA
+        #     # This is NOT the normal ARO path
+        #     if self.config["site_IPC_mechanism"] == "shares":
+        #         try:
+        #             weather = open(g_dev["wema_share_path"] + "weather.txt", "r")
+        #             status = json.loads(weather.readline())
+        #             weather.close()
+        #             self.status = status
+        #             self.prior_status = status
+        #             g_dev["ocn"].status = status
+        #             return status
+        #         except:
+        #             try:
+        #                 time.sleep(3)
+        #                 weather = open(g_dev["wema_share_path"] + "weather.txt", "r")
+        #                 status = json.loads(weather.readline())
+        #                 weather.close()
+        #                 self.status = status
+        #                 self.prior_status = status
+        #                 g_dev["ocn"].status = status
+        #                 return status
+        #             except:
+        #                 try:
+        #                     time.sleep(3)
+        #                     weather = open(
+        #                         g_dev["wema_share_path"] + "weather.txt", "r"
+        #                     )
+        #                     status = json.loads(weather.readline())
+        #                     weather.close()
+        #                     self.status = status
+        #                     self.prior_status = status
+        #                     g_dev["ocn"].status = status
+        #                     return status
+        #                 except:
+        #                     plog("Using prior OCN status after 4 failures.")
+        #                     g_dev["ocn"].status = self.prior_status
+        #                     return self.prior_status
+    
+        if self.aagsolo:
+            
+            
+            # URL of the AAG Solo last data endpoint
+            url = "http://aagsolo/cgi-bin/cgiLastData"
+            
+            # Fetch the data
+            response = requests.get(url)
+            
+
+
+            # Check if the request was successful
+            if response.status_code == 200:
+                # Parse the key-value data
+                data_lines = response.text.strip().split("\n")
+                
+                # Convert to dictionary
+                weather_data = {}
+                for line in data_lines:
+                    key, value = line.split("=")
                     try:
-                        time.sleep(3)
-                        weather = open(g_dev["wema_share_path"] + "weather.txt", "r")
-                        status = json.loads(weather.readline())
-                        weather.close()
-                        self.status = status
-                        self.prior_status = status
-                        g_dev["ocn"].status = status
-                        return status
-                    except:
-                        try:
-                            time.sleep(3)
-                            weather = open(
-                                g_dev["wema_share_path"] + "weather.txt", "r"
-                            )
-                            status = json.loads(weather.readline())
-                            weather.close()
-                            self.status = status
-                            self.prior_status = status
-                            g_dev["ocn"].status = status
-                            return status
-                        except:
-                            plog("Using prior OCN status after 4 failures.")
-                            g_dev["ocn"].status = self.prior_status
-                            return self.prior_status
+                        # Try converting numerical values to float or int where possible
+                        if "." in value:
+                            weather_data[key] = float(value)
+                        else:
+                            weather_data[key] = int(value)
+                    except ValueError:
+                        # Keep string values as they are
+                        weather_data[key] = value.strip()
+            
+                # # Convert to JSON format
+                # json_data = json.dumps(weather_data, indent=4)
+            
+                # # Print or save JSON output
+                # print(json_data)
+            
+            else:
+                print("Failed to fetch data. HTTP Status:", response.status_code)
+
+
+            # Other things ocn creates
+            status = {}
+            illum, mag = self.astro_events.illuminationNow()
+            # illum = float(redis_monitor["illum lux"])
+            if illum > 500:
+                illum = int(illum)
+            else:
+                illum = round(illum, 3)
+            if self.unihedron_connected:
+                try:
+                    uni_measure = (
+                        self.unihedron.SkyQuality
+                    )  # Provenance of 20.01 is dubious 20200504 WER
+                except:
+                    uni_measure = 0
+            else:
+                uni_measure = 0
+
+            # Forming standard variables.
+            self.temperature=weather_data['temp']
+            self.new_pressure=weather_data['relpress']
+            self.humidity=weather_data['hum']
+            self.dewpoint=weather_data['dewp']
+            self.sky_minus_ambient=weather_data['rawir']-weather_data['temp']
+            self.windspeed=weather_data['wind']
+            self.rain_rate=weather_data['rain']
+            self.cloud_cover=weather_data['clouds']
+            
+            
+            self.ok_to_open = True
+            
+            
+            self.time_since = 20
+
+            status = {
+                "temperature_C": self.temperature,
+                "pressure_mbar": self.new_pressure,
+                "humidity_%": self.humidity,
+                "dewpoint_C": self.dewpoint,
+                "sky_temp_C": self.sky_minus_ambient,
+                "last_sky_update_s": self.time_since,
+                "wind_m/s": self.windspeed,
+                "rain_rate": self.rain_rate,
+                "solar_flux_w/m^2": None,
+                "cloud_cover_%": self.cloud_cover,
+                "calc_HSI_lux": illum,
+                "calc_sky_mpsas": round(uni_measure, 2),  # Provenance of 20.01 is dubious 20200504 WER
+                "open_ok": self.ok_to_open,
+                "lightning_strike_radius km": 'n/a',
+                "general_obscuration %": 'n/a',
+                "photometric extinction k'": 'n/a',
+                # "wx_hold": None,
+                # "hold_duration": 0,
+            }
+
+            return status
+            #breakpoint()
     
     
         elif self.config['observing_conditions']['observing_conditions1']["name"] == 'SkyAlert Custom for ARO':
@@ -474,7 +584,7 @@ class ObservingConditions:
                 plog('above is an unglamourous traceback but continuing onwards')
             return status
 
-        elif self.is_wema:  # These operations are common to a generic single computer or wema site.
+        else:  # These operations are common to a generic single computer or wema site.
             ## Here we get the status from local devices, including MRC
             
             status = {}
@@ -570,78 +680,78 @@ class ObservingConditions:
                     # "hold_duration": 0,
                 }
     
-            wx_reasons = []
-            #breakpoint()
-            rain_limit = self.sky_monitor.RainRate > self.rain_limit_setting
-            if rain_limit:
-                plog("Reported rain rate in mm/hr:  ", self.sky_monitor.RainRate)
-                wx_reasons.append('Rain > ' + str(self.rain_limit_setting))
-            humidity_limit = self.sky_monitor.Humidity < self.humidity_limit_setting
-            if not humidity_limit:
-                wx_reasons.append('Humidity >= ' + str(self.humidity_limit_setting) + '%')
+            # wx_reasons = []
+            # #breakpoint()
+            # rain_limit = self.sky_monitor.RainRate > self.rain_limit_setting
+            # if rain_limit:
+            #     plog("Reported rain rate in mm/hr:  ", self.sky_monitor.RainRate)
+            #     wx_reasons.append('Rain > ' + str(self.rain_limit_setting))
+            # humidity_limit = self.sky_monitor.Humidity < self.humidity_limit_setting
+            # if not humidity_limit:
+            #     wx_reasons.append('Humidity >= ' + str(self.humidity_limit_setting) + '%')
             
-            wind_limit = (
-                    self.sky_monitor.WindSpeed*0.2778 < self.windspeed_limit_setting
-            )  # sky_monitor reports km/h, Clarity may report in MPH
-            if not wind_limit:
-                wx_reasons.append('Wind > ' + str(self.windspeed_limit_setting) + ' km/h')
-            dewpoint_gap = (
-                not (self.sky_monitor.Temperature - self.sky_monitor.DewPoint) < self.temp_minus_dew_setting
-            )
-            if not dewpoint_gap:
-                wx_reasons.append('Ambient - Dewpoint < ' + str(self.temp_minus_dew_setting) + 'C')
-            sky_amb_limit = (
-                                    self.sky_monitor.SkyTemperature - self.sky_monitor.Temperature
-                            ) < self.sky_temp_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
-            if not sky_amb_limit:
-                wx_reasons.append('(sky - amb) > ' + str(self.sky_temp_limit_setting) + 'C')
-            try:
-                cloud_cover_value = float(self.sky_monitor.CloudCover)
-                status['cloud_cover_%'] = round(cloud_cover_value, 0)
-                if cloud_cover_value <= self.cloud_cover_limit_setting:
-                    cloud_cover = False
-                else:
-                    cloud_cover = True
-                    wx_reasons.append('>=' + str(self.cloud_cover_limit_setting) + '% Cloudy')
-            except:
-                status['cloud_cover_%'] = "no report"
-                cloud_cover = True  # We cannot use this signal to force a wX hold or close
-            self.current_ambient = round(self.temperature, 2)
-            temp_bounds = self.lowest_temperature_setting < self.sky_monitor.Temperature < self.highest_temperature_setting
+            # wind_limit = (
+            #         self.sky_monitor.WindSpeed*0.2778 < self.windspeed_limit_setting
+            # )  # sky_monitor reports km/h, Clarity may report in MPH
+            # if not wind_limit:
+            #     wx_reasons.append('Wind > ' + str(self.windspeed_limit_setting) + ' km/h')
+            # dewpoint_gap = (
+            #     not (self.sky_monitor.Temperature - self.sky_monitor.DewPoint) < self.temp_minus_dew_setting
+            # )
+            # if not dewpoint_gap:
+            #     wx_reasons.append('Ambient - Dewpoint < ' + str(self.temp_minus_dew_setting) + 'C')
+            # sky_amb_limit = (
+            #                         self.sky_monitor.SkyTemperature - self.sky_monitor.Temperature
+            #                 ) < self.sky_temp_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
+            # if not sky_amb_limit:
+            #     wx_reasons.append('(sky - amb) > ' + str(self.sky_temp_limit_setting) + 'C')
+            # try:
+            #     cloud_cover_value = float(self.sky_monitor.CloudCover)
+            #     status['cloud_cover_%'] = round(cloud_cover_value, 0)
+            #     if cloud_cover_value <= self.cloud_cover_limit_setting:
+            #         cloud_cover = False
+            #     else:
+            #         cloud_cover = True
+            #         wx_reasons.append('>=' + str(self.cloud_cover_limit_setting) + '% Cloudy')
+            # except:
+            #     status['cloud_cover_%'] = "no report"
+            #     cloud_cover = True  # We cannot use this signal to force a wX hold or close
+            # self.current_ambient = round(self.temperature, 2)
+            # temp_bounds = self.lowest_temperature_setting < self.sky_monitor.Temperature < self.highest_temperature_setting
     
-            if not temp_bounds:
-                wx_reasons.append('amb temp out of range')
+            # if not temp_bounds:
+            #     wx_reasons.append('amb temp out of range')
     
-            self.wx_is_ok = (
-                    (dewpoint_gap and self.temp_minus_dew_on)
-                    and (temp_bounds and (self.lowest_temperature_on or self.highest_temperature_on))
-                    and (wind_limit and self.windspeed_limit_on)
-                    and (sky_amb_limit and self.sky_temperature_limit_on)
-                    and (humidity_limit and self.humidity_limit_on)
-                    and not (rain_limit and self.rain_limit_on)
-                    and not (cloud_cover and self.cloud_cover_limit_on)
-            )
-            #  NB wx_is_ok does not include ambient light or altitude of the Sun
-            # the notion of Obs OK should bring in Sun Elevation and or ambient light.
+            # self.wx_is_ok = (
+            #         (dewpoint_gap and self.temp_minus_dew_on)
+            #         and (temp_bounds and (self.lowest_temperature_on or self.highest_temperature_on))
+            #         and (wind_limit and self.windspeed_limit_on)
+            #         and (sky_amb_limit and self.sky_temperature_limit_on)
+            #         and (humidity_limit and self.humidity_limit_on)
+            #         and not (rain_limit and self.rain_limit_on)
+            #         and not (cloud_cover and self.cloud_cover_limit_on)
+            # )
+            # #  NB wx_is_ok does not include ambient light or altitude of the Sun
+            # # the notion of Obs OK should bring in Sun Elevation and or ambient light.
     
-            if self.sky_monitor.RainRate > 0.0:
-                #plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
-                #plog("Rain Rate is 1.0")
-                # plog('Rain > ' + str(rain_limit_setting))
-                plog("Rain Flag is 1: This is usually a glitch so ignoring.")
-                plog("May be unevaporated rain, ice, or a bird dropping.")
-                #plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
+            # if self.sky_monitor.RainRate > 0.0:
+            #     #plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
+            #     #plog("Rain Rate is 1.0")
+            #     # plog('Rain > ' + str(rain_limit_setting))
+            #     plog("Rain Flag is 1: This is usually a glitch so ignoring.")
+            #     plog("May be unevaporated rain, ice, or a bird dropping.")
+            #     #plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
     
-            if self.wx_is_ok:
-                wx_str = "Yes"
-                status["wx_ok"] = "Yes"
-                # plog('Wx Ok?  ', status["wx_ok"])
-            else:
-                wx_str = "No"  # Ideally we add the dominant reason in priority order.
-                status["wx_ok"] = "No"
-                plog('Wx Ok: ', status["wx_ok"], wx_reasons)
+            # if self.wx_is_ok:
+            #     wx_str = "Yes"
+            #     status["wx_ok"] = "Yes"
+            #     # plog('Wx Ok?  ', status["wx_ok"])
+            # else:
+            #     wx_str = "No"  # Ideally we add the dominant reason in priority order.
+            #     status["wx_ok"] = "No"
+            #     plog('Wx Ok: ', status["wx_ok"], wx_reasons)
     
-            g_dev["wx_ok"] = self.wx_is_ok
+            # g_dev["wx_ok"] = self.wx_is_ok
             # g_dev['ocn'].wx_hold = False
     
             # if self.config["site_IPC_mechanism"] == "shares":

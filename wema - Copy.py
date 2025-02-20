@@ -161,7 +161,7 @@ class WxEncAgent:
         self.last_request = None
         self.stopped = False
         self.site_message = "-"
-        #self.site_mode = config['site_enclosures_default_mode']
+        self.site_mode = config['site_enclosures_default_mode']
         self.device_types = config["wema_types"]
         self.astro_events = wema_events.Events(self.config)
         self.astro_events.compute_day_directory()
@@ -287,96 +287,33 @@ class WxEncAgent:
             self.keep_open_all_night=wema_settings_shelf['keep_open_all_night']
             self.keep_closed_all_night=wema_settings_shelf['keep_closed_all_night']
             if self.ocn_exists:
-                try:
-                    g_dev['ocn'].rain_limit_on=wema_settings_shelf['rain_limit_on']
-                    g_dev['ocn'].warning_rain_limit_setting=wema_settings_shelf['warning_rain_limit_setting']
-                    g_dev['ocn'].rain_limit_setting=wema_settings_shelf['rain_limit_setting']
-                    
-                    g_dev['ocn'].cloud_cover_limit_on=wema_settings_shelf['cloud_cover_limit_on']
-                    g_dev['ocn'].warning_cloud_cover_limit_setting=wema_settings_shelf['warning_cloud_cover_limit_setting']
-                    g_dev['ocn'].cloud_cover_limit_setting=wema_settings_shelf['cloud_cover_limit_setting']
-                    
-                    g_dev['ocn'].humidity_limit_on=wema_settings_shelf['humidity_limit_on']
-                    g_dev['ocn'].warning_humidity_limit_setting=wema_settings_shelf['warning_humidity_limit_setting']
-                    g_dev['ocn'].humidity_limit_setting=wema_settings_shelf['humidity_limit_setting']
-                    
-                    g_dev['ocn'].windspeed_limit_on=wema_settings_shelf['windspeed_limit_on']
-                    g_dev['ocn'].warning_windspeed_limit_setting=wema_settings_shelf['warning_windspeed_limit_setting']
-                    g_dev['ocn'].windspeed_limit_setting=wema_settings_shelf['windspeed_limit_setting']
-                    
-                    g_dev['ocn'].lightning_limit_on=wema_settings_shelf['lightning_limit_on']
-                    g_dev['ocn'].warning_lightning_limit_setting=wema_settings_shelf['warning_lightning_limit_setting']
-                    g_dev['ocn'].lightning_limit_setting=wema_settings_shelf['lightning_limit_setting']
-                    
-                    g_dev['ocn'].temp_minus_dew_on=wema_settings_shelf['temp_minus_dew_on']
-                    g_dev['ocn'].warning_temp_minus_dew_setting=wema_settings_shelf['warning_temp_minus_dew_setting']
-                    g_dev['ocn'].temp_minus_dew_setting=wema_settings_shelf['temp_minus_dew_setting']
-                    
-                    g_dev['ocn'].sky_temperature_limit_on=wema_settings_shelf['sky_temperature_limit_on']
-                    g_dev['ocn'].warning_sky_temp_limit_setting=wema_settings_shelf['warning_sky_temp_limit_setting']
-                    g_dev['ocn'].sky_temp_limit_setting=wema_settings_shelf['sky_temp_limit_setting']
-                except:
-                    plog ("Probably has not formed a shelf yet, forming a shelf from reasonable values.")
-                    plog(traceback.format_exc())
-                    g_dev['ocn'].rain_limit_on=True
-                    g_dev['ocn'].warning_rain_limit_setting=1
-                    g_dev['ocn'].rain_limit_setting=3
-                    
-                    g_dev['ocn'].cloud_cover_limit_on=True
-                    g_dev['ocn'].warning_cloud_cover_limit_setting=25
-                    g_dev['ocn'].cloud_cover_limit_setting=50
-                    
-                    g_dev['ocn'].humidity_limit_on=True
-                    g_dev['ocn'].warning_humidity_limit_setting=75
-                    g_dev['ocn'].humidity_limit_setting=88
-                    
-                    g_dev['ocn'].windspeed_limit_on=True
-                    g_dev['ocn'].warning_windspeed_limit_setting=10
-                    g_dev['ocn'].windspeed_limit_setting=15
-                    
-                    g_dev['ocn'].lightning_limit_on=False
-                    g_dev['ocn'].warning_lightning_limit_setting=10
-                    g_dev['ocn'].lightning_limit_setting=15
-                    
-                    g_dev['ocn'].temp_minus_dew_on=False
-                    g_dev['ocn'].warning_temp_minus_dew_setting=2
-                    g_dev['ocn'].temp_minus_dew_setting=3
-                    
-                    g_dev['ocn'].sky_temperature_limit_on=False
-                    g_dev['ocn'].warning_sky_temp_limit_setting=-17
-                    g_dev['ocn'].sky_temp_limit_setting=-1           
-                    
-                    
-                    wema_settings_shelf['rain_limit_on'] = g_dev['ocn'].rain_limit_on
-                    wema_settings_shelf['warning_rain_limit_setting'] = g_dev['ocn'].warning_rain_limit_setting
-                    wema_settings_shelf['rain_limit_setting'] = g_dev['ocn'].rain_limit_setting
-                    
-                    wema_settings_shelf['cloud_cover_limit_on'] = g_dev['ocn'].cloud_cover_limit_on
-                    wema_settings_shelf['warning_cloud_cover_limit_setting'] = g_dev['ocn'].warning_cloud_cover_limit_setting
-                    wema_settings_shelf['cloud_cover_limit_setting'] = g_dev['ocn'].cloud_cover_limit_setting
-                    
-                    wema_settings_shelf['humidity_limit_on'] = g_dev['ocn'].humidity_limit_on
-                    wema_settings_shelf['warning_humidity_limit_setting'] = g_dev['ocn'].warning_humidity_limit_setting
-                    wema_settings_shelf['humidity_limit_setting'] = g_dev['ocn'].humidity_limit_setting
-                    
-                    wema_settings_shelf['windspeed_limit_on'] = g_dev['ocn'].windspeed_limit_on
-                    wema_settings_shelf['warning_windspeed_limit_setting'] = g_dev['ocn'].warning_windspeed_limit_setting
-                    wema_settings_shelf['windspeed_limit_setting'] = g_dev['ocn'].windspeed_limit_setting
-                    
-                    wema_settings_shelf['lightning_limit_on'] = g_dev['ocn'].lightning_limit_on
-                    wema_settings_shelf['warning_lightning_limit_setting'] = g_dev['ocn'].warning_lightning_limit_setting
-                    wema_settings_shelf['lightning_limit_setting'] = g_dev['ocn'].lightning_limit_setting
-                    
-                    wema_settings_shelf['temp_minus_dew_on'] = g_dev['ocn'].temp_minus_dew_on
-                    wema_settings_shelf['warning_temp_minus_dew_setting'] = g_dev['ocn'].warning_temp_minus_dew_setting
-                    wema_settings_shelf['temp_minus_dew_setting'] = g_dev['ocn'].temp_minus_dew_setting
-                    
-                    wema_settings_shelf['sky_temperature_limit_on'] = g_dev['ocn'].sky_temperature_limit_on
-                    wema_settings_shelf['warning_sky_temp_limit_setting'] = g_dev['ocn'].warning_sky_temp_limit_setting
-                    wema_settings_shelf['sky_temp_limit_setting'] = g_dev['ocn'].sky_temp_limit_setting
-
-                    
-                    
+                g_dev['ocn'].rain_limit_on=wema_settings_shelf['rain_limit_on']
+                g_dev['ocn'].warning_rain_limit_setting=wema_settings_shelf['warning_rain_limit_setting']
+                g_dev['ocn'].rain_limit_setting=wema_settings_shelf['rain_limit_setting']
+                
+                g_dev['ocn'].cloud_cover_limit_on=wema_settings_shelf['cloud_cover_limit_on']
+                g_dev['ocn'].warning_cloud_cover_limit_setting=wema_settings_shelf['warning_cloud_cover_limit_setting']
+                g_dev['ocn'].cloud_cover_limit_setting=wema_settings_shelf['cloud_cover_limit_setting']
+                
+                g_dev['ocn'].humidity_limit_on=wema_settings_shelf['humidity_limit_on']
+                g_dev['ocn'].warning_humidity_limit_setting=wema_settings_shelf['warning_humidity_limit_setting']
+                g_dev['ocn'].humidity_limit_setting=wema_settings_shelf['humidity_limit_setting']
+                
+                g_dev['ocn'].windspeed_limit_on=wema_settings_shelf['windspeed_limit_on']
+                g_dev['ocn'].warning_windspeed_limit_setting=wema_settings_shelf['warning_windspeed_limit_setting']
+                g_dev['ocn'].windspeed_limit_setting=wema_settings_shelf['windspeed_limit_setting']
+                
+                g_dev['ocn'].lightning_limit_on=wema_settings_shelf['lightning_limit_on']
+                g_dev['ocn'].warning_lightning_limit_setting=wema_settings_shelf['warning_lightning_limit_setting']
+                g_dev['ocn'].lightning_limit_setting=wema_settings_shelf['lightning_limit_setting']
+                
+                g_dev['ocn'].temp_minus_dew_on=wema_settings_shelf['temp_minus_dew_on']
+                g_dev['ocn'].warning_temp_minus_dew_setting=wema_settings_shelf['warning_temp_minus_dew_setting']
+                g_dev['ocn'].temp_minus_dew_setting=wema_settings_shelf['temp_minus_dew_setting']
+                
+                g_dev['ocn'].sky_temperature_limit_on=wema_settings_shelf['sky_temperature_limit_on']
+                g_dev['ocn'].warning_sky_temp_limit_setting=wema_settings_shelf['warning_sky_temp_limit_setting']
+                g_dev['ocn'].sky_temp_limit_setting=wema_settings_shelf['sky_temp_limit_setting']
             #pid = camShelf["pid_obs"]  # a 9 character string
             wema_settings_shelf.close()
             
@@ -670,8 +607,8 @@ class WxEncAgent:
         enc_status=g_dev['enc'].get_status()
         
         if enc_status is not None:
-            #breakpoint()
-            if enc_status['shutter_status'] in ['Open', 'Sim Open']:
+            breakpoint()
+            if enc_status['enclosure']['enclosure1']['shutter_status'] in ['Open', 'Sim Open']:
                 if 'Dome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
                     
                     if time.time() > (self.dome_check_timer + self.dome_check_timer_period):
@@ -685,8 +622,8 @@ class WxEncAgent:
                             
                             while g_dev['enc'].enclosure.Slewing:
                                 plog("Waiting for dome to stop slewing")
-                                #self.send_enclosure_status(self.enc_status, self.ocn_status)
-                                time.sleep(0.25)
+                                self.send_enclosure_status(self.enc_status, self.ocn_status)
+                                time.sleep(5)
                         
                             # Call out to aws to get current main scope pointing and ra and dec
                             
@@ -731,13 +668,9 @@ class WxEncAgent:
                                 
                             current_dome_azimuth= g_dev['enc'].enclosure.Azimuth
                             
-                            dome_out_by=abs (current_dome_azimuth-target_azimuth)
-                            if dome_out_by > 180:
-                                dome_out_by=abs(dome_out_by-360)
                             
-                            
-                            plog ("Dome out by: " + str (dome_out_by))
-                            if abs (dome_out_by) > 1:                       
+                            plog ("Dome out by: " + str(abs (current_dome_azimuth-target_azimuth)))
+                            if abs (current_dome_azimuth-target_azimuth) > 1:                       
                                 plog ("Moving Dome")
                             
                                 try:
@@ -830,96 +763,6 @@ class WxEncAgent:
                 pass
 
 
-            
-            
-            # Here is where we actually make the decision about the weather
-            # Independantly of the actual observing conditions device          
-            
-            # THE DECISION DESK!!! Made from the status, not in the device
-            
-            quick_status=ocn_status['observing_conditions']['observing_conditions1']
-            
-            wx_reasons = []
-            #breakpoint()
-            rain_limit = quick_status['rain_rate'] > g_dev['ocn'].rain_limit_setting
-            if rain_limit:
-                plog("Reported rain rate in mm/hr:  ", quick_status['rain_rate'])
-                wx_reasons.append('Rain > ' + str(g_dev['ocn'].rain_limit_setting))
-            humidity_limit = quick_status['humidity_%'] < g_dev['ocn'].humidity_limit_setting
-            if not humidity_limit:
-                wx_reasons.append('Humidity >= ' + str(g_dev['ocn'].humidity_limit_setting) + '%')
-            
-            wind_limit = (
-                    quick_status['wind_m/s']*0.2778 < g_dev['ocn'].windspeed_limit_setting
-            )  # sky_monitor reports km/h, Clarity may report in MPH
-            if not wind_limit:
-                wx_reasons.append('Wind > ' + str(g_dev['ocn'].windspeed_limit_setting) + ' km/h')
-            dewpoint_gap = (
-                not (quick_status['temperature_C']- quick_status['dewpoint_C']) < g_dev['ocn'].temp_minus_dew_setting
-            )
-            if not dewpoint_gap:
-                wx_reasons.append('Ambient - Dewpoint < ' + str(g_dev['ocn'].temp_minus_dew_setting) + 'C')
-            sky_amb_limit = (
-                                    quick_status['sky_temp_C']- quick_status['temperature_C']
-                            ) < g_dev['ocn'].sky_temp_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
-            if not sky_amb_limit:
-                wx_reasons.append('(sky - amb) > ' + str(g_dev['ocn'].sky_temp_limit_setting) + 'C')
-            try:
-                cloud_cover_value = float(quick_status['cloud_cover_%'])
-                #status['cloud_cover_%'] = round(cloud_cover_value, 0)
-                if cloud_cover_value <= g_dev['ocn'].cloud_cover_limit_setting:
-                    cloud_cover = False
-                else:
-                    cloud_cover = True
-                    wx_reasons.append('>=' + str(g_dev['ocn'].cloud_cover_limit_setting) + '% Cloudy')
-            except:
-                #status['cloud_cover_%'] = "no report"
-                cloud_cover = True  # We cannot use this signal to force a wX hold or close
-            #self.current_ambient = round(self.temperature, 2)
-            temp_bounds = g_dev['ocn'].lowest_temperature_setting < quick_status['temperature_C'] < g_dev['ocn'].highest_temperature_setting
-    
-            if not temp_bounds:
-                wx_reasons.append('amb temp out of range')
-    
-            g_dev['ocn'].wx_is_ok = (
-                    (dewpoint_gap and g_dev['ocn'].temp_minus_dew_on)
-                    and (temp_bounds and (g_dev['ocn'].lowest_temperature_on or g_dev['ocn'].highest_temperature_on))
-                    and (wind_limit and g_dev['ocn'].windspeed_limit_on)
-                    and (sky_amb_limit and g_dev['ocn'].sky_temperature_limit_on)
-                    and (humidity_limit and g_dev['ocn'].humidity_limit_on)
-                    and not (rain_limit and g_dev['ocn'].rain_limit_on)
-                    and not (cloud_cover and g_dev['ocn'].cloud_cover_limit_on)
-            )
-            #  NB wx_is_ok does not include ambient light or altitude of the Sun
-            # the notion of Obs OK should bring in Sun Elevation and or ambient light.
-    
-            if quick_status['rain_rate']> 0.0:
-                #plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
-                #plog("Rain Rate is 1.0")
-                # plog('Rain > ' + str(rain_limit_setting))
-                plog("Rain Flag is 1: This is usually a glitch so ignoring.")
-                plog("May be unevaporated rain, ice, or a bird dropping.")
-                #plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
-    
-            if g_dev['ocn'].wx_is_ok:
-                #wx_str = "Yes"
-                ocn_status['observing_conditions']['observing_conditions1']["wx_ok"] = "Yes"
-                # plog('Wx Ok?  ', status["wx_ok"])
-            else:
-                #wx_str = "No"  # Ideally we add the dominant reason in priority order.
-                ocn_status['observing_conditions']['observing_conditions1']["wx_ok"] = "No"
-                #plog('Wx Ok: ', status["wx_ok"], wx_reasons)
-    
-            #g_dev["wx_ok"] = self.wx_is_ok
-            
-            
-            
-            
-            
-            #######
-            # ONCE WE HAVE FIGURED ALL THAT OUT, THEN SEND THE STATUS
-            ################
-            
             #breakpoint()
             if self.enclosure_next_open_time - time.time() > 0:
                 ocn_status['observing_conditions']['observing_conditions1']['hold_duration'] = round(self.enclosure_next_open_time - time.time(), 1)
@@ -941,9 +784,6 @@ class WxEncAgent:
                 print("\n\n > Status Sent:  \n", ocn_status)
             
             self.ocn_status=ocn_status
-            
-            
-            
 
         # WEMA Settings
         if time.time() > self.wema_settings_upload_timer + self.wema_settings_upload_period:
@@ -1055,20 +895,17 @@ class WxEncAgent:
                 else:
                     enc_status['enclosure']['enclosure1']['shut_reason_daytime'] = False
                     
-            if 'Dome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:   
-                # Remove the dome_offset
-                actual_azimuth = g_dev['enc'].enclosure.Azimuth - self.dome_offset
-                if actual_azimuth > 360:
-                    actual_azimuth=actual_azimuth - 360
-                if actual_azimuth < 0:
-                    actual_azimuth=actual_azimuth + 360
-                
-                enc_status['enclosure']['enclosure1']['dome_azimuth'] = actual_azimuth
-                plog ("reported dome az: " + str(actual_azimuth))
-            else:
-                enc_status['enclosure']['enclosure1']['dome_azimuth'] = 0
-            
-            
+                if 'Dome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:   
+                    # Remove the dome_offset
+                    actual_azimuth = g_dev['enc'].enclosure.Azimuth - self.dome_offset
+                    if actual_azimuth > 360:
+                        actual_azimuth=actual_azimuth - 360
+                    if actual_azimuth < 0:
+                        actual_azimuth=actual_azimuth + 360
+                    enc_status['enclosure']['enclosure1']['dome_azimuth'] = actual_azimuth
+                else:
+                    enc_status['enclosure']['enclosure1']['dome_azimuth'] = 0
+                    
             # If the observing mode is set to off, append a noobs to prevent the obs from observing   #Why have this in the WEMA?  
             #  There is a more intersting thing to deal with -- opening into a night with no observations scheduled, or having
             #  a long blank spot ofter an early night of observing.
@@ -1077,13 +914,10 @@ class WxEncAgent:
 
             if enc_status is not None:
                 lane = "enclosure"
-                wema = self.config['wema_name']  
                 try:                        
                     send_status(wema, lane, enc_status)
                 except:
                     plog('could not send enclosure status')   
-                    plog(traceback.format_exc())
-                    breakpoint()
 
     def update(self):     ## NB NB NB This is essentially the Manager/Sequencer for the
         #breakpoint()                 ## enclosures managed by the WEMA
@@ -1409,7 +1243,7 @@ class WxEncAgent:
         try:
             while True:
                 self.update()  # `Ctrl-C` will exit the program.
-                time.sleep(0.5)
+                time.sleep(15)
         except KeyboardInterrupt:
             print("Finishing loops and exiting...")
             self.stopped = True
@@ -1452,20 +1286,13 @@ class WxEncAgent:
                     time.sleep(10)
                     plog ("still waiting for official closed report")
                     
-            if self.config['enclosure']['enclosure1']['use_park_command_rather_than_slew_to_park']:
-                plog ("Parking Dome")
-                #breakpoint()
-                g_dev['enc'].enclosure.Park()
-                while not g_dev['enc'].enclosure.AtPark:
-                    plog ("Waiting for Park")
-                    time.sleep(5)
-            else:
-                plog ("Parking Dome")
-                g_dev['enc'].enclosure.SlewToAzimuth(self.config['enclosure']['enclosure1']['slew_park_azimuth'])
-                while g_dev['enc'].enclosure.Slewing:
-                    plog("Waiting for Park")
-                    #self.send_enclosure_status(self.enc_status, self.ocn_status)
-                    time.sleep(5)
+            
+            plog ("Parking Dome")
+            #breakpoint()
+            g_dev['enc'].enclosure.Park()
+            while not g_dev['enc'].enclosure.AtPark:
+                plog ("Waiting for Park")
+                time.sleep(5)
             
             plog ("Successfully parked. Ready to go to bed.")
         
@@ -1568,23 +1395,17 @@ class WxEncAgent:
                             if enc_status['shutter_status'] in ['Open', 'open']:
                                 break
                             else:
-                                time.sleep(2)
+                                time.sleep(10)
                                 plog ("still waiting for official open report")
                                 
                         
+                        plog ("Homing Dome")
+                        g_dev['enc'].enclosure.FindHome()
+                        while not g_dev['enc'].enclosure.AtHome:
+                            plog ("Waiting for Home")
+                            time.sleep(5)
                         
-                        
-                        if self.config['enclosure']['enclosure1']['home_dome_after_opening']:
-                        
-                            plog ("Homing Dome")
-                            g_dev['enc'].enclosure.FindHome()
-                            while not g_dev['enc'].enclosure.AtHome:
-                                plog ("Waiting for Home")
-                                time.sleep(5)
-                            
-                            g_dev['enc'].enclosure.SyncToAzimuth(self.config['enclosure']['enclosure1']['dome_home_azimuth']) # If shutter home at 194, then park at 100.
-                            
-                            plog ("Successfully found Home. Ready to observe")
+                        plog ("Successfully found Home. Ready to observe")
                             
                         #breakpoint()
 

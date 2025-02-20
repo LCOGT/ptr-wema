@@ -254,7 +254,7 @@ class Enclosure:
         g_dev['enc'] = self
         self.slew_latch = False
         self.dome_open = None  # Just initialising this variable
-        self.mode = self.config['site_enclosures_default_mode'] # Just initialising this variable
+        #self.mode = self.config['site_enclosures_default_mode'] # Just initialising this variable
         self.roof_open = None
         #if self.config['site_in_automatic_default'] == "Automatic":
 
