@@ -321,7 +321,11 @@ class ObservingConditions:
 
             # Forming standard variables.
             self.temperature=weather_data['temp']
-            self.new_pressure=weather_data['relpress']
+            try:
+                self.new_pressure=weather_data['relpress']
+            except:
+                self.new_pressure=1000
+            
             self.humidity=weather_data['hum']
             self.dewpoint=weather_data['dewp']
             self.sky_minus_ambient=weather_data['rawir']-weather_data['temp']

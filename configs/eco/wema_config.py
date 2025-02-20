@@ -269,7 +269,7 @@ wema_config = {
             'ocn_is_custom':  False, 
             # Intention it is found in this file.
             'name': 'SRO File',
-            'driver': None,  # Could be redis, ASCOM, ...
+            'driver': 'aagsolo',  # Could be redis, ASCOM, ...
             'share_path_name': 'F:/ptr/',
             'driver_2':  None,   #' ASCOM.Boltwood.OkToOpen.SafetyMonitor',
             'driver_3':  None,    # 'ASCOM.Boltwood.OkToImage.SafetyMonitor'

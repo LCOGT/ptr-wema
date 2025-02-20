@@ -672,7 +672,7 @@ class WxEncAgent:
         if enc_status is not None:
             #breakpoint()
             if enc_status['shutter_status'] in ['Open', 'Sim Open']:
-                if 'Dome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
+                if 'MaxDome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
                     
                     if time.time() > (self.dome_check_timer + self.dome_check_timer_period):
                         self.dome_check_timer=time.time()
@@ -1055,7 +1055,7 @@ class WxEncAgent:
                 else:
                     enc_status['enclosure']['enclosure1']['shut_reason_daytime'] = False
                     
-            if 'Dome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:   
+            if 'MaxDome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:   
                 # Remove the dome_offset
                 actual_azimuth = g_dev['enc'].enclosure.Azimuth - self.dome_offset
                 if actual_azimuth > 360:
@@ -1441,7 +1441,7 @@ class WxEncAgent:
         
         # If it is a dome, then we need to get the dome parked as well
         # This currently does this. 
-        if 'Dome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
+        if 'MaxDome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
             plog ("Detected Dome. Now waiting for official close command and then Parking the Dome.")
             
             while True:
@@ -1560,7 +1560,7 @@ class WxEncAgent:
 
                     # If it is a dome, then we need to get the dome setup as well
                     # This currently does this. 
-                    if 'Dome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
+                    if 'MaxDome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
                         plog ("Detected Dome. Now waiting for official open command and then Homing the Dome.")
                         
                         while True:
