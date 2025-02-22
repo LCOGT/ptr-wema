@@ -275,6 +275,97 @@ class WxEncAgent:
         
         self.wema_settings_shelf_filename = self.wema_path + "ptr_night_shelf/" + str(self.config['wema_name'])+"_wema_stored_settings"
     
+        #######################
+        # THIS AREA JUST GETS DELETED ONCE WE HAVE AN ONLINE ADJUSTABLE WEMA SETTINGS
+        # UNTIL THEN IT WILL LOAD THE VALUES FROM THE CONFIG
+        #######################
+        
+        plog ("Loading limits from config: TO BE DEPRECATED ONCE WE HAVE AN ONLINE LIMIT SYSTEM")
+        
+        wema_settings_shelf = shelve.open(self.wema_settings_shelf_filename)
+        
+        self.rain_limit_setting = self.config['rain_limit']
+        self.humidity_limit_setting = self.config['humidity_limit']
+        self.windspeed_limit_setting = self.config['windspeed_limit']
+        self.lightning_limit_setting = self.config['lightning_limit']
+        self.temp_minus_dew_setting = self.config['temperature_minus_dewpoint_limit']
+        self.sky_temp_limit_setting = self.config['sky_temperature_limit']
+        self.cloud_cover_limit_setting = self.config['cloud_cover_limit']
+        self.lowest_temperature_setting = self.config['lowest_ambient_temperature']
+        self.highest_temperature_setting = self.config['highest_ambient_temperature']
+
+        self.warning_rain_limit_setting = self.config['warning_rain_limit']
+        self.warning_humidity_limit_setting = self.config['warning_humidity_limit']
+        self.warning_windspeed_limit_setting = self.config['warning_windspeed_limit']
+        self.warning_lightning_limit_setting = self.config['warning_lightning_limit']
+        self.warning_temp_minus_dew_setting = self.config['warning_temperature_minus_dewpoint_limit']
+        self.warning_sky_temp_limit_setting = self.config['warning_sky_temperature_limit']
+        self.warning_cloud_cover_limit_setting = self.config['warning_cloud_cover_limit']
+        self.warning_lowest_temperature_setting = self.config['warning_lowest_ambient_temperature']
+        self.warning_highest_temperature_setting = self.config['warning_highest_ambient_temperature']
+
+        self.rain_limit_on = self.config['rain_limit_on']
+        self.humidity_limit_on = self.config['humidity_limit_on']
+        self.windspeed_limit_on = self.config['windspeed_limit_on']
+        self.lightning_limit_on = self.config['lightning_limit_on']
+        self.temp_minus_dew_on = self.config['temperature_minus_dewpoint_limit_on']
+        self.sky_temperature_limit_on = self.config['sky_temperature_limit_on']
+        self.cloud_cover_limit_on = self.config['cloud_cover_limit_on']
+        self.lowest_temperature_on = self.config['lowest_ambient_temperature_on']
+        self.highest_temperature_on = self.config['highest_ambient_temperature_on']
+                
+        wema_settings_shelf['rain_limit_on'] = self.rain_limit_on
+        wema_settings_shelf['warning_rain_limit_setting'] = self.warning_rain_limit_setting
+        wema_settings_shelf['rain_limit_setting'] = self.rain_limit_setting
+        
+        wema_settings_shelf['cloud_cover_limit_on'] = self.cloud_cover_limit_on
+        wema_settings_shelf['warning_cloud_cover_limit_setting'] = self.warning_cloud_cover_limit_setting
+        wema_settings_shelf['cloud_cover_limit_setting'] = self.cloud_cover_limit_setting
+        
+        wema_settings_shelf['humidity_limit_on'] = self.humidity_limit_on
+        wema_settings_shelf['warning_humidity_limit_setting'] = self.warning_humidity_limit_setting
+        wema_settings_shelf['humidity_limit_setting'] = self.humidity_limit_setting
+        
+        wema_settings_shelf['windspeed_limit_on'] = self.windspeed_limit_on
+        wema_settings_shelf['warning_windspeed_limit_setting'] = self.warning_windspeed_limit_setting
+        wema_settings_shelf['windspeed_limit_setting'] = self.windspeed_limit_setting
+        
+        wema_settings_shelf['lightning_limit_on'] = self.lightning_limit_on
+        wema_settings_shelf['warning_lightning_limit_setting'] = self.warning_lightning_limit_setting
+        wema_settings_shelf['lightning_limit_setting'] = self.lightning_limit_setting
+        
+        wema_settings_shelf['temp_minus_dew_on'] = self.temp_minus_dew_on
+        wema_settings_shelf['warning_temp_minus_dew_setting'] = self.warning_temp_minus_dew_setting
+        wema_settings_shelf['temp_minus_dew_setting'] = self.temp_minus_dew_setting
+        
+        wema_settings_shelf['sky_temperature_limit_on'] = self.sky_temperature_limit_on
+        wema_settings_shelf['warning_sky_temp_limit_setting'] = self.warning_sky_temp_limit_setting
+        wema_settings_shelf['sky_temp_limit_setting'] = self.sky_temp_limit_setting
+        
+        wema_settings_shelf['lowest_ambient_temperature'] = self.lowest_temperature_setting
+        wema_settings_shelf['highest_ambient_temperature'] = self.highest_temperature_setting
+
+        wema_settings_shelf['lowest_ambient_temperature_on'] = self.lowest_temperature_on
+        wema_settings_shelf['highest_ambient_temperature_on']= self.highest_temperature_on
+        
+        wema_settings_shelf['hightemperature_limit_warning_level'] = self.warning_highest_temperature_setting
+        #status['wema_settings']['hightemperature_limit_danger_level'] = self.highest_temperature_setting
+        
+        # status['wema_settings']['lowtemperature_limit_on']  = self.lowest_temperature_on
+        # status['wema_settings']['lowtemperature_limit_quiet'] = self.lowtemp_limit_quiet
+        wema_settings_shelf['lowtemperature_limit_warning_level'] = self.warning_lowest_temperature_setting
+        
+        #pid = camShelf["pid_obs"]  # a 9 character string
+        wema_settings_shelf.close()
+    
+        #######################
+        # ^^^^^^^^^^^^^^ THIS AREA JUST GETS DELETED ONCE WE HAVE AN ONLINE ADJUSTABLE WEMA SETTINGS
+        # UNTIL THEN IT WILL LOAD THE VALUES FROM THE CONFIG
+        #######################
+    
+    
+    
+    
         
         if os.path.exists(self.wema_settings_shelf_filename + '.dat'):       
         
@@ -926,57 +1017,102 @@ class WxEncAgent:
             
             wx_reasons = []
             #breakpoint()
-            rain_limit = quick_status['rain_rate'] > self.rain_limit_setting
-            if rain_limit:
-                plog("Reported rain rate in mm/hr:  ", quick_status['rain_rate'])
-                wx_reasons.append('Rain > ' + str(self.rain_limit_setting))
-            humidity_limit = quick_status['humidity_%'] < self.humidity_limit_setting
-            if not humidity_limit:
-                wx_reasons.append('Humidity >= ' + str(self.humidity_limit_setting) + '%')
             
-            wind_limit = (
-                    quick_status['wind_m/s']*0.2778 < self.windspeed_limit_setting
-            )  # sky_monitor reports km/h, Clarity may report in MPH
-            if not wind_limit:
-                wx_reasons.append('Wind > ' + str(self.windspeed_limit_setting) + ' km/h')
-            dewpoint_gap = (
-                not (quick_status['temperature_C']- quick_status['dewpoint_C']) < self.temp_minus_dew_setting
-            )
-            if not dewpoint_gap:
-                wx_reasons.append('Ambient - Dewpoint < ' + str(self.temp_minus_dew_setting) + 'C')
-            sky_amb_limit = (
-                                    quick_status['sky_temp_C']- quick_status['temperature_C']
-                            ) < self.sky_temp_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
-            if not sky_amb_limit:
-                wx_reasons.append('(sky - amb) > ' + str(self.sky_temp_limit_setting) + 'C')
-            try:
-                cloud_cover_value = float(quick_status['cloud_cover_%'])
-                #status['cloud_cover_%'] = round(cloud_cover_value, 0)
-                if cloud_cover_value <= self.cloud_cover_limit_setting:
-                    cloud_cover = False
-                else:
-                    cloud_cover = True
-                    wx_reasons.append('>=' + str(self.cloud_cover_limit_setting) + '% Cloudy')
-            except:
-                #status['cloud_cover_%'] = "no report"
-                cloud_cover = True  # We cannot use this signal to force a wX hold or close
-            #self.current_ambient = round(self.temperature, 2)
-            temp_bounds = self.lowest_temperature_setting < quick_status['temperature_C'] < self.highest_temperature_setting
-    
-            if not temp_bounds:
+            
+            
+            #self.lightning_limit_on = self.config['lightning_limit_on']
+            
+            
+            
+            if self.rain_limit_on:
+                rain_limit = quick_status['rain_rate'] > self.rain_limit_setting
+                if rain_limit:
+                    plog("Reported rain rate in mm/hr:  ", quick_status['rain_rate'])
+                    wx_reasons.append('Rain > ' + str(self.rain_limit_setting))
+            else:
+                rain_limit=False
+            
+            if self.humidity_limit_on:
+                humidity_limit = quick_status['humidity_%'] < self.humidity_limit_setting
+                if not humidity_limit:
+                    wx_reasons.append('Humidity >= ' + str(self.humidity_limit_setting) + '%')
+            else:
+                humidity_limit=True
+            
+            if self.windspeed_limit_on:
+                wind_limit = (
+                        quick_status['wind_m/s']*0.2778 < self.windspeed_limit_setting
+                )  # sky_monitor reports km/h, Clarity may report in MPH
+                if not wind_limit:
+                    wx_reasons.append('Wind > ' + str(self.windspeed_limit_setting) + ' km/h')
+            else:
+                wind_limit=True
+            
+            if self.temp_minus_dew_on:
+                dewpoint_gap = (
+                    not (quick_status['temperature_C']- quick_status['dewpoint_C']) < self.temp_minus_dew_setting
+                )
+                if not dewpoint_gap:
+                    wx_reasons.append('Ambient - Dewpoint < ' + str(self.temp_minus_dew_setting) + 'C')
+            else:
+                dewpoint_gap=True
+            
+            if self.sky_temperature_limit_on:
+                sky_amb_limit = (
+                                        quick_status['sky_temp_C']- quick_status['temperature_C']
+                                ) < self.sky_temp_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
+                if not sky_amb_limit:
+                    wx_reasons.append('(sky - amb) > ' + str(self.sky_temp_limit_setting) + 'C')
+            else:
+                sky_amb_limit=True
+            
+            if self.cloud_cover_limit_on:
+                try:
+                    cloud_cover_value = float(quick_status['cloud_cover_%'])
+                    #status['cloud_cover_%'] = round(cloud_cover_value, 0)
+                    if cloud_cover_value <= self.cloud_cover_limit_setting:
+                        cloud_cover = False
+                    else:
+                        cloud_cover = True
+                        wx_reasons.append('>=' + str(self.cloud_cover_limit_setting) + '% Cloudy')
+                except:
+                    #status['cloud_cover_%'] = "no report"
+                    cloud_cover = True  # We cannot use this signal to force a wX hold or close
+            else:
+                cloud_cover = False
+            
+            
+            if self.lowest_temperature_on:
+                low_temp_bound= quick_status['temperature_C'] < self.lowest_temperature_setting
+            else: 
+                low_temp_bound=False
+            
+            if self.highest_temperature_on:
+                high_temp_bound=quick_status['temperature_C'] > self.highest_temperature_setting
+            else:
+                high_temp_bound=False
+                
+            temp_bounds=False
+            if low_temp_bound or high_temp_bound:
+                temp_bounds=False
                 wx_reasons.append('amb temp out of range')
     
-            self.local_weather_ok = (
-                    (dewpoint_gap and self.temp_minus_dew_on)
-                    and (temp_bounds and (self.lowest_temperature_on or self.highest_temperature_on))
-                    and (wind_limit and self.windspeed_limit_on)
-                    and (sky_amb_limit and self.sky_temperature_limit_on)
-                    and (humidity_limit and self.humidity_limit_on)
-                    and not (rain_limit and self.rain_limit_on)
-                    and not (cloud_cover and self.cloud_cover_limit_on)
-            )
+            # self.local_weather_ok = (
+            #         (dewpoint_gap and self.temp_minus_dew_on)
+            #         and (temp_bounds and (self.lowest_temperature_on or self.highest_temperature_on))
+            #         and (wind_limit and self.windspeed_limit_on)
+            #         and (sky_amb_limit and self.sky_temperature_limit_on)
+            #         and (humidity_limit and self.humidity_limit_on)
+            #         and not (rain_limit and self.rain_limit_on)
+            #         and not (cloud_cover and self.cloud_cover_limit_on)
+            # )
+            
+            self.local_weather_ok = dewpoint_gap and temp_bounds and wind_limit and sky_amb_limit and humidity_limit and not rain_limit and not cloud_cover  
+            
             #  NB wx_is_ok does not include ambient light or altitude of the Sun
             # the notion of Obs OK should bring in Sun Elevation and or ambient light.
+            
+            #breakpoint()
     
             if quick_status['rain_rate']> 0.0:
                 #plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
@@ -1007,7 +1143,7 @@ class WxEncAgent:
             elif self.local_weather_active:
                 combined_weather_ok = self.local_weather_ok
             else:
-                combined_weather_ok = 'Unknown'
+                combined_weather_ok = 'Not considered'
                 
             
             ocn_status['observing_conditions']['observing_conditions1']["wx_ok"] = combined_weather_ok
@@ -1251,7 +1387,7 @@ class WxEncAgent:
             if self.local_weather_ok == None:
                 plog("No information on local weather available.")
             else:
-                plog("Local Weather Ok to Observe  : " +str(self.local_weather_ok))
+                plog("Local Weather Ok to Observe  : " + str(self.local_weather_ok))
                 if not self.local_weather_active:
                     plog ("However, Local Weather control is set off")
             
