@@ -145,6 +145,14 @@ wema_config = {
     'morn_flat_start_offset': -10,       #min from Sunrise
     'morn_flat_end_offset':  +40,        #min from Sunrise
     'end_night_processing_time':  90,   #  A guess#'eve_sky_flat_sunset_offset': -60.0,  # Minutes  neg means before, + after.
+    
+    
+    #############################################################
+    #### BE AWARE THAT THESE VALUES ARE JUST FOR INITILIASATION!#
+    ## THEY WILL BE STORED IN A SHELF AND CHANGES SHOULD BE MADE#
+    ## THROUGH THE UI IN THE LONG TERM!                         #
+    #############################################################
+    
     # Whether these limits are on by default
     'rain_limit_on': False,
     'humidity_limit_on': True,
@@ -157,6 +165,13 @@ wema_config = {
     'highest_ambient_temperature_on': True,
     'has_inside_weather_station': False,
 
+
+    #############################################################
+    #### BE AWARE THAT THESE VALUES ARE JUST FOR INITILIASATION!#
+    ## THEY WILL BE STORED IN A SHELF AND CHANGES SHOULD BE MADE#
+    ## THROUGH THE UI IN THE LONG TERM!                         #
+    #############################################################
+
     # Local weather DANGER limits - will cause the roof to shut
     'rain_limit': 1,
     'humidity_limit': 75,  # % presumably
@@ -167,6 +182,13 @@ wema_config = {
     'cloud_cover_limit': 51,
     'lowest_ambient_temperature': 1,
     'highest_ambient_temperature': 43,
+    
+    
+    #############################################################
+    #### BE AWARE THAT THESE VALUES ARE JUST FOR INITILIASATION!#
+    ## THEY WILL BE STORED IN A SHELF AND CHANGES SHOULD BE MADE#
+    ## THROUGH THE UI IN THE LONG TERM!                         #
+    #############################################################
     
     # Local weather warning limits, will send a warning, but leave the roof alone
     'warning_rain_limit': 3,

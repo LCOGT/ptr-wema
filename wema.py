@@ -292,94 +292,153 @@ class WxEncAgent:
             self.keep_closed_all_night=wema_settings_shelf['keep_closed_all_night']
             if self.ocn_exists:
                 try:
-                    g_dev['ocn'].rain_limit_on=wema_settings_shelf['rain_limit_on']
-                    g_dev['ocn'].warning_rain_limit_setting=wema_settings_shelf['warning_rain_limit_setting']
-                    g_dev['ocn'].rain_limit_setting=wema_settings_shelf['rain_limit_setting']
+                    self.rain_limit_on=wema_settings_shelf['rain_limit_on']
+                    self.warning_rain_limit_setting=wema_settings_shelf['warning_rain_limit_setting']
+                    self.rain_limit_setting=wema_settings_shelf['rain_limit_setting']
                     
-                    g_dev['ocn'].cloud_cover_limit_on=wema_settings_shelf['cloud_cover_limit_on']
-                    g_dev['ocn'].warning_cloud_cover_limit_setting=wema_settings_shelf['warning_cloud_cover_limit_setting']
-                    g_dev['ocn'].cloud_cover_limit_setting=wema_settings_shelf['cloud_cover_limit_setting']
+                    self.cloud_cover_limit_on=wema_settings_shelf['cloud_cover_limit_on']
+                    self.warning_cloud_cover_limit_setting=wema_settings_shelf['warning_cloud_cover_limit_setting']
+                    self.cloud_cover_limit_setting=wema_settings_shelf['cloud_cover_limit_setting']
                     
-                    g_dev['ocn'].humidity_limit_on=wema_settings_shelf['humidity_limit_on']
-                    g_dev['ocn'].warning_humidity_limit_setting=wema_settings_shelf['warning_humidity_limit_setting']
-                    g_dev['ocn'].humidity_limit_setting=wema_settings_shelf['humidity_limit_setting']
+                    self.humidity_limit_on=wema_settings_shelf['humidity_limit_on']
+                    self.warning_humidity_limit_setting=wema_settings_shelf['warning_humidity_limit_setting']
+                    self.humidity_limit_setting=wema_settings_shelf['humidity_limit_setting']
                     
-                    g_dev['ocn'].windspeed_limit_on=wema_settings_shelf['windspeed_limit_on']
-                    g_dev['ocn'].warning_windspeed_limit_setting=wema_settings_shelf['warning_windspeed_limit_setting']
-                    g_dev['ocn'].windspeed_limit_setting=wema_settings_shelf['windspeed_limit_setting']
+                    self.windspeed_limit_on=wema_settings_shelf['windspeed_limit_on']
+                    self.warning_windspeed_limit_setting=wema_settings_shelf['warning_windspeed_limit_setting']
+                    self.windspeed_limit_setting=wema_settings_shelf['windspeed_limit_setting']
                     
-                    g_dev['ocn'].lightning_limit_on=wema_settings_shelf['lightning_limit_on']
-                    g_dev['ocn'].warning_lightning_limit_setting=wema_settings_shelf['warning_lightning_limit_setting']
-                    g_dev['ocn'].lightning_limit_setting=wema_settings_shelf['lightning_limit_setting']
+                    self.lightning_limit_on=wema_settings_shelf['lightning_limit_on']
+                    self.warning_lightning_limit_setting=wema_settings_shelf['warning_lightning_limit_setting']
+                    self.lightning_limit_setting=wema_settings_shelf['lightning_limit_setting']
                     
-                    g_dev['ocn'].temp_minus_dew_on=wema_settings_shelf['temp_minus_dew_on']
-                    g_dev['ocn'].warning_temp_minus_dew_setting=wema_settings_shelf['warning_temp_minus_dew_setting']
-                    g_dev['ocn'].temp_minus_dew_setting=wema_settings_shelf['temp_minus_dew_setting']
+                    self.temp_minus_dew_on=wema_settings_shelf['temp_minus_dew_on']
+                    self.warning_temp_minus_dew_setting=wema_settings_shelf['warning_temp_minus_dew_setting']
+                    self.temp_minus_dew_setting=wema_settings_shelf['temp_minus_dew_setting']
                     
-                    g_dev['ocn'].sky_temperature_limit_on=wema_settings_shelf['sky_temperature_limit_on']
-                    g_dev['ocn'].warning_sky_temp_limit_setting=wema_settings_shelf['warning_sky_temp_limit_setting']
-                    g_dev['ocn'].sky_temp_limit_setting=wema_settings_shelf['sky_temp_limit_setting']
+                    self.sky_temperature_limit_on=wema_settings_shelf['sky_temperature_limit_on']
+                    self.warning_sky_temp_limit_setting=wema_settings_shelf['warning_sky_temp_limit_setting']
+                    self.sky_temp_limit_setting=wema_settings_shelf['sky_temp_limit_setting']
+                    
+                    self.lowest_temperature_setting =  wema_settings_shelf['lowest_ambient_temperature']
+                    self.highest_temperature_setting =  wema_settings_shelf['highest_ambient_temperature']
+                    self.lowest_temperature_on =  wema_settings_shelf['lowest_ambient_temperature_on']
+                    self.highest_temperature_on =  wema_settings_shelf['highest_ambient_temperature_on']
+                    
+                    self.warning_highest_temperature_setting=wema_settings_shelf['highest_ambient_temperature_on']
+                    #status['wema_settings']['hightemperature_limit_danger_level'] = self.highest_temperature_setting
+                    
+                    # status['wema_settings']['lowtemperature_limit_on']  = self.lowest_temperature_on
+                    # status['wema_settings']['lowtemperature_limit_quiet'] = self.lowtemp_limit_quiet
+                    self.warning_lowest_temperature_setting=wema_settings_shelf['lowest_ambient_temperature_on']
+                    
+                    
+                    
                 except:
-                    plog ("Probably has not formed a shelf yet, forming a shelf from reasonable values.")
+                    plog ("Probably has not formed a shelf yet, forming a shelf from the config.")
                     plog(traceback.format_exc())
-                    g_dev['ocn'].rain_limit_on=True
-                    g_dev['ocn'].warning_rain_limit_setting=1
-                    g_dev['ocn'].rain_limit_setting=3
-                    
-                    g_dev['ocn'].cloud_cover_limit_on=True
-                    g_dev['ocn'].warning_cloud_cover_limit_setting=25
-                    g_dev['ocn'].cloud_cover_limit_setting=50
-                    
-                    g_dev['ocn'].humidity_limit_on=True
-                    g_dev['ocn'].warning_humidity_limit_setting=75
-                    g_dev['ocn'].humidity_limit_setting=88
-                    
-                    g_dev['ocn'].windspeed_limit_on=True
-                    g_dev['ocn'].warning_windspeed_limit_setting=10
-                    g_dev['ocn'].windspeed_limit_setting=15
-                    
-                    g_dev['ocn'].lightning_limit_on=False
-                    g_dev['ocn'].warning_lightning_limit_setting=10
-                    g_dev['ocn'].lightning_limit_setting=15
-                    
-                    g_dev['ocn'].temp_minus_dew_on=False
-                    g_dev['ocn'].warning_temp_minus_dew_setting=2
-                    g_dev['ocn'].temp_minus_dew_setting=3
-                    
-                    g_dev['ocn'].sky_temperature_limit_on=False
-                    g_dev['ocn'].warning_sky_temp_limit_setting=-17
-                    g_dev['ocn'].sky_temp_limit_setting=-1           
                     
                     
-                    wema_settings_shelf['rain_limit_on'] = g_dev['ocn'].rain_limit_on
-                    wema_settings_shelf['warning_rain_limit_setting'] = g_dev['ocn'].warning_rain_limit_setting
-                    wema_settings_shelf['rain_limit_setting'] = g_dev['ocn'].rain_limit_setting
                     
-                    wema_settings_shelf['cloud_cover_limit_on'] = g_dev['ocn'].cloud_cover_limit_on
-                    wema_settings_shelf['warning_cloud_cover_limit_setting'] = g_dev['ocn'].warning_cloud_cover_limit_setting
-                    wema_settings_shelf['cloud_cover_limit_setting'] = g_dev['ocn'].cloud_cover_limit_setting
-                    
-                    wema_settings_shelf['humidity_limit_on'] = g_dev['ocn'].humidity_limit_on
-                    wema_settings_shelf['warning_humidity_limit_setting'] = g_dev['ocn'].warning_humidity_limit_setting
-                    wema_settings_shelf['humidity_limit_setting'] = g_dev['ocn'].humidity_limit_setting
-                    
-                    wema_settings_shelf['windspeed_limit_on'] = g_dev['ocn'].windspeed_limit_on
-                    wema_settings_shelf['warning_windspeed_limit_setting'] = g_dev['ocn'].warning_windspeed_limit_setting
-                    wema_settings_shelf['windspeed_limit_setting'] = g_dev['ocn'].windspeed_limit_setting
-                    
-                    wema_settings_shelf['lightning_limit_on'] = g_dev['ocn'].lightning_limit_on
-                    wema_settings_shelf['warning_lightning_limit_setting'] = g_dev['ocn'].warning_lightning_limit_setting
-                    wema_settings_shelf['lightning_limit_setting'] = g_dev['ocn'].lightning_limit_setting
-                    
-                    wema_settings_shelf['temp_minus_dew_on'] = g_dev['ocn'].temp_minus_dew_on
-                    wema_settings_shelf['warning_temp_minus_dew_setting'] = g_dev['ocn'].warning_temp_minus_dew_setting
-                    wema_settings_shelf['temp_minus_dew_setting'] = g_dev['ocn'].temp_minus_dew_setting
-                    
-                    wema_settings_shelf['sky_temperature_limit_on'] = g_dev['ocn'].sky_temperature_limit_on
-                    wema_settings_shelf['warning_sky_temp_limit_setting'] = g_dev['ocn'].warning_sky_temp_limit_setting
-                    wema_settings_shelf['sky_temp_limit_setting'] = g_dev['ocn'].sky_temp_limit_setting
+                    self.rain_limit_setting = self.config['rain_limit']
+                    self.humidity_limit_setting = self.config['humidity_limit']
+                    self.windspeed_limit_setting = self.config['windspeed_limit']
+                    self.lightning_limit_setting = self.config['lightning_limit']
+                    self.temp_minus_dew_setting = self.config['temperature_minus_dewpoint_limit']
+                    self.sky_temp_limit_setting = self.config['sky_temperature_limit']
+                    self.cloud_cover_limit_setting = self.config['cloud_cover_limit']
+                    self.lowest_temperature_setting = self.config['lowest_ambient_temperature']
+                    self.highest_temperature_setting = self.config['highest_ambient_temperature']
 
+                    self.warning_rain_limit_setting = self.config['warning_rain_limit']
+                    self.warning_humidity_limit_setting = self.config['warning_humidity_limit']
+                    self.warning_windspeed_limit_setting = self.config['warning_windspeed_limit']
+                    self.warning_lightning_limit_setting = self.config['warning_lightning_limit']
+                    self.warning_temp_minus_dew_setting = self.config['warning_temperature_minus_dewpoint_limit']
+                    self.warning_sky_temp_limit_setting = self.config['warning_sky_temperature_limit']
+                    self.warning_cloud_cover_limit_setting = self.config['warning_cloud_cover_limit']
+                    self.warning_lowest_temperature_setting = self.config['warning_lowest_ambient_temperature']
+                    self.warning_highest_temperature_setting = self.config['warning_highest_ambient_temperature']
+
+                    self.rain_limit_on = self.config['rain_limit_on']
+                    self.humidity_limit_on = self.config['humidity_limit_on']
+                    self.windspeed_limit_on = self.config['windspeed_limit_on']
+                    self.lightning_limit_on = self.config['lightning_limit_on']
+                    self.temp_minus_dew_on = self.config['temperature_minus_dewpoint_limit_on']
+                    self.sky_temperature_limit_on = self.config['sky_temperature_limit_on']
+                    self.cloud_cover_limit_on = self.config['cloud_cover_limit_on']
+                    self.lowest_temperature_on = self.config['lowest_ambient_temperature_on']
+                    self.highest_temperature_on = self.config['highest_ambient_temperature_on']
                     
+                    # self.rain_limit_on=True
+                    # self.warning_rain_limit_setting=1
+                    # self.rain_limit_setting=3
+                    
+                    # self.cloud_cover_limit_on=True
+                    # self.warning_cloud_cover_limit_setting=25
+                    # self.cloud_cover_limit_setting=50
+                    
+                    # self.humidity_limit_on=True
+                    # self.warning_humidity_limit_setting=75
+                    # self.humidity_limit_setting=88
+                    
+                    # self.windspeed_limit_on=True
+                    # self.warning_windspeed_limit_setting=10
+                    # self.windspeed_limit_setting=15
+                    
+                    # self.lightning_limit_on=False
+                    # self.warning_lightning_limit_setting=10
+                    # self.lightning_limit_setting=15
+                    
+                    # self.temp_minus_dew_on=False
+                    # self.warning_temp_minus_dew_setting=2
+                    # self.temp_minus_dew_setting=3
+                    
+                    # self.sky_temperature_limit_on=False
+                    # self.warning_sky_temp_limit_setting=-17
+                    # self.sky_temp_limit_setting=-1           
+                    
+                    
+                    wema_settings_shelf['rain_limit_on'] = self.rain_limit_on
+                    wema_settings_shelf['warning_rain_limit_setting'] = self.warning_rain_limit_setting
+                    wema_settings_shelf['rain_limit_setting'] = self.rain_limit_setting
+                    
+                    wema_settings_shelf['cloud_cover_limit_on'] = self.cloud_cover_limit_on
+                    wema_settings_shelf['warning_cloud_cover_limit_setting'] = self.warning_cloud_cover_limit_setting
+                    wema_settings_shelf['cloud_cover_limit_setting'] = self.cloud_cover_limit_setting
+                    
+                    wema_settings_shelf['humidity_limit_on'] = self.humidity_limit_on
+                    wema_settings_shelf['warning_humidity_limit_setting'] = self.warning_humidity_limit_setting
+                    wema_settings_shelf['humidity_limit_setting'] = self.humidity_limit_setting
+                    
+                    wema_settings_shelf['windspeed_limit_on'] = self.windspeed_limit_on
+                    wema_settings_shelf['warning_windspeed_limit_setting'] = self.warning_windspeed_limit_setting
+                    wema_settings_shelf['windspeed_limit_setting'] = self.windspeed_limit_setting
+                    
+                    wema_settings_shelf['lightning_limit_on'] = self.lightning_limit_on
+                    wema_settings_shelf['warning_lightning_limit_setting'] = self.warning_lightning_limit_setting
+                    wema_settings_shelf['lightning_limit_setting'] = self.lightning_limit_setting
+                    
+                    wema_settings_shelf['temp_minus_dew_on'] = self.temp_minus_dew_on
+                    wema_settings_shelf['warning_temp_minus_dew_setting'] = self.warning_temp_minus_dew_setting
+                    wema_settings_shelf['temp_minus_dew_setting'] = self.temp_minus_dew_setting
+                    
+                    wema_settings_shelf['sky_temperature_limit_on'] = self.sky_temperature_limit_on
+                    wema_settings_shelf['warning_sky_temp_limit_setting'] = self.warning_sky_temp_limit_setting
+                    wema_settings_shelf['sky_temp_limit_setting'] = self.sky_temp_limit_setting
+                    
+                    wema_settings_shelf['lowest_ambient_temperature'] = self.lowest_temperature_setting
+                    wema_settings_shelf['highest_ambient_temperature'] = self.highest_temperature_setting
+
+                    wema_settings_shelf['lowest_ambient_temperature_on'] = self.lowest_temperature_on
+                    wema_settings_shelf['highest_ambient_temperature_on']= self.highest_temperature_on
+                    
+                    wema_settings_shelf['hightemperature_limit_warning_level'] = self.warning_highest_temperature_setting
+                    #status['wema_settings']['hightemperature_limit_danger_level'] = self.highest_temperature_setting
+                    
+                    # status['wema_settings']['lowtemperature_limit_on']  = self.lowest_temperature_on
+                    # status['wema_settings']['lowtemperature_limit_quiet'] = self.lowtemp_limit_quiet
+                    wema_settings_shelf['lowtemperature_limit_warning_level'] = self.warning_lowest_temperature_setting
                     
             #pid = camShelf["pid_obs"]  # a 9 character string
             wema_settings_shelf.close()
@@ -562,33 +621,33 @@ class WxEncAgent:
                         if cmd['action']=='set_weather_values': 
                             tempval=cmd['required_params']['weather_values']
                             
-                            g_dev['ocn'].rain_limit_on='on' in tempval['rain']['status']
-                            g_dev['ocn'].warning_rain_limit_setting=tempval['rain']['warning_level']
-                            g_dev['ocn'].rain_limit_setting=tempval['rain']['danger_level']
+                            self.rain_limit_on='on' in tempval['rain']['status']
+                            self.warning_rain_limit_setting=tempval['rain']['warning_level']
+                            self.rain_limit_setting=tempval['rain']['danger_level']
                             
-                            g_dev['ocn'].cloud_cover_limit_on='on' in tempval['clouds']['status']
-                            g_dev['ocn'].warning_cloud_cover_limit_setting=tempval['clouds']['warning_level']
-                            g_dev['ocn'].cloud_cover_limit_setting=tempval['clouds']['danger_level']
+                            self.cloud_cover_limit_on='on' in tempval['clouds']['status']
+                            self.warning_cloud_cover_limit_setting=tempval['clouds']['warning_level']
+                            self.cloud_cover_limit_setting=tempval['clouds']['danger_level']
                             
-                            g_dev['ocn'].humidity_limit_on='on' in tempval['humidity']['status']
-                            g_dev['ocn'].warning_humidity_limit_setting=tempval['humidity']['warning_level']
-                            g_dev['ocn'].humidity_limit_setting=tempval['humidity']['danger_level']
+                            self.humidity_limit_on='on' in tempval['humidity']['status']
+                            self.warning_humidity_limit_setting=tempval['humidity']['warning_level']
+                            self.humidity_limit_setting=tempval['humidity']['danger_level']
                             
-                            g_dev['ocn'].windspeed_limit_on='on' in tempval['windspeed']['status']
-                            g_dev['ocn'].warning_windspeed_limit_setting=tempval['windspeed']['warning_level']
-                            g_dev['ocn'].windspeed_limit_setting=tempval['windspeed']['danger_level']
+                            self.windspeed_limit_on='on' in tempval['windspeed']['status']
+                            self.warning_windspeed_limit_setting=tempval['windspeed']['warning_level']
+                            self.windspeed_limit_setting=tempval['windspeed']['danger_level']
                             
-                            g_dev['ocn'].lightning_limit_on='on' in tempval['lightning']['status']
-                            g_dev['ocn'].warning_lightning_limit_setting=tempval['lightning']['warning_level']
-                            g_dev['ocn'].lightning_limit_setting=tempval['lightning']['danger_level']
+                            self.lightning_limit_on='on' in tempval['lightning']['status']
+                            self.warning_lightning_limit_setting=tempval['lightning']['warning_level']
+                            self.lightning_limit_setting=tempval['lightning']['danger_level']
                             
-                            g_dev['ocn'].temp_minus_dew_on='on' in tempval['tempDew']['status']
-                            g_dev['ocn'].warning_temp_minus_dew_setting=tempval['tempDew']['warning_level']
-                            g_dev['ocn'].temp_minus_dew_setting=tempval['tempDew']['danger_level']
+                            self.temp_minus_dew_on='on' in tempval['tempDew']['status']
+                            self.warning_temp_minus_dew_setting=tempval['tempDew']['warning_level']
+                            self.temp_minus_dew_setting=tempval['tempDew']['danger_level']
                             
-                            g_dev['ocn'].sky_temperature_limit_on='on' in tempval['skyTempLimit']['status']
-                            g_dev['ocn'].warning_sky_temp_limit_setting=tempval['skyTempLimit']['warning_level']
-                            g_dev['ocn'].sky_temp_limit_setting=tempval['skyTempLimit']['danger_level']
+                            self.sky_temperature_limit_on='on' in tempval['skyTempLimit']['status']
+                            self.warning_sky_temp_limit_setting=tempval['skyTempLimit']['warning_level']
+                            self.sky_temp_limit_setting=tempval['skyTempLimit']['danger_level']
                             
                             self.wema_settings_upload_timer=time.time() -2 * self.wema_settings_upload_period
                             self.update_status()
@@ -608,33 +667,49 @@ class WxEncAgent:
                 wema_settings_shelf['keep_open_all_night']=self.keep_open_all_night
                 wema_settings_shelf['keep_closed_all_night']=self.keep_closed_all_night
                 if self.ocn_exists:
-                    wema_settings_shelf['rain_limit_on']=g_dev['ocn'].rain_limit_on
-                    wema_settings_shelf['warning_rain_limit_setting']=g_dev['ocn'].warning_rain_limit_setting
-                    wema_settings_shelf['rain_limit_setting']=g_dev['ocn'].rain_limit_setting
+                    wema_settings_shelf['rain_limit_on']=self.rain_limit_on
+                    wema_settings_shelf['warning_rain_limit_setting']=self.warning_rain_limit_setting
+                    wema_settings_shelf['rain_limit_setting']=self.rain_limit_setting
                     
-                    wema_settings_shelf['cloud_cover_limit_on']=g_dev['ocn'].cloud_cover_limit_on
-                    wema_settings_shelf['warning_cloud_cover_limit_setting']=g_dev['ocn'].warning_cloud_cover_limit_setting
-                    wema_settings_shelf['cloud_cover_limit_setting']=g_dev['ocn'].cloud_cover_limit_setting
+                    wema_settings_shelf['cloud_cover_limit_on']=self.cloud_cover_limit_on
+                    wema_settings_shelf['warning_cloud_cover_limit_setting']=self.warning_cloud_cover_limit_setting
+                    wema_settings_shelf['cloud_cover_limit_setting']=self.cloud_cover_limit_setting
                     
-                    wema_settings_shelf['humidity_limit_on']=g_dev['ocn'].humidity_limit_on
-                    wema_settings_shelf['warning_humidity_limit_setting']=g_dev['ocn'].warning_humidity_limit_setting
-                    wema_settings_shelf['humidity_limit_setting']=g_dev['ocn'].humidity_limit_setting
+                    wema_settings_shelf['humidity_limit_on']=self.humidity_limit_on
+                    wema_settings_shelf['warning_humidity_limit_setting']=self.warning_humidity_limit_setting
+                    wema_settings_shelf['humidity_limit_setting']=self.humidity_limit_setting
                     
-                    wema_settings_shelf['windspeed_limit_on']=g_dev['ocn'].windspeed_limit_on
-                    wema_settings_shelf['warning_windspeed_limit_setting']=g_dev['ocn'].warning_windspeed_limit_setting
-                    wema_settings_shelf['windspeed_limit_setting']=g_dev['ocn'].windspeed_limit_setting
+                    wema_settings_shelf['windspeed_limit_on']=self.windspeed_limit_on
+                    wema_settings_shelf['warning_windspeed_limit_setting']=self.warning_windspeed_limit_setting
+                    wema_settings_shelf['windspeed_limit_setting']=self.windspeed_limit_setting
                     
-                    wema_settings_shelf['lightning_limit_on']=g_dev['ocn'].lightning_limit_on
-                    wema_settings_shelf['warning_lightning_limit_setting']=g_dev['ocn'].warning_lightning_limit_setting
-                    wema_settings_shelf['lightning_limit_setting']=g_dev['ocn'].lightning_limit_setting
+                    wema_settings_shelf['lightning_limit_on']=self.lightning_limit_on
+                    wema_settings_shelf['warning_lightning_limit_setting']=self.warning_lightning_limit_setting
+                    wema_settings_shelf['lightning_limit_setting']=self.lightning_limit_setting
                     
-                    wema_settings_shelf['temp_minus_dew_on']=g_dev['ocn'].temp_minus_dew_on
-                    wema_settings_shelf['warning_temp_minus_dew_setting']=g_dev['ocn'].warning_temp_minus_dew_setting
-                    wema_settings_shelf['temp_minus_dew_setting']=g_dev['ocn'].temp_minus_dew_setting
+                    wema_settings_shelf['temp_minus_dew_on']=self.temp_minus_dew_on
+                    wema_settings_shelf['warning_temp_minus_dew_setting']=self.warning_temp_minus_dew_setting
+                    wema_settings_shelf['temp_minus_dew_setting']=self.temp_minus_dew_setting
                     
-                    wema_settings_shelf['sky_temperature_limit_on']=g_dev['ocn'].sky_temperature_limit_on
-                    wema_settings_shelf['warning_sky_temp_limit_setting']=g_dev['ocn'].warning_sky_temp_limit_setting
-                    wema_settings_shelf['sky_temp_limit_setting']=g_dev['ocn'].sky_temp_limit_setting
+                    wema_settings_shelf['sky_temperature_limit_on']=self.sky_temperature_limit_on
+                    wema_settings_shelf['warning_sky_temp_limit_setting']=self.warning_sky_temp_limit_setting
+                    wema_settings_shelf['sky_temp_limit_setting']=self.sky_temp_limit_setting
+              
+                    wema_settings_shelf['lowest_ambient_temperature'] = self.lowest_temperature_setting
+                    wema_settings_shelf['highest_ambient_temperature'] = self.highest_temperature_setting
+
+                    wema_settings_shelf['lowest_temperature_on'] = self.lowest_temperature_on
+                    wema_settings_shelf['highest_temperature_on']= self.highest_temperature_on  
+                    
+                    
+                    wema_settings_shelf['hightemperature_limit_warning_level'] = self.warning_highest_temperature_setting
+                    #status['wema_settings']['hightemperature_limit_danger_level'] = self.highest_temperature_setting
+                    
+                    # status['wema_settings']['lowtemperature_limit_on']  = self.lowest_temperature_on
+                    # status['wema_settings']['lowtemperature_limit_quiet'] = self.lowtemp_limit_quiet
+                    wema_settings_shelf['lowtemperature_limit_warning_level'] = self.warning_lowest_temperature_setting
+                    # status['wema_settings']['lowtemperature_limit_danger_level'] = self.lowest_temperature_setting
+
               
                 #pid = camShelf["pid_obs"]  # a 9 character string
                 wema_settings_shelf.close()
@@ -851,54 +926,54 @@ class WxEncAgent:
             
             wx_reasons = []
             #breakpoint()
-            rain_limit = quick_status['rain_rate'] > g_dev['ocn'].rain_limit_setting
+            rain_limit = quick_status['rain_rate'] > self.rain_limit_setting
             if rain_limit:
                 plog("Reported rain rate in mm/hr:  ", quick_status['rain_rate'])
-                wx_reasons.append('Rain > ' + str(g_dev['ocn'].rain_limit_setting))
-            humidity_limit = quick_status['humidity_%'] < g_dev['ocn'].humidity_limit_setting
+                wx_reasons.append('Rain > ' + str(self.rain_limit_setting))
+            humidity_limit = quick_status['humidity_%'] < self.humidity_limit_setting
             if not humidity_limit:
-                wx_reasons.append('Humidity >= ' + str(g_dev['ocn'].humidity_limit_setting) + '%')
+                wx_reasons.append('Humidity >= ' + str(self.humidity_limit_setting) + '%')
             
             wind_limit = (
-                    quick_status['wind_m/s']*0.2778 < g_dev['ocn'].windspeed_limit_setting
+                    quick_status['wind_m/s']*0.2778 < self.windspeed_limit_setting
             )  # sky_monitor reports km/h, Clarity may report in MPH
             if not wind_limit:
-                wx_reasons.append('Wind > ' + str(g_dev['ocn'].windspeed_limit_setting) + ' km/h')
+                wx_reasons.append('Wind > ' + str(self.windspeed_limit_setting) + ' km/h')
             dewpoint_gap = (
-                not (quick_status['temperature_C']- quick_status['dewpoint_C']) < g_dev['ocn'].temp_minus_dew_setting
+                not (quick_status['temperature_C']- quick_status['dewpoint_C']) < self.temp_minus_dew_setting
             )
             if not dewpoint_gap:
-                wx_reasons.append('Ambient - Dewpoint < ' + str(g_dev['ocn'].temp_minus_dew_setting) + 'C')
+                wx_reasons.append('Ambient - Dewpoint < ' + str(self.temp_minus_dew_setting) + 'C')
             sky_amb_limit = (
                                     quick_status['sky_temp_C']- quick_status['temperature_C']
-                            ) < g_dev['ocn'].sky_temp_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
+                            ) < self.sky_temp_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
             if not sky_amb_limit:
-                wx_reasons.append('(sky - amb) > ' + str(g_dev['ocn'].sky_temp_limit_setting) + 'C')
+                wx_reasons.append('(sky - amb) > ' + str(self.sky_temp_limit_setting) + 'C')
             try:
                 cloud_cover_value = float(quick_status['cloud_cover_%'])
                 #status['cloud_cover_%'] = round(cloud_cover_value, 0)
-                if cloud_cover_value <= g_dev['ocn'].cloud_cover_limit_setting:
+                if cloud_cover_value <= self.cloud_cover_limit_setting:
                     cloud_cover = False
                 else:
                     cloud_cover = True
-                    wx_reasons.append('>=' + str(g_dev['ocn'].cloud_cover_limit_setting) + '% Cloudy')
+                    wx_reasons.append('>=' + str(self.cloud_cover_limit_setting) + '% Cloudy')
             except:
                 #status['cloud_cover_%'] = "no report"
                 cloud_cover = True  # We cannot use this signal to force a wX hold or close
             #self.current_ambient = round(self.temperature, 2)
-            temp_bounds = g_dev['ocn'].lowest_temperature_setting < quick_status['temperature_C'] < g_dev['ocn'].highest_temperature_setting
+            temp_bounds = self.lowest_temperature_setting < quick_status['temperature_C'] < self.highest_temperature_setting
     
             if not temp_bounds:
                 wx_reasons.append('amb temp out of range')
     
             self.local_weather_ok = (
-                    (dewpoint_gap and g_dev['ocn'].temp_minus_dew_on)
-                    and (temp_bounds and (g_dev['ocn'].lowest_temperature_on or g_dev['ocn'].highest_temperature_on))
-                    and (wind_limit and g_dev['ocn'].windspeed_limit_on)
-                    and (sky_amb_limit and g_dev['ocn'].sky_temperature_limit_on)
-                    and (humidity_limit and g_dev['ocn'].humidity_limit_on)
-                    and not (rain_limit and g_dev['ocn'].rain_limit_on)
-                    and not (cloud_cover and g_dev['ocn'].cloud_cover_limit_on)
+                    (dewpoint_gap and self.temp_minus_dew_on)
+                    and (temp_bounds and (self.lowest_temperature_on or self.highest_temperature_on))
+                    and (wind_limit and self.windspeed_limit_on)
+                    and (sky_amb_limit and self.sky_temperature_limit_on)
+                    and (humidity_limit and self.humidity_limit_on)
+                    and not (rain_limit and self.rain_limit_on)
+                    and not (cloud_cover and self.cloud_cover_limit_on)
             )
             #  NB wx_is_ok does not include ambient light or altitude of the Sun
             # the notion of Obs OK should bring in Sun Elevation and or ambient light.
@@ -994,50 +1069,50 @@ class WxEncAgent:
                     
             if self.ocn_exists:
                 # Local Weather Limits
-                status['wema_settings']['rain_limit_on'] = g_dev['ocn'].rain_limit_on
+                status['wema_settings']['rain_limit_on'] = self.rain_limit_on
                 status['wema_settings']['rain_limit_quiet'] = self.rain_limit_quiet
-                status['wema_settings']['rain_limit_warning_level'] = g_dev['ocn'].warning_rain_limit_setting
-                status['wema_settings']['rain_limit_danger_level'] = g_dev['ocn'].rain_limit_setting
+                status['wema_settings']['rain_limit_warning_level'] = self.warning_rain_limit_setting
+                status['wema_settings']['rain_limit_danger_level'] = self.rain_limit_setting
                 
-                status['wema_settings']['cloud_limit_on'] = g_dev['ocn'].cloud_cover_limit_on
+                status['wema_settings']['cloud_limit_on'] = self.cloud_cover_limit_on
                 status['wema_settings']['cloud_limit_quiet'] = self.cloud_limit_quiet
-                status['wema_settings']['cloud_limit_warning_level'] = g_dev['ocn'].warning_cloud_cover_limit_setting
-                status['wema_settings']['cloud_limit_danger_level'] = g_dev['ocn'].cloud_cover_limit_setting
+                status['wema_settings']['cloud_limit_warning_level'] = self.warning_cloud_cover_limit_setting
+                status['wema_settings']['cloud_limit_danger_level'] = self.cloud_cover_limit_setting
                 
-                status['wema_settings']['humidity_limit_on']  = g_dev['ocn'].humidity_limit_on
+                status['wema_settings']['humidity_limit_on']  = self.humidity_limit_on
                 status['wema_settings']['humidity_limit_quiet'] = self.humidity_limit_quiet
-                status['wema_settings']['humidity_limit_warning_level'] = g_dev['ocn'].warning_humidity_limit_setting
-                status['wema_settings']['humidity_limit_danger_level'] = g_dev['ocn'].humidity_limit_setting
+                status['wema_settings']['humidity_limit_warning_level'] = self.warning_humidity_limit_setting
+                status['wema_settings']['humidity_limit_danger_level'] = self.humidity_limit_setting
                 
-                status['wema_settings']['windspeed_limit_on']  = g_dev['ocn'].windspeed_limit_on
+                status['wema_settings']['windspeed_limit_on']  = self.windspeed_limit_on
                 status['wema_settings']['windspeed_limit_quiet'] = self.windspeed_limit_quiet
-                status['wema_settings']['windspeed_limit_warning_level'] = g_dev['ocn'].warning_windspeed_limit_setting
-                status['wema_settings']['windspeed_limit_danger_level'] = g_dev['ocn'].windspeed_limit_setting
+                status['wema_settings']['windspeed_limit_warning_level'] = self.warning_windspeed_limit_setting
+                status['wema_settings']['windspeed_limit_danger_level'] = self.windspeed_limit_setting
                 
-                status['wema_settings']['lightning_limit_on']  = g_dev['ocn'].lightning_limit_on
+                status['wema_settings']['lightning_limit_on']  = self.lightning_limit_on
                 status['wema_settings']['lightning_limit_quiet'] = self.lightning_limit_quiet
-                status['wema_settings']['lightning_limit_warning_level'] = g_dev['ocn'].warning_lightning_limit_setting
-                status['wema_settings']['lightning_limit_danger_level'] =  g_dev['ocn'].lightning_limit_setting
+                status['wema_settings']['lightning_limit_warning_level'] = self.warning_lightning_limit_setting
+                status['wema_settings']['lightning_limit_danger_level'] =  self.lightning_limit_setting
                 
-                status['wema_settings']['tempminusdew_limit_on']  = g_dev['ocn'].temp_minus_dew_on
+                status['wema_settings']['tempminusdew_limit_on']  = self.temp_minus_dew_on
                 status['wema_settings']['tempminusdew_limit_quiet'] = self.temp_minus_dew_quiet
-                status['wema_settings']['tempminusdew_limit_warning_level'] = g_dev['ocn'].warning_temp_minus_dew_setting
-                status['wema_settings']['tempminusdew_limit_danger_level'] = g_dev['ocn'].temp_minus_dew_setting
+                status['wema_settings']['tempminusdew_limit_warning_level'] = self.warning_temp_minus_dew_setting
+                status['wema_settings']['tempminusdew_limit_danger_level'] = self.temp_minus_dew_setting
                 
-                status['wema_settings']['skytemp_limit_on']  = g_dev['ocn'].sky_temperature_limit_on
+                status['wema_settings']['skytemp_limit_on']  = self.sky_temperature_limit_on
                 status['wema_settings']['skytemp_limit_quiet'] = self.skytemp_limit_quiet
-                status['wema_settings']['skytemp_limit_warning_level'] = g_dev['ocn'].warning_sky_temp_limit_setting
-                status['wema_settings']['skytemp_limit_danger_level'] = g_dev['ocn'].sky_temp_limit_setting
+                status['wema_settings']['skytemp_limit_warning_level'] = self.warning_sky_temp_limit_setting
+                status['wema_settings']['skytemp_limit_danger_level'] = self.sky_temp_limit_setting
                 
-                status['wema_settings']['hightemperature_limit_on']  = g_dev['ocn'].highest_temperature_on
+                status['wema_settings']['hightemperature_limit_on']  = self.highest_temperature_on
                 status['wema_settings']['hightemperature_limit_quiet'] = self.hightemp_limit_quiet
-                status['wema_settings']['hightemperature_limit_warning_level'] = g_dev['ocn'].warning_highest_temperature_setting
-                status['wema_settings']['hightemperature_limit_danger_level'] = g_dev['ocn'].highest_temperature_setting
+                status['wema_settings']['hightemperature_limit_warning_level'] = self.warning_highest_temperature_setting
+                status['wema_settings']['hightemperature_limit_danger_level'] = self.highest_temperature_setting
                 
-                status['wema_settings']['lowtemperature_limit_on']  = g_dev['ocn'].lowest_temperature_on
+                status['wema_settings']['lowtemperature_limit_on']  = self.lowest_temperature_on
                 status['wema_settings']['lowtemperature_limit_quiet'] = self.lowtemp_limit_quiet
-                status['wema_settings']['lowtemperature_limit_warning_level'] = g_dev['ocn'].warning_lowest_temperature_setting
-                status['wema_settings']['lowtemperature_limit_danger_level'] = g_dev['ocn'].lowest_temperature_setting
+                status['wema_settings']['lowtemperature_limit_warning_level'] = self.warning_lowest_temperature_setting
+                status['wema_settings']['lowtemperature_limit_danger_level'] = self.lowest_temperature_setting
 
             lane = "wema_settings"
             try:                
@@ -1657,7 +1732,7 @@ class WxEncAgent:
 
         obs_win_begin, sunset, sunrise, ephem_now = self.astro_events.getSunEvents()
         
-        self.update_status()
+        #self.update_status()
         # First thing to do at the Cool Down, Open time is to calculate the quality of the evening
         # using the broad weather report.
         try: 
