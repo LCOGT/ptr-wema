@@ -1014,6 +1014,8 @@ class WxEncAgent:
                 plog ("local weather station not reporting humidity, using last owm report")
                 ocn_status['observing_conditions']['observing_conditions1']['humidity_%']=self.current_owm_humidity
                 quick_status['humidity_%'] = self.current_owm_humidity
+                #breakpoint()
+                print ("OWM Humidity: " + str(self.current_owm_humidity))
             
             wx_reasons = []
             #breakpoint()
@@ -1072,6 +1074,8 @@ class WxEncAgent:
                     #status['cloud_cover_%'] = round(cloud_cover_value, 0)
                     if cloud_cover_value <= self.cloud_cover_limit_setting:
                         cloud_cover = False
+                        wx_reasons.append('>=' + str(self.cloud_cover_limit_setting) + '% Cloudy')
+                
                     else:
                         cloud_cover = True
                         wx_reasons.append('>=' + str(self.cloud_cover_limit_setting) + '% Cloudy')
@@ -1106,7 +1110,7 @@ class WxEncAgent:
             #         and not (rain_limit and self.rain_limit_on)
             #         and not (cloud_cover and self.cloud_cover_limit_on)
             # )
-            
+            #breakpoint()
             self.local_weather_ok = dewpoint_gap and temp_bounds and wind_limit and sky_amb_limit and humidity_limit and not rain_limit and not cloud_cover  
             
             #  NB wx_is_ok does not include ambient light or altitude of the Sun
@@ -1896,8 +1900,9 @@ class WxEncAgent:
             self.weather_report_run_timer = time.time()
             
             # Keep this for weather stations that do not have current humidity
-            self.current_own_humidity=one_call.current.humidity
+            self.current_owm_humidity=one_call.current.humidity
             
+        
             # Collect relevant info for fitzgerald weather number calculation
             hourcounter=0
             fitzgerald_weather_number_grid=[]
