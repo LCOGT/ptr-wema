@@ -268,6 +268,19 @@ wema_config = {
             # Intention it is found in this file.
             'name': 'SRO File',
             'driver': 'aagsolo',  # Could be redis, ASCOM, ...
+            
+            # From reading the aagsolo manual and papers around it,
+            # It seems there isn't one reliable settings for estimating
+            # cloud cover or rain for that matter and these values are best
+            # set based on experience at each different site and probably
+            # each different aagsolo that is set up in different ambient
+            # conditions. So these values should be eyeballed from
+            # the aagsolo/ webpage on the actual network            
+            'aagsolo_rain_threshold': 3200,
+            'aagsolo_clear_skyT': -4,
+            'aagsolo_cloudy_skyT': 19,
+            
+            
             'share_path_name': 'F:/ptr/',
             'driver_2':  None,   #' ASCOM.Boltwood.OkToOpen.SafetyMonitor',
             'driver_3':  None,    # 'ASCOM.Boltwood.OkToImage.SafetyMonitor'

@@ -32,6 +32,8 @@ from wema_utility import plog
 from pyowm import OWM
 from pyowm.utils import config
 from pyowm.utils import timestamps
+from pyowm.utils.config import get_default_config
+from pyowm.commons.databoxes import SubscriptionType
 from requests.adapters import HTTPAdapter, Retry
 from dotenv import load_dotenv
 load_dotenv(".env")
@@ -130,6 +132,8 @@ class WxEncAgent:
 
         self.ocn_status=None
         self.enc_status=None
+
+        self.current_owm_humidity=-1
 
         # Initialise this variable
         self.open_and_enabled_to_observe=False
@@ -829,15 +833,21 @@ class WxEncAgent:
             except:
                 pass
 
+            
+            #breakpoint()
 
             
             
             # Here is where we actually make the decision about the weather
-            # Independantly of the actual observing conditions device          
-            
-            # THE DECISION DESK!!! Made from the status, not in the device
+            # Independantly of the actual observing conditions device        
+            # THE WAYNE ROSING BRAND WEATHER DECISION DESK!!! Made from the status, not in the device
             
             quick_status=ocn_status['observing_conditions']['observing_conditions1']
+            
+            if quick_status['humidity_%'] == -1:
+                plog ("local weather station not reporting humidity, using last owm report")
+                ocn_status['observing_conditions']['observing_conditions1']['humidity_%']=self.current_owm_humidity
+                quick_status['humidity_%'] = self.current_owm_humidity
             
             wx_reasons = []
             #breakpoint()
@@ -881,7 +891,7 @@ class WxEncAgent:
             if not temp_bounds:
                 wx_reasons.append('amb temp out of range')
     
-            g_dev['ocn'].wx_is_ok = (
+            self.local_weather_ok = (
                     (dewpoint_gap and g_dev['ocn'].temp_minus_dew_on)
                     and (temp_bounds and (g_dev['ocn'].lowest_temperature_on or g_dev['ocn'].highest_temperature_on))
                     and (wind_limit and g_dev['ocn'].windspeed_limit_on)
@@ -897,18 +907,37 @@ class WxEncAgent:
                 #plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
                 #plog("Rain Rate is 1.0")
                 # plog('Rain > ' + str(rain_limit_setting))
-                plog("Rain Flag is 1: This is usually a glitch so ignoring.")
+                plog("For SkyAlerts: Rain Flag is 1: This is usually a glitch so ignoring.")
                 plog("May be unevaporated rain, ice, or a bird dropping.")
                 #plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
     
-            if g_dev['ocn'].wx_is_ok:
+            if self.local_weather_ok:
                 #wx_str = "Yes"
-                ocn_status['observing_conditions']['observing_conditions1']["wx_ok"] = "Yes"
+                ocn_status['observing_conditions']['observing_conditions1']["local_weather_ok"] = "Yes"
                 # plog('Wx Ok?  ', status["wx_ok"])
             else:
                 #wx_str = "No"  # Ideally we add the dominant reason in priority order.
-                ocn_status['observing_conditions']['observing_conditions1']["wx_ok"] = "No"
+                ocn_status['observing_conditions']['observing_conditions1']["local_weather_ok"] = "No"
                 #plog('Wx Ok: ', status["wx_ok"], wx_reasons)
+    
+    
+            ocn_status['observing_conditions']['observing_conditions1']["OWM_weather_ok"] = self.weather_report_open_at_start
+            
+    
+    
+            if self.local_weather_active and self.owm_active:
+                combined_weather_ok = self.local_weather_ok and self.weather_report_open_at_start
+            elif  self.owm_active:
+                combined_weather_ok = self.weather_report_open_at_start
+            elif self.local_weather_active:
+                combined_weather_ok = self.local_weather_ok
+            else:
+                combined_weather_ok = 'Unknown'
+                
+            
+            ocn_status['observing_conditions']['observing_conditions1']["wx_ok"] = combined_weather_ok
+    
+            plog('Wx Ok: ', combined_weather_ok, wx_reasons)
     
             #g_dev["wx_ok"] = self.wx_is_ok
             
@@ -1083,7 +1112,7 @@ class WxEncAgent:
                 except:
                     plog('could not send enclosure status')   
                     plog(traceback.format_exc())
-                    breakpoint()
+                    #breakpoint()
 
     def update(self):     ## NB NB NB This is essentially the Manager/Sequencer for the
         #breakpoint()                 ## enclosures managed by the WEMA
@@ -1120,19 +1149,19 @@ class WxEncAgent:
             else:
                 enc_status = get_enc_status_custom()
             #breakpoint()
-            if ocn_status==None:
-                self.local_weather_ok = None
-            else:
+            # if ocn_status==None:
+            #     self.local_weather_ok = None
+            # else:
                
-                if 'wx_ok' in ocn_status:
-                    if ocn_status['wx_ok'] == 'Yes':
-                        self.local_weather_ok = True
-                    elif ocn_status['wx_ok'] == 'No':
-                        self.local_weather_ok = False
-                    else:
-                        self.local_weather_ok = None
-                else:
-                    self.local_weather_ok = None
+            #     if 'wx_ok' in ocn_status:
+            #         if ocn_status['wx_ok'] == 'Yes':
+            #             self.local_weather_ok = True
+            #         elif ocn_status['wx_ok'] == 'No':
+            #             self.local_weather_ok = False
+            #         else:
+            #             self.local_weather_ok = None
+            #     else:
+            #         self.local_weather_ok = None
 
             plog("***************************************************************")
             plog("Current time             : " + str(time.asctime()))
@@ -1633,16 +1662,30 @@ class WxEncAgent:
         # using the broad weather report.
         try: 
             plog("Appraising quality of evening from Open Weather Map.")
-            owm = OWM('d5c3eae1b48bf7df3f240b8474af3ed0')
+            
+            config_dict = get_default_config()
+            
+            config_dict["subscription_type"] = SubscriptionType(name="professional", subdomain="pro", is_paid=False)            
+
+            owm = OWM('d5c3eae1b48bf7df3f240b8474af3ed0', config_dict)
             mgr = owm.weather_manager()
+            
+            #breakpoint()
             try:
-                one_call = mgr.one_call(lat=self.config["latitude"], lon=self.config["longitude"])
+                one_call = mgr.one_call(lat=self.config["latitude"], lon=self.config["longitude"],exclude=["alerts", "minutely" ,"daily"])
             except:
                 plog ("Connection glitch probably. Bailing out, will try again soon")
                 plog(traceback.format_exc())
                 time.sleep(10)
+                
                 return
+            
+            #breakpoint()
+            
             self.weather_report_run_timer = time.time()
+            
+            # Keep this for weather stations that do not have current humidity
+            self.current_own_humidity=one_call.current.humidity
             
             # Collect relevant info for fitzgerald weather number calculation
             hourcounter=0

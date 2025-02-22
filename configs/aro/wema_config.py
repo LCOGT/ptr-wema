@@ -237,6 +237,19 @@ wema_config = {
             'ocn_is_custom':  False,  
             'name': 'SkyAlert Custom for ARO',
             'driver': 'ASCOM.SkyAlert.ObservingConditions',  #  'ASCOM.Boltwood.ObservingConditions',
+            
+            # From reading the aagsolo manual and papers around it,
+            # It seems there isn't one reliable settings for estimating
+            # cloud cover or rain for that matter and these values are best
+            # set based on experience at each different site and probably
+            # each different aagsolo that is set up in different ambient
+            # conditions. So these values should be eyeballed from
+            # the aagsolo/ webpage on the actual network            
+            'aagsolo_rain_threshold': 3200,
+            'aagsolo_clear_skyT': -4,
+            'aagsolo_cloudy_skyT': 19,
+            
+            
             'driver_2':  None,
             'driver_3':  None,
             'redis_ip': '127.0.0.1',   #None if no redis path present

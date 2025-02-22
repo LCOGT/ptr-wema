@@ -195,6 +195,19 @@ wema_config = {
             # Intention it is found near bottom of this file.
             'name': 'Weather Station #1',
             'driver': 'ASCOM.SkyAlert.ObservingConditions',
+            
+            # From reading the aagsolo manual and papers around it,
+            # It seems there isn't one reliable settings for estimating
+            # cloud cover or rain for that matter and these values are best
+            # set based on experience at each different site and probably
+            # each different aagsolo that is set up in different ambient
+            # conditions. So these values should be eyeballed from
+            # the aagsolo/ webpage on the actual network            
+            'aagsolo_rain_threshold': 3200,
+            'aagsolo_clear_skyT': -4,
+            'aagsolo_cloudy_skyT': 19,
+            
+            
             'share_path_name': None,
             'driver_2': 'ASCOM.SkyAlert.SafetyMonitor',
             'driver_3': None,

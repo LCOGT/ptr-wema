@@ -33,6 +33,46 @@ import requests
 import json
 
 
+# def calculate_cloud_fraction(T_sky_C, T_clear_C=-20, T_cloud_C=3):
+#     """
+#     Calculate fractional cloud cover based on sky temperature in Celsius.
+    
+#     Parameters:
+#     T_sky_C (float): Measured sky temperature in Celsius.
+#     T_clear_C (float): Clear sky temperature in Celsius (default: -43C).
+#     T_cloud_C (float): Overcast sky temperature in Celsius (default: 7C).
+    
+#     Returns:
+#     float: Fractional cloud cover (0 to 1)
+#     """
+#     if T_sky_C < T_clear_C:
+#         return 0.0  # Fully clear sky
+#     elif T_sky_C > T_cloud_C:
+#         return 1.0  # Fully overcast sky
+    
+#     return (T_sky_C - T_clear_C) / (T_cloud_C - T_clear_C)
+
+def calculate_cloud_fraction(T_sky_C, T_clear_C=-20, T_cloud_C=3, n=2):
+    """
+    Calculate fractional cloud cover based on a nonlinear function of sky temperature.
+    
+    Parameters:
+    T_sky_C (float): Measured sky temperature in Celsius.
+    T_clear_C (float): Clear sky temperature in Celsius (default: -20C).
+    T_cloud_C (float): Overcast sky temperature in Celsius (default: 3C).
+    n (float): Nonlinearity exponent (default: 2, adjust based on empirical data).
+    
+    Returns:
+    float: Fractional cloud cover (0 to 1)
+    """
+    if T_sky_C <= T_clear_C:
+        return 0.0  # Fully clear sky
+    elif T_sky_C >= T_cloud_C:
+        return 1.0  # Fully overcast sky
+    
+    # Compute nonlinear cloud fraction
+    return ((T_sky_C - T_clear_C) / (T_cloud_C - T_clear_C)) ** n
+
 def linearize_unihedron(uni_value):  # Need to be coefficients in config.
     #  Based on 20180811 data
     uni_value = float(uni_value)
@@ -61,7 +101,7 @@ class ObservingConditions:
         g_dev["ocn"] = self
         # g_dev['obs'].night_fitzgerald_number = 0,  # 20230709 initialse this varable to permissive state WER
         self.sample_time = 0
-        self.ok_to_open = "n/a"  # This is a default on startup.
+        #self.ok_to_open = "n/a"  # This is a default on startup.
         self.wet_flag = False
         self.gust_memory = 0.0
         self.observing_condtions_message = "-"
@@ -300,6 +340,20 @@ class ObservingConditions:
             else:
                 print("Failed to fetch data. HTTP Status:", response.status_code)
 
+        
+            
+
+            # Convert AAG values into PTR values
+            T_sky_C = weather_data['clouds']
+            cloud_percentage = calculate_cloud_fraction(T_sky_C, self.config["observing_conditions"]["observing_conditions1"]['aagsolo_clear_skyT'], self.config["observing_conditions"]["observing_conditions1"]['aagsolo_cloudy_skyT']) * 100
+            #print(f"Estimated fractional cloud cover: {cloud_fraction:.2f}")
+
+            # rain_rate is either on or off
+            # so one or zero
+            if weather_data['rain'] < self.config["observing_conditions"]["observing_conditions1"]['aagsolo_clear_skyT']:
+                self.rain_rate=1
+            else:
+                self.rain_rate=0
 
             # Other things ocn creates
             status = {}
@@ -328,13 +382,13 @@ class ObservingConditions:
             
             self.humidity=weather_data['hum']
             self.dewpoint=weather_data['dewp']
-            self.sky_minus_ambient=weather_data['rawir']-weather_data['temp']
+            self.sky_minus_ambient=weather_data['clouds']-weather_data['temp']
             self.windspeed=weather_data['wind']
-            self.rain_rate=weather_data['rain']
-            self.cloud_cover=weather_data['clouds']
+            
+            self.cloud_cover=cloud_percentage
             
             
-            self.ok_to_open = True
+            #self.ok_to_open = True
             
             
             self.time_since = 20
@@ -344,21 +398,29 @@ class ObservingConditions:
                 "pressure_mbar": self.new_pressure,
                 "humidity_%": self.humidity,
                 "dewpoint_C": self.dewpoint,
-                "sky_temp_C": self.sky_minus_ambient,
+                "sky_temp_C": weather_data['clouds'],
                 "last_sky_update_s": self.time_since,
                 "wind_m/s": self.windspeed,
                 "rain_rate": self.rain_rate,
                 "solar_flux_w/m^2": None,
-                "cloud_cover_%": self.cloud_cover,
+                "cloud_cover_%": round(self.cloud_cover,0),
                 "calc_HSI_lux": illum,
                 "calc_sky_mpsas": round(uni_measure, 2),  # Provenance of 20.01 is dubious 20200504 WER
-                "open_ok": self.ok_to_open,
+                #"open_ok": self.ok_to_open,
                 "lightning_strike_radius km": 'n/a',
                 "general_obscuration %": 'n/a',
                 "photometric extinction k'": 'n/a',
                 # "wx_hold": None,
                 # "hold_duration": 0,
             }
+            
+            
+            print (" **** AAGSOLO READOUT *******")
+            print (weather_data)
+            print (" **** PTR STATUS **********")
+            print (status)
+            #breakpoint()
+
 
             return status
             #breakpoint()
@@ -476,7 +538,7 @@ class ObservingConditions:
                     "cloud_cover_%": self.cloud_cover,
                     "calc_HSI_lux": illum,
                     "calc_sky_mpsas": round(uni_measure, 2),  # Provenance of 20.01 is dubious 20200504 WER
-                    "open_ok": self.ok_to_open,
+                    #"open_ok": self.ok_to_open,
                     "lightning_strike_radius km": 'n/a',
                     "general_obscuration %": 'n/a',
                     "photometric extinction k'": 'n/a',
@@ -651,7 +713,7 @@ class ObservingConditions:
                     "calc_sky_mpsas": round(
                         uni_measure, 2
                     ),  # Provenance of 20.01 is dubious 20200504 WER
-                    "open_ok": self.ok_to_open,
+                    #"open_ok": self.ok_to_open,
                     "lightning_strike_radius km": 'n/a',
                     "general_obscuration %": 'n/a',
                     "photometric extinction k'": 'n/a',
@@ -676,7 +738,7 @@ class ObservingConditions:
                     "calc_sky_mpsas": round(
                         uni_measure, 2
                     ),  # Provenance of 20.01 is dubious 20200504 WER
-                    "open_ok": self.ok_to_open,
+                    #"open_ok": self.ok_to_open,
                     "lightning_strike_radius km": 'n/a',
                     "general_obscuration %": 'n/a',
                     "photometric extinction k'": 'n/a',
