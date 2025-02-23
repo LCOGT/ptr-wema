@@ -1087,17 +1087,17 @@ class WxEncAgent:
             
             
             if self.lowest_temperature_on:
-                low_temp_bound= quick_status['temperature_C'] < self.lowest_temperature_setting
+                low_temp_bound=not quick_status['temperature_C'] < self.lowest_temperature_setting
             else: 
-                low_temp_bound=False
+                low_temp_bound=True
             
             if self.highest_temperature_on:
-                high_temp_bound=quick_status['temperature_C'] > self.highest_temperature_setting
+                high_temp_bound=not quick_status['temperature_C'] > self.highest_temperature_setting
             else:
-                high_temp_bound=False
+                high_temp_bound=True
                 
-            temp_bounds=False
-            if low_temp_bound or high_temp_bound:
+            temp_bounds=True
+            if not low_temp_bound or not high_temp_bound:
                 temp_bounds=False
                 wx_reasons.append('amb temp out of range')
     
@@ -1158,7 +1158,7 @@ class WxEncAgent:
     
             #g_dev["wx_ok"] = self.wx_is_ok
             
-            
+            #breakpoint()
             
             
             
