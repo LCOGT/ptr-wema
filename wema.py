@@ -1152,6 +1152,8 @@ class WxEncAgent:
             
             ocn_status['observing_conditions']['observing_conditions1']["wx_ok"] = combined_weather_ok
     
+            #breakpoint()
+    
             plog('Wx Ok: ', combined_weather_ok, wx_reasons)
     
             #g_dev["wx_ok"] = self.wx_is_ok
@@ -1170,8 +1172,8 @@ class WxEncAgent:
             else:
                 ocn_status['observing_conditions']['observing_conditions1']['hold_duration'] = 0
             
-            
-            ocn_status['observing_conditions']['observing_conditions1']["wx_hold"] = not self.local_weather_ok
+
+            ocn_status['observing_conditions']['observing_conditions1']["wx_hold"] = not combined_weather_ok
     
             if ocn_status is not None:
                 lane = "weather"
