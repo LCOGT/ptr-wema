@@ -295,7 +295,7 @@ wema_config = {
             # conditions. So these values should be eyeballed from
             # the aagsolo/ webpage on the actual network            
             'aagsolo_rain_threshold': 3200,
-            'aagsolo_clear_skyT': 4,
+            'aagsolo_clear_skyT': 2,
             'aagsolo_cloudy_skyT': 20,
             
             

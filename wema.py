@@ -28,13 +28,14 @@ import wema_events
 from devices.observing_conditions import ObservingConditions
 from devices.enclosure import Enclosure
 from global_yard import g_dev
+import logging
 from wema_utility import plog
 from pyowm import OWM
 from pyowm.utils import config
 from pyowm.utils import timestamps
 from pyowm.utils.config import get_default_config
 from pyowm.commons.databoxes import SubscriptionType
-from requests.adapters import HTTPAdapter, Retry
+#from requests.adapters import HTTPAdapter, Retry
 from dotenv import load_dotenv
 load_dotenv(".env")
 from wema_config import get_enc_status_custom
@@ -44,8 +45,50 @@ from astropy.coordinates import EarthLocation, AltAz, SkyCoord
 from astropy.time import Time
 import astropy.units as u
 
+from func_timeout import func_timeout, FunctionTimedOut
+
+#import http.client
+#http.client.HTTPConnection.debuglevel = 1
+#logging.getLogger("urllib3").setLevel(logging.DEBUG)
+
+close_headers = {
+    "Connection": "close"  # Forces the server to close the connection after the response
+}
+
 import pytz
 import datetime
+
+import requests
+
+# Default headers to force closing connections
+close_headers = {"Connection": "close"}
+
+def global_request(method, url, **kwargs):
+    """ Wrapper around requests to enforce default options and ensure response is closed """
+    kwargs.setdefault("allow_redirects", False)
+    kwargs.setdefault("headers", close_headers)
+    kwargs.setdefault("stream", False)
+    kwargs.setdefault("timeout", 5)  # Optional: Set a global timeout
+    
+    # Send the request
+    response = requests.request(method, url, **kwargs)
+
+
+    # Read the response content (to ensure the connection can be closed)
+    content = response.content  # Ensure the body is downloaded before closing
+    status_code = response.status_code
+    headers = response.headers
+
+    # Close the response immediately
+    response.close()
+
+    # Return relevant response data (since original response object is closed)
+    return {
+        "status_code": status_code,
+        "content": content,
+        "headers": headers
+    }
+
 
 # FIXME: This needs attention once we figure out the restart_obs script.
 def terminate_restart_observer(site_path, no_restart=False):
@@ -78,7 +121,7 @@ def send_status(obsy, column, status_to_send):
     data = json.dumps(payload)
     try:
         
-        response = requests.post(uri_status, data=data, timeout=20)
+        response = requests.post(uri_status, data=data, timeout=20, allow_redirects=False, headers=close_headers)
 
         if response.ok:
            # pass
@@ -263,9 +306,11 @@ class WxEncAgent:
         
         try:
 
-            requests.request("POST", url_job, data=json.dumps(body), timeout=30).json()
+            requests.request("POST", url_job, data=json.dumps(body), timeout=30, allow_redirects=False, headers=close_headers, stream=False).json()
         except:
             plog ("Connection glitch in getnewjobs")
+            plog(traceback.format_exc())
+            
 
         
         if not os.path.exists(self.wema_path):
@@ -281,83 +326,87 @@ class WxEncAgent:
         #######################
         
         plog ("Loading limits from config: TO BE DEPRECATED ONCE WE HAVE AN ONLINE LIMIT SYSTEM")
-        
-        wema_settings_shelf = shelve.open(self.wema_settings_shelf_filename)
-        
-        self.rain_limit_setting = self.config['rain_limit']
-        self.humidity_limit_setting = self.config['humidity_limit']
-        self.windspeed_limit_setting = self.config['windspeed_limit']
-        self.lightning_limit_setting = self.config['lightning_limit']
-        self.temp_minus_dew_setting = self.config['temperature_minus_dewpoint_limit']
-        self.sky_temp_limit_setting = self.config['sky_temperature_limit']
-        self.cloud_cover_limit_setting = self.config['cloud_cover_limit']
-        self.lowest_temperature_setting = self.config['lowest_ambient_temperature']
-        self.highest_temperature_setting = self.config['highest_ambient_temperature']
+        try:
+            wema_settings_shelf = shelve.open(self.wema_settings_shelf_filename)
+            
+            self.rain_limit_setting = self.config['rain_limit']
+            self.humidity_limit_setting = self.config['humidity_limit']
+            self.windspeed_limit_setting = self.config['windspeed_limit']
+            self.lightning_limit_setting = self.config['lightning_limit']
+            self.temp_minus_dew_setting = self.config['temperature_minus_dewpoint_limit']
+            self.sky_temp_limit_setting = self.config['sky_temperature_limit']
+            self.cloud_cover_limit_setting = self.config['cloud_cover_limit']
+            self.lowest_temperature_setting = self.config['lowest_ambient_temperature']
+            self.highest_temperature_setting = self.config['highest_ambient_temperature']
 
-        self.warning_rain_limit_setting = self.config['warning_rain_limit']
-        self.warning_humidity_limit_setting = self.config['warning_humidity_limit']
-        self.warning_windspeed_limit_setting = self.config['warning_windspeed_limit']
-        self.warning_lightning_limit_setting = self.config['warning_lightning_limit']
-        self.warning_temp_minus_dew_setting = self.config['warning_temperature_minus_dewpoint_limit']
-        self.warning_sky_temp_limit_setting = self.config['warning_sky_temperature_limit']
-        self.warning_cloud_cover_limit_setting = self.config['warning_cloud_cover_limit']
-        self.warning_lowest_temperature_setting = self.config['warning_lowest_ambient_temperature']
-        self.warning_highest_temperature_setting = self.config['warning_highest_ambient_temperature']
+            self.warning_rain_limit_setting = self.config['warning_rain_limit']
+            self.warning_humidity_limit_setting = self.config['warning_humidity_limit']
+            self.warning_windspeed_limit_setting = self.config['warning_windspeed_limit']
+            self.warning_lightning_limit_setting = self.config['warning_lightning_limit']
+            self.warning_temp_minus_dew_setting = self.config['warning_temperature_minus_dewpoint_limit']
+            self.warning_sky_temp_limit_setting = self.config['warning_sky_temperature_limit']
+            self.warning_cloud_cover_limit_setting = self.config['warning_cloud_cover_limit']
+            self.warning_lowest_temperature_setting = self.config['warning_lowest_ambient_temperature']
+            self.warning_highest_temperature_setting = self.config['warning_highest_ambient_temperature']
 
-        self.rain_limit_on = self.config['rain_limit_on']
-        self.humidity_limit_on = self.config['humidity_limit_on']
-        self.windspeed_limit_on = self.config['windspeed_limit_on']
-        self.lightning_limit_on = self.config['lightning_limit_on']
-        self.temp_minus_dew_on = self.config['temperature_minus_dewpoint_limit_on']
-        self.sky_temperature_limit_on = self.config['sky_temperature_limit_on']
-        self.cloud_cover_limit_on = self.config['cloud_cover_limit_on']
-        self.lowest_temperature_on = self.config['lowest_ambient_temperature_on']
-        self.highest_temperature_on = self.config['highest_ambient_temperature_on']
-                
-        wema_settings_shelf['rain_limit_on'] = self.rain_limit_on
-        wema_settings_shelf['warning_rain_limit_setting'] = self.warning_rain_limit_setting
-        wema_settings_shelf['rain_limit_setting'] = self.rain_limit_setting
-        
-        wema_settings_shelf['cloud_cover_limit_on'] = self.cloud_cover_limit_on
-        wema_settings_shelf['warning_cloud_cover_limit_setting'] = self.warning_cloud_cover_limit_setting
-        wema_settings_shelf['cloud_cover_limit_setting'] = self.cloud_cover_limit_setting
-        
-        wema_settings_shelf['humidity_limit_on'] = self.humidity_limit_on
-        wema_settings_shelf['warning_humidity_limit_setting'] = self.warning_humidity_limit_setting
-        wema_settings_shelf['humidity_limit_setting'] = self.humidity_limit_setting
-        
-        wema_settings_shelf['windspeed_limit_on'] = self.windspeed_limit_on
-        wema_settings_shelf['warning_windspeed_limit_setting'] = self.warning_windspeed_limit_setting
-        wema_settings_shelf['windspeed_limit_setting'] = self.windspeed_limit_setting
-        
-        wema_settings_shelf['lightning_limit_on'] = self.lightning_limit_on
-        wema_settings_shelf['warning_lightning_limit_setting'] = self.warning_lightning_limit_setting
-        wema_settings_shelf['lightning_limit_setting'] = self.lightning_limit_setting
-        
-        wema_settings_shelf['temp_minus_dew_on'] = self.temp_minus_dew_on
-        wema_settings_shelf['warning_temp_minus_dew_setting'] = self.warning_temp_minus_dew_setting
-        wema_settings_shelf['temp_minus_dew_setting'] = self.temp_minus_dew_setting
-        
-        wema_settings_shelf['sky_temperature_limit_on'] = self.sky_temperature_limit_on
-        wema_settings_shelf['warning_sky_temp_limit_setting'] = self.warning_sky_temp_limit_setting
-        wema_settings_shelf['sky_temp_limit_setting'] = self.sky_temp_limit_setting
-        
-        wema_settings_shelf['lowest_ambient_temperature'] = self.lowest_temperature_setting
-        wema_settings_shelf['highest_ambient_temperature'] = self.highest_temperature_setting
+            self.rain_limit_on = self.config['rain_limit_on']
+            self.humidity_limit_on = self.config['humidity_limit_on']
+            self.windspeed_limit_on = self.config['windspeed_limit_on']
+            self.lightning_limit_on = self.config['lightning_limit_on']
+            self.temp_minus_dew_on = self.config['temperature_minus_dewpoint_limit_on']
+            self.sky_temperature_limit_on = self.config['sky_temperature_limit_on']
+            self.cloud_cover_limit_on = self.config['cloud_cover_limit_on']
+            self.lowest_temperature_on = self.config['lowest_ambient_temperature_on']
+            self.highest_temperature_on = self.config['highest_ambient_temperature_on']
+                    
+            wema_settings_shelf['rain_limit_on'] = self.rain_limit_on
+            wema_settings_shelf['warning_rain_limit_setting'] = self.warning_rain_limit_setting
+            wema_settings_shelf['rain_limit_setting'] = self.rain_limit_setting
+            
+            wema_settings_shelf['cloud_cover_limit_on'] = self.cloud_cover_limit_on
+            wema_settings_shelf['warning_cloud_cover_limit_setting'] = self.warning_cloud_cover_limit_setting
+            wema_settings_shelf['cloud_cover_limit_setting'] = self.cloud_cover_limit_setting
+            
+            wema_settings_shelf['humidity_limit_on'] = self.humidity_limit_on
+            wema_settings_shelf['warning_humidity_limit_setting'] = self.warning_humidity_limit_setting
+            wema_settings_shelf['humidity_limit_setting'] = self.humidity_limit_setting
+            
+            wema_settings_shelf['windspeed_limit_on'] = self.windspeed_limit_on
+            wema_settings_shelf['warning_windspeed_limit_setting'] = self.warning_windspeed_limit_setting
+            wema_settings_shelf['windspeed_limit_setting'] = self.windspeed_limit_setting
+            
+            wema_settings_shelf['lightning_limit_on'] = self.lightning_limit_on
+            wema_settings_shelf['warning_lightning_limit_setting'] = self.warning_lightning_limit_setting
+            wema_settings_shelf['lightning_limit_setting'] = self.lightning_limit_setting
+            
+            wema_settings_shelf['temp_minus_dew_on'] = self.temp_minus_dew_on
+            wema_settings_shelf['warning_temp_minus_dew_setting'] = self.warning_temp_minus_dew_setting
+            wema_settings_shelf['temp_minus_dew_setting'] = self.temp_minus_dew_setting
+            
+            wema_settings_shelf['sky_temperature_limit_on'] = self.sky_temperature_limit_on
+            wema_settings_shelf['warning_sky_temp_limit_setting'] = self.warning_sky_temp_limit_setting
+            wema_settings_shelf['sky_temp_limit_setting'] = self.sky_temp_limit_setting
+            
+            wema_settings_shelf['lowest_ambient_temperature'] = self.lowest_temperature_setting
+            wema_settings_shelf['highest_ambient_temperature'] = self.highest_temperature_setting
 
-        wema_settings_shelf['lowest_ambient_temperature_on'] = self.lowest_temperature_on
-        wema_settings_shelf['highest_ambient_temperature_on']= self.highest_temperature_on
+            wema_settings_shelf['lowest_ambient_temperature_on'] = self.lowest_temperature_on
+            wema_settings_shelf['highest_ambient_temperature_on']= self.highest_temperature_on
+            
+            wema_settings_shelf['hightemperature_limit_warning_level'] = self.warning_highest_temperature_setting
+            #status['wema_settings']['hightemperature_limit_danger_level'] = self.highest_temperature_setting
+            
+            # status['wema_settings']['lowtemperature_limit_on']  = self.lowest_temperature_on
+            # status['wema_settings']['lowtemperature_limit_quiet'] = self.lowtemp_limit_quiet
+            wema_settings_shelf['lowtemperature_limit_warning_level'] = self.warning_lowest_temperature_setting
+            
+            #pid = camShelf["pid_obs"]  # a 9 character string
+            wema_settings_shelf.close()
+        except:
+            plog ("Startup shelf load failed.")
+            plog(traceback.format_exc())
         
-        wema_settings_shelf['hightemperature_limit_warning_level'] = self.warning_highest_temperature_setting
-        #status['wema_settings']['hightemperature_limit_danger_level'] = self.highest_temperature_setting
-        
-        # status['wema_settings']['lowtemperature_limit_on']  = self.lowest_temperature_on
-        # status['wema_settings']['lowtemperature_limit_quiet'] = self.lowtemp_limit_quiet
-        wema_settings_shelf['lowtemperature_limit_warning_level'] = self.warning_lowest_temperature_setting
-        
-        #pid = camShelf["pid_obs"]  # a 9 character string
-        wema_settings_shelf.close()
-    
+        plog ("passed startup shelf load")
         #######################
         # ^^^^^^^^^^^^^^ THIS AREA JUST GETS DELETED ONCE WE HAVE AN ONLINE ADJUSTABLE WEMA SETTINGS
         # UNTIL THEN IT WILL LOAD THE VALUES FROM THE CONFIG
@@ -536,7 +585,35 @@ class WxEncAgent:
             
             self.update_status()
         
-        #breakpoint()
+        plog ("booted up and got status from ocn device")
+
+        # The LCS dome loses it's position if the wema code gets restarted.
+        # If the WEMA code is restarted while the shutter is open, it needs to rehome
+        # to figure out where it is. 
+        if 'MaxDome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
+            home_on_boot=True
+            
+            enc_status=g_dev['enc'].get_status()
+            
+            if enc_status is not None:
+                #breakpoint()
+                if enc_status['shutter_status'] in ['Open', 'Sim Open']:
+                    if home_on_boot:
+                        try:
+                            g_dev['enc'].enclosure.FindHome()
+                            while not g_dev['enc'].enclosure.AtHome:
+                                plog ("Waiting for Home")
+                                time.sleep(5)
+                            
+                            g_dev['enc'].enclosure.SyncToAzimuth(self.config['enclosure']['enclosure1']['dome_home_azimuth']) # If shutter home at 194, then park at 100.
+                            
+                            plog ("Successfully found Home. Ready to observe")
+                        except:
+                            plog(traceback.format_exc())
+                            plog ("DOME COMMAND GLITCHED OUT.")
+                        
+        
+            
         
         
 
@@ -619,7 +696,7 @@ class WxEncAgent:
         #plog ("scanning requests")
         try:
             unread_commands = requests.request(
-                "POST", url_job, data=json.dumps(body), timeout=20
+                "POST", url_job, data=json.dumps(body), timeout=20, allow_redirects=False, headers=close_headers, stream=False
             ).json()
         except:
             plog(traceback.format_exc())
@@ -845,6 +922,7 @@ class WxEncAgent:
                 if 'MaxDome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
                     
                     if time.time() > (self.dome_check_timer + self.dome_check_timer_period):
+                        print (time.time() - self.dome_check_timer)
                         self.dome_check_timer=time.time()
                         
                         dome_at_scope=False
@@ -852,43 +930,36 @@ class WxEncAgent:
                         while not dome_at_scope:
                             
                             #breakpoint()
+                            try:
+                                while g_dev['enc'].enclosure.Slewing:
+                                    plog("Waiting for dome to stop slewing")
+                                    #self.send_enclosure_status(self.enc_status, self.ocn_status)
+                                    time.sleep(0.25)
+                            except:
+                                plog(traceback.format_exc())
+                                plog ("DOME COMMAND GLITCHED OUT.")
                             
-                            while g_dev['enc'].enclosure.Slewing:
-                                plog("Waiting for dome to stop slewing")
-                                #self.send_enclosure_status(self.enc_status, self.ocn_status)
-                                time.sleep(0.25)
-                        
                             # Call out to aws to get current main scope pointing and ra and dec
                             
                             uri_status = f"https://status.photonranch.org/status/{sync_obs}/device"
                             try:
-                                main_obs_status=requests.get(uri_status, timeout=20)
-                            except:
-                                plog ("failed getting the obs settings")
+                                #print ("Grabbing obs status")
+
+
+                                main_obs_status=requests.get(uri_status, timeout=20, allow_redirects=False, headers=close_headers, stream=False)
+                                #try:
+                                #main_obs_status = func_timeout(10, requests.get, args=(uri_status,), kwargs={"timeout": 20, "allow_redirects": False, "headers": close_headers, "stream": False})
+                                #except:
                                 
-                            obs_mount_name=list(main_obs_status.json()['status']['mount'].keys())[0]
+                                #print ("Got obs status")
                             
-                            obs_mount_status=main_obs_status.json()['status']['mount'][obs_mount_name]
-                            
-                            
-                            # Where is scope currently pointing?
-                            obs_mount_ra=obs_mount_status['right_ascension']['val']
-                            obs_mount_dec=obs_mount_status['declination']['val']
-                            
-                            
-                            # Figure out the implied azimuth for that ra and dec at this location                      
-                            observation_time=Time.now()
-                            
-                            sky_coord=SkyCoord(ra=obs_mount_ra*15*u.deg, dec=obs_mount_dec*u.deg)
-                            # Convert to AltAz frame
-                            altaz_frame = AltAz(obstime=observation_time, location=self.observer_location)
-                            altaz_coords = sky_coord.transform_to(altaz_frame)
-                            
-                            obs_current_altitude = altaz_coords.alt.deg
-                            obs_current_azimuth = altaz_coords.az.deg
-                            
-                            slave_directly_to_telescope_pointing=False
-                            if slave_directly_to_telescope_pointing:
+                                    
+                                obs_mount_name=list(main_obs_status.json()['status']['mount'].keys())[0]
+                                
+                                obs_mount_status=main_obs_status.json()['status']['mount'][obs_mount_name]
+                                
+                                
+                                # Where is scope currently pointing?
                                 obs_mount_ra=obs_mount_status['right_ascension']['val']
                                 obs_mount_dec=obs_mount_status['declination']['val']
                                 
@@ -901,65 +972,85 @@ class WxEncAgent:
                                 altaz_frame = AltAz(obstime=observation_time, location=self.observer_location)
                                 altaz_coords = sky_coord.transform_to(altaz_frame)
                                 
-                                # Extract altitude and azimuth
-                                #obs_altitude = altaz_coords.alt.deg
-                                obs_target_azimuth = altaz_coords.az.deg
-                            
-                            else:
-                                obs_target_azimuth=obs_mount_dec=obs_mount_status['target_az']['val']
-                            
-                            if obs_target_azimuth == -500:
-                                plog ("Target Azimuth for Scope not an actual skytarget, so not moving dome")
-                                plog(f"Actual Azimuth: {obs_current_azimuth:.2f} degrees")
-                            else:
-                                #print(f"Time: {observation_time.iso}")
-                                plog ("Primary Obs Pointing")
-                                #plog(f"Altitude: {obs_altitude:.2f} degrees")
+                                obs_current_altitude = altaz_coords.alt.deg
+                                obs_current_azimuth = altaz_coords.az.deg
                                 
-                                plog(f"Target Azimuth: {obs_target_azimuth:.2f} degrees")
-                                
-                                plog(f"Actual Azimuth: {obs_current_azimuth:.2f} degrees")
-                                
-                                
-                                # Temporary hack - 
-                                target_azimuth = obs_target_azimuth + self.dome_offset
-                                if target_azimuth > 360:
-                                    target_azimuth=target_azimuth - 360
-                                if target_azimuth < 0:
-                                    target_azimuth=target_azimuth + 360
+                                slave_directly_to_telescope_pointing=False
+                                if slave_directly_to_telescope_pointing:
+                                    obs_mount_ra=obs_mount_status['right_ascension']['val']
+                                    obs_mount_dec=obs_mount_status['declination']['val']
                                     
-                                current_dome_azimuth= g_dev['enc'].enclosure.Azimuth
+                                    
+                                    # Figure out the implied azimuth for that ra and dec at this location                      
+                                    observation_time=Time.now()
+                                    
+                                    sky_coord=SkyCoord(ra=obs_mount_ra*15*u.deg, dec=obs_mount_dec*u.deg)
+                                    # Convert to AltAz frame
+                                    altaz_frame = AltAz(obstime=observation_time, location=self.observer_location)
+                                    altaz_coords = sky_coord.transform_to(altaz_frame)
+                                    
+                                    # Extract altitude and azimuth
+                                    #obs_altitude = altaz_coords.alt.deg
+                                    obs_target_azimuth = altaz_coords.az.deg
                                 
-                                dome_out_by=abs (current_dome_azimuth-target_azimuth)
-                                if dome_out_by > 180:
-                                    dome_out_by=abs(dome_out_by-360)
+                                else:
+                                    obs_target_azimuth=obs_mount_dec=obs_mount_status['target_az']['val']
                                 
-                                
-                                plog ("Dome out by: " + str (dome_out_by))
-                                if abs (dome_out_by) > 1:                       
-                                    plog ("Moving Dome")
-                                
+                                if obs_target_azimuth == -500:
+                                    #plog ("Target Azimuth for Scope not an actual skytarget, so not moving dome")
+                                    #plog(f"Actual Azimuth: {obs_current_azimuth:.2f} degrees")
+                                    dome_at_scope=True
+                                    pass
+                                else:
+                                    #print(f"Time: {observation_time.iso}")
+                                    plog ("Primary Obs Pointing")
+                                    #plog(f"Altitude: {obs_altitude:.2f} degrees")
+                                    
+                                    plog(f"Target Azimuth: {obs_target_azimuth:.2f} degrees")
+                                    
+                                    plog(f"Actual Azimuth: {obs_current_azimuth:.2f} degrees")
+                                                                    
+                                    # Temporary hack - 
+                                    target_azimuth = obs_target_azimuth + self.dome_offset
+                                    if target_azimuth > 360:
+                                        target_azimuth=target_azimuth - 360
+                                    if target_azimuth < 0:
+                                        target_azimuth=target_azimuth + 360
+                                    
                                     try:
-                                        g_dev['enc'].enclosure.SlewToAzimuth(target_azimuth)
-                                        dome_at_scope=False
-                                        #time.sleep(10)
+                                        current_dome_azimuth= g_dev['enc'].enclosure.Azimuth
                                     except:
                                         plog(traceback.format_exc())
                                         plog ("DOME COMMAND GLITCHED OUT.")
-                                        
-                                else:
-                                    plog ("Leaving Dome as it is")
-                                    dome_at_scope=True
+                                    
+                                    dome_out_by=abs (current_dome_azimuth-target_azimuth)
+                                    if dome_out_by > 180:
+                                        dome_out_by=abs(dome_out_by-360)
+                                    
+                                    
+                                    plog ("Dome out by: " + str (dome_out_by))
+                                    if abs (dome_out_by) > 1:                       
+                                        plog ("Moving Dome")
+                                    
+                                        try:
+                                            g_dev['enc'].enclosure.SlewToAzimuth(target_azimuth)
+                                            dome_at_scope=False
+                                            #time.sleep(10)
+                                        except:
+                                            plog(traceback.format_exc())
+                                            plog ("DOME COMMAND GLITCHED OUT.")
+                                            
+                                    else:
+                                        plog ("Leaving Dome as it is")
+                                        dome_at_scope=True
+                            except:
+                                plog(traceback.format_exc())
+                                plog ("failed getting the obs status probably, but also might be a dome thing in the dome position area")
+                                
 
         loud = False
         while time.time() < self.time_last_status + self.status_interval:
-            return
-
-        
-
-        
-        
-        
+            return        
 
         # Hourly Weather Report
         if time.time() > (self.weather_report_run_timer + 3600):
@@ -1332,14 +1423,19 @@ class WxEncAgent:
                     
             if 'MaxDome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:   
                 # Remove the dome_offset
-                actual_azimuth = g_dev['enc'].enclosure.Azimuth - self.dome_offset
-                if actual_azimuth > 360:
-                    actual_azimuth=actual_azimuth - 360
-                if actual_azimuth < 0:
-                    actual_azimuth=actual_azimuth + 360
+                try:
+                    actual_azimuth = g_dev['enc'].enclosure.Azimuth - self.dome_offset
+                    if actual_azimuth > 360:
+                        actual_azimuth=actual_azimuth - 360
+                    if actual_azimuth < 0:
+                        actual_azimuth=actual_azimuth + 360
+                    
+                    enc_status['enclosure']['enclosure1']['dome_azimuth'] = actual_azimuth
+                    plog ("reported dome az: " + str(actual_azimuth))
+                except:
+                    plog(traceback.format_exc())
+                    plog ("DOME COMMAND GLITCHED OUT.")
                 
-                enc_status['enclosure']['enclosure1']['dome_azimuth'] = actual_azimuth
-                plog ("reported dome az: " + str(actual_azimuth))
             else:
                 enc_status['enclosure']['enclosure1']['dome_azimuth'] = 0
             
@@ -1598,9 +1694,12 @@ class WxEncAgent:
 
                         
                         try:
-                            obs_settings=requests.get(uri_status, timeout=20)
+                            #print ("Grabbing obs settings")                            
+                            obs_settings=requests.get(uri_status, timeout=20, allow_redirects=False, headers=close_headers, stream=False)
+                            #print ("Grabbed obs settings")
                         except:
                             plog ("Some error in getting the obs_settings")
+                            plog(traceback.format_exc())
                             obs_settings='nope'
 
                         if '[200]' in str(obs_settings): # If reading successful
@@ -1702,7 +1801,7 @@ class WxEncAgent:
             }
         )
         try:
-            response = requests.post(url_log, body, timeout=20)
+            response = requests.post(url_log, body, timeout=20, allow_redirects=False, headers=close_headers, stream=False)
         except Exception:
             print("Log did not send, usually not fatal.")
 
@@ -1730,29 +1829,42 @@ class WxEncAgent:
             if self.config['enclosure']['enclosure1']['home_dome_before_parking']:
             
                 plog ("Homing Dome")
-                g_dev['enc'].enclosure.FindHome()
-                while not g_dev['enc'].enclosure.AtHome:
-                    plog ("Waiting for Home")
-                    time.sleep(5)
+                try:
+                    g_dev['enc'].enclosure.FindHome()
+                    while not g_dev['enc'].enclosure.AtHome:
+                        plog ("Waiting for Home")
+                        time.sleep(5)
                 
-                g_dev['enc'].enclosure.SyncToAzimuth(self.config['enclosure']['enclosure1']['dome_home_azimuth']) # If shutter home at 194, then park at 100.
+                    g_dev['enc'].enclosure.SyncToAzimuth(self.config['enclosure']['enclosure1']['dome_home_azimuth']) # If shutter home at 194, then park at 100.
                 
-                plog ("Successfully found Home. Ready to observe")
+                    plog ("Successfully found Home. Ready to observe")
+                except:
+                    plog(traceback.format_exc())
+                    plog ("DOME COMMAND GLITCHED OUT.")
                     
             if self.config['enclosure']['enclosure1']['use_park_command_rather_than_slew_to_park']:
                 plog ("Parking Dome")
                 #breakpoint()
-                g_dev['enc'].enclosure.Park()
-                while not g_dev['enc'].enclosure.AtPark:
-                    plog ("Waiting for Park")
-                    time.sleep(5)
+                try:
+                    g_dev['enc'].enclosure.Park()
+                    while not g_dev['enc'].enclosure.AtPark:
+                        plog ("Waiting for Park")
+                        time.sleep(5)
+                except:
+                    plog(traceback.format_exc())
+                    plog ("DOME COMMAND GLITCHED OUT.")
             else:
                 plog ("Parking Dome")
-                g_dev['enc'].enclosure.SlewToAzimuth(self.config['enclosure']['enclosure1']['slew_park_azimuth'])
-                while g_dev['enc'].enclosure.Slewing:
-                    plog("Waiting for Park")
-                    #self.send_enclosure_status(self.enc_status, self.ocn_status)
-                    time.sleep(5)
+                try:
+                    g_dev['enc'].enclosure.SlewToAzimuth(self.config['enclosure']['enclosure1']['slew_park_azimuth'])
+                    while g_dev['enc'].enclosure.Slewing:
+                        plog("Waiting for Park")
+                        #self.send_enclosure_status(self.enc_status, self.ocn_status)
+                        time.sleep(5)
+                except:
+                    plog(traceback.format_exc())
+                    plog ("DOME COMMAND GLITCHED OUT.")
+                
             
             plog ("Successfully parked. Ready to go to bed.")
         
@@ -1864,14 +1976,18 @@ class WxEncAgent:
                         if self.config['enclosure']['enclosure1']['home_dome_after_opening']:
                         
                             plog ("Homing Dome")
-                            g_dev['enc'].enclosure.FindHome()
-                            while not g_dev['enc'].enclosure.AtHome:
-                                plog ("Waiting for Home")
-                                time.sleep(5)
+                            try:
+                                g_dev['enc'].enclosure.FindHome()
+                                while not g_dev['enc'].enclosure.AtHome:
+                                    plog ("Waiting for Home")
+                                    time.sleep(5)
+                                
+                                g_dev['enc'].enclosure.SyncToAzimuth(self.config['enclosure']['enclosure1']['dome_home_azimuth']) # If shutter home at 194, then park at 100.
+                                plog ("Successfully found Home. Ready to observe")
+                            except:
+                                plog(traceback.format_exc())
+                                plog ("DOME COMMAND GLITCHED OUT.")
                             
-                            g_dev['enc'].enclosure.SyncToAzimuth(self.config['enclosure']['enclosure1']['dome_home_azimuth']) # If shutter home at 194, then park at 100.
-                            
-                            plog ("Successfully found Home. Ready to observe")
                             
                         #breakpoint()
 
@@ -2040,7 +2156,7 @@ class WxEncAgent:
                     "status": { "forecast": forecast_status }
                 })
                 try:
-                    response = requests.request("POST", url, data=payload)
+                    response = requests.request("POST", url, data=payload, allow_redirects=False, headers=close_headers, stream=False)
                 except:
                     plog ("Connection glitch on the forecast request")
 
