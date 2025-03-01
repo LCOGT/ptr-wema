@@ -870,6 +870,8 @@ class WxEncAgent:
                             
                             obs_mount_status=main_obs_status.json()['status']['mount'][obs_mount_name]
                             
+                            
+                            # Where is scope currently pointing?
                             obs_mount_ra=obs_mount_status['right_ascension']['val']
                             obs_mount_dec=obs_mount_status['declination']['val']
                             
@@ -882,45 +884,72 @@ class WxEncAgent:
                             altaz_frame = AltAz(obstime=observation_time, location=self.observer_location)
                             altaz_coords = sky_coord.transform_to(altaz_frame)
                             
-                            # Extract altitude and azimuth
-                            obs_altitude = altaz_coords.alt.deg
-                            obs_azimuth = altaz_coords.az.deg
+                            obs_current_altitude = altaz_coords.alt.deg
+                            obs_current_azimuth = altaz_coords.az.deg
                             
-                            #print(f"Time: {observation_time.iso}")
-                            plog ("Primary Obs Pointing")
-                            plog(f"Altitude: {obs_altitude:.2f} degrees")
-                            plog(f"Azimuth: {obs_azimuth:.2f} degrees")
-                            
-                            
-                            # Temporary hack - 
-                            target_azimuth = obs_azimuth + self.dome_offset
-                            if target_azimuth > 360:
-                                target_azimuth=target_azimuth - 360
-                            if target_azimuth < 0:
-                                target_azimuth=target_azimuth + 360
+                            slave_directly_to_telescope_pointing=False
+                            if slave_directly_to_telescope_pointing:
+                                obs_mount_ra=obs_mount_status['right_ascension']['val']
+                                obs_mount_dec=obs_mount_status['declination']['val']
                                 
-                            current_dome_azimuth= g_dev['enc'].enclosure.Azimuth
+                                
+                                # Figure out the implied azimuth for that ra and dec at this location                      
+                                observation_time=Time.now()
+                                
+                                sky_coord=SkyCoord(ra=obs_mount_ra*15*u.deg, dec=obs_mount_dec*u.deg)
+                                # Convert to AltAz frame
+                                altaz_frame = AltAz(obstime=observation_time, location=self.observer_location)
+                                altaz_coords = sky_coord.transform_to(altaz_frame)
+                                
+                                # Extract altitude and azimuth
+                                #obs_altitude = altaz_coords.alt.deg
+                                obs_target_azimuth = altaz_coords.az.deg
                             
-                            dome_out_by=abs (current_dome_azimuth-target_azimuth)
-                            if dome_out_by > 180:
-                                dome_out_by=abs(dome_out_by-360)
-                            
-                            
-                            plog ("Dome out by: " + str (dome_out_by))
-                            if abs (dome_out_by) > 1:                       
-                                plog ("Moving Dome")
-                            
-                                try:
-                                    g_dev['enc'].enclosure.SlewToAzimuth(target_azimuth)
-                                    dome_at_scope=False
-                                    #time.sleep(10)
-                                except:
-                                    plog(traceback.format_exc())
-                                    plog ("DOME COMMAND GLITCHED OUT.")
-                                    
                             else:
-                                plog ("Leaving Dome as it is")
-                                dome_at_scope=True
+                                obs_target_azimuth=obs_mount_dec=obs_mount_status['target_az']['val']
+                            
+                            if obs_target_azimuth == -500:
+                                plog ("Target Azimuth for Scope not an actual skytarget, so not moving dome")
+                                plog(f"Actual Azimuth: {obs_current_azimuth:.2f} degrees")
+                            else:
+                                #print(f"Time: {observation_time.iso}")
+                                plog ("Primary Obs Pointing")
+                                #plog(f"Altitude: {obs_altitude:.2f} degrees")
+                                
+                                plog(f"Target Azimuth: {obs_target_azimuth:.2f} degrees")
+                                
+                                plog(f"Actual Azimuth: {obs_current_azimuth:.2f} degrees")
+                                
+                                
+                                # Temporary hack - 
+                                target_azimuth = obs_target_azimuth + self.dome_offset
+                                if target_azimuth > 360:
+                                    target_azimuth=target_azimuth - 360
+                                if target_azimuth < 0:
+                                    target_azimuth=target_azimuth + 360
+                                    
+                                current_dome_azimuth= g_dev['enc'].enclosure.Azimuth
+                                
+                                dome_out_by=abs (current_dome_azimuth-target_azimuth)
+                                if dome_out_by > 180:
+                                    dome_out_by=abs(dome_out_by-360)
+                                
+                                
+                                plog ("Dome out by: " + str (dome_out_by))
+                                if abs (dome_out_by) > 1:                       
+                                    plog ("Moving Dome")
+                                
+                                    try:
+                                        g_dev['enc'].enclosure.SlewToAzimuth(target_azimuth)
+                                        dome_at_scope=False
+                                        #time.sleep(10)
+                                    except:
+                                        plog(traceback.format_exc())
+                                        plog ("DOME COMMAND GLITCHED OUT.")
+                                        
+                                else:
+                                    plog ("Leaving Dome as it is")
+                                    dome_at_scope=True
 
         loud = False
         while time.time() < self.time_last_status + self.status_interval:
