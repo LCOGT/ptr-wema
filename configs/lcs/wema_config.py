@@ -186,11 +186,11 @@ wema_config = {
 
     # Whether these limits are on by default
     'rain_limit_on': False,
-    'humidity_limit_on': True,
+    'humidity_limit_on': False,
     'windspeed_limit_on': True,
     'lightning_limit_on': True,
     'temperature_minus_dewpoint_limit_on': True,
-    'sky_temperature_limit_on': True,
+    'sky_temperature_limit_on': False,
     'cloud_cover_limit_on': False,
     'lowest_ambient_temperature_on': True,
     'highest_ambient_temperature_on': True,
@@ -203,10 +203,10 @@ wema_config = {
 
     # Local weather DANGER limits - will cause the roof to shut
     'rain_limit': 0,
-    'humidity_limit': 80,
+    'humidity_limit': 92,
     'windspeed_limit': 25,
     'lightning_limit': 15,
-    'temperature_minus_dewpoint_limit': 2,
+    'temperature_minus_dewpoint_limit': -2,
     'sky_temperature_limit': -12,
     'cloud_cover_limit': 50,
     'lowest_ambient_temperature': 1,
@@ -295,8 +295,8 @@ wema_config = {
             # conditions. So these values should be eyeballed from
             # the aagsolo/ webpage on the actual network            
             'aagsolo_rain_threshold': 3200,
-            'aagsolo_clear_skyT': -4,
-            'aagsolo_cloudy_skyT': 19,
+            'aagsolo_clear_skyT': 4,
+            'aagsolo_cloudy_skyT': 20,
             
             
             'share_path_name': 'F:/ptr/',
@@ -324,7 +324,9 @@ wema_config = {
             'rolloff_has_endwall': False,
             
             'home_dome_after_opening' : True,
+            'home_dome_before_parking' : True,
             'dome_home_azimuth' : 194,
+            'dome_offset_in_degrees' : 0,
             
             'use_park_command_rather_than_slew_to_park': False,
             'slew_park_azimuth' : 100,

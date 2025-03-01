@@ -160,7 +160,7 @@ class WxEncAgent:
 
         # THIS IS JUST THE FIRST OF SOME DOMES
         # NEED TO MAKE THIS A CONFIG ITEM
-        self.dome_offset = 180 ### THIS IS PURELY FOR LCS
+        self.dome_offset = self.config['enclosure']['enclosure1']['dome_offset_in_degrees'] ### THIS IS PURELY FOR LCS
 
         self.last_request = None
         self.stopped = False
@@ -1697,6 +1697,18 @@ class WxEncAgent:
                 else:
                     time.sleep(10)
                     plog ("still waiting for official closed report")
+                    
+            if self.config['enclosure']['enclosure1']['home_dome_before_parking']:
+            
+                plog ("Homing Dome")
+                g_dev['enc'].enclosure.FindHome()
+                while not g_dev['enc'].enclosure.AtHome:
+                    plog ("Waiting for Home")
+                    time.sleep(5)
+                
+                g_dev['enc'].enclosure.SyncToAzimuth(self.config['enclosure']['enclosure1']['dome_home_azimuth']) # If shutter home at 194, then park at 100.
+                
+                plog ("Successfully found Home. Ready to observe")
                     
             if self.config['enclosure']['enclosure1']['use_park_command_rather_than_slew_to_park']:
                 plog ("Parking Dome")
