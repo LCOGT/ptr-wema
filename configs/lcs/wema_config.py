@@ -296,7 +296,7 @@ wema_config = {
             # the aagsolo/ webpage on the actual network            
             'aagsolo_rain_threshold': 3200,
             'aagsolo_clear_skyT': 2,
-            'aagsolo_cloudy_skyT': 20,
+            'aagsolo_cloudy_skyT': 15,
             
             
             'share_path_name': 'F:/ptr/',
@@ -326,8 +326,9 @@ wema_config = {
             'home_dome_after_opening' : True,
             'home_dome_before_parking' : True,
             'dome_home_azimuth' : 194,
-            'dome_offset_in_degrees' : 0,
-            
+            'dome_offset_in_degrees' : 0, # This is basically how far is the dome out from where it should be
+            'dome_radius' : 1.6,
+            'offset_from_ota_to_axis' : 0.45,            
             'use_park_command_rather_than_slew_to_park': False,
             'slew_park_azimuth' : 100,
             

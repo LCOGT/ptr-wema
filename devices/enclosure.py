@@ -1042,13 +1042,13 @@ class Enclosure:
     #     plog("enclosure cmd: sync_alt")
     #     pass
 
-    def sync_mount_command(self, req: dict, opt: dict):
-        #plog("enclosure cmd: sync_az")
-        # if self.site not in ['sro', 'mrc', 'mrc2', 'aro', 'eco']:  #NB NB GASP, this needs a re-think!!
-        # if False: # Currently this does nothing?
-        self.enclosure.Slaved = True
-        self.following = True
-        self.enclosure_synchronized = True
+    # def sync_mount_command(self, req: dict, opt: dict):
+    #     #plog("enclosure cmd: sync_az")
+    #     # if self.site not in ['sro', 'mrc', 'mrc2', 'aro', 'eco']:  #NB NB GASP, this needs a re-think!!
+    #     # if False: # Currently this does nothing?
+    #     self.enclosure.Slaved = True
+    #     self.following = True
+    #     self.enclosure_synchronized = True
 
     # def park_command(self, req: dict, opt: dict):
     #     ''' park the enclosure if it's a dome '''

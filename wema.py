@@ -46,7 +46,7 @@ from astropy.time import Time
 import astropy.units as u
 
 from func_timeout import func_timeout, FunctionTimedOut
-
+import numpy as np
 #import http.client
 #http.client.HTTPConnection.debuglevel = 1
 #logging.getLogger("urllib3").setLevel(logging.DEBUG)
@@ -61,33 +61,73 @@ import datetime
 import requests
 
 # Default headers to force closing connections
-close_headers = {"Connection": "close"}
+# close_headers = {"Connection": "close"}
 
-def global_request(method, url, **kwargs):
-    """ Wrapper around requests to enforce default options and ensure response is closed """
-    kwargs.setdefault("allow_redirects", False)
-    kwargs.setdefault("headers", close_headers)
-    kwargs.setdefault("stream", False)
-    kwargs.setdefault("timeout", 5)  # Optional: Set a global timeout
+# def global_request(method, url, **kwargs):
+#     """ Wrapper around requests to enforce default options and ensure response is closed """
+#     kwargs.setdefault("allow_redirects", False)
+#     kwargs.setdefault("headers", close_headers)
+#     kwargs.setdefault("stream", False)
+#     kwargs.setdefault("timeout", 5)  # Optional: Set a global timeout
     
-    # Send the request
-    response = requests.request(method, url, **kwargs)
+#     # Send the request
+#     response = requests.request(method, url, **kwargs)
 
 
-    # Read the response content (to ensure the connection can be closed)
-    content = response.content  # Ensure the body is downloaded before closing
-    status_code = response.status_code
-    headers = response.headers
+#     # Read the response content (to ensure the connection can be closed)
+#     content = response.content  # Ensure the body is downloaded before closing
+#     status_code = response.status_code
+#     headers = response.headers
 
-    # Close the response immediately
-    response.close()
+#     # Close the response immediately
+#     response.close()
 
-    # Return relevant response data (since original response object is closed)
-    return {
-        "status_code": status_code,
-        "content": content,
-        "headers": headers
-    }
+#     # Return relevant response data (since original response object is closed)
+#     return {
+#         "status_code": status_code,
+#         "content": content,
+#         "headers": headers
+#     }
+
+
+def correct_dome_azimuth(telescope_az, telescope_alt, side_of_pier, dome_radius, telescope_offset):#, dome_slit_offset=0):
+    """
+    Corrects the dome azimuth based on telescope pointing and side of the pier.
+
+    Parameters:
+        telescope_az (float): Telescope azimuth in degrees (0-360).
+        telescope_alt (float): Telescope altitude in degrees (0-90).
+        side_of_pier (str): 'E' for East, 'W' for West.
+        dome_radius (float): Radius of the dome in meters.
+        telescope_offset (float): Lateral offset of the telescope from the dome center in meters.
+        dome_slit_offset (float, optional): Empirical offset to keep the telescope centered in the dome slit (default 0).
+
+    Returns:
+        float: Corrected dome azimuth in degrees (0-360).
+    """
+
+    # Convert to radians for calculations
+    #az_rad = np.radians(telescope_az)
+    alt_rad = np.radians(telescope_alt)
+
+    # Compute the small offset angle due to the telescope offset inside the dome
+    if dome_radius > 0:
+        offset_angle = np.degrees(np.arctan2(telescope_offset * np.cos(alt_rad), dome_radius))
+    else:
+        offset_angle = 0  # Avoid division by zero
+
+    # Adjust azimuth based on the side of the pier
+    if side_of_pier.upper() == 'E':
+        dome_az = (telescope_az + offset_angle) % 360
+    elif side_of_pier.upper() == 'W':
+        dome_az = (telescope_az - offset_angle) % 360
+    else:
+        raise ValueError("side_of_pier must be 'E' or 'W'")
+
+    # # Apply an empirical dome slit offset
+    # dome_az = (dome_az + dome_slit_offset) % 360
+
+    return dome_az
 
 
 # FIXME: This needs attention once we figure out the restart_obs script.
@@ -590,6 +630,7 @@ class WxEncAgent:
         # The LCS dome loses it's position if the wema code gets restarted.
         # If the WEMA code is restarted while the shutter is open, it needs to rehome
         # to figure out where it is. 
+        
         if 'MaxDome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
             home_on_boot=True
             
@@ -919,10 +960,11 @@ class WxEncAgent:
         if enc_status is not None:
             #breakpoint()
             if enc_status['shutter_status'] in ['Open', 'Sim Open']:
+            #if True:
                 if 'MaxDome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
                     
                     if time.time() > (self.dome_check_timer + self.dome_check_timer_period):
-                        print (time.time() - self.dome_check_timer)
+                        #print (time.time() - self.dome_check_timer)
                         self.dome_check_timer=time.time()
                         
                         dome_at_scope=False
@@ -930,9 +972,12 @@ class WxEncAgent:
                         while not dome_at_scope:
                             
                             #breakpoint()
+                            report_timer=time.time() - 31
                             try:
                                 while g_dev['enc'].enclosure.Slewing:
-                                    plog("Waiting for dome to stop slewing")
+                                    if time.time() - report_timer > 10:
+                                        plog("Waiting for dome to stop slewing")
+                                        report_timer=time.time()
                                     #self.send_enclosure_status(self.enc_status, self.ocn_status)
                                     time.sleep(0.25)
                             except:
@@ -975,6 +1020,10 @@ class WxEncAgent:
                                 obs_current_altitude = altaz_coords.alt.deg
                                 obs_current_azimuth = altaz_coords.az.deg
                                 
+                                
+                                
+                                
+                                
                                 slave_directly_to_telescope_pointing=False
                                 if slave_directly_to_telescope_pointing:
                                     obs_mount_ra=obs_mount_status['right_ascension']['val']
@@ -992,9 +1041,19 @@ class WxEncAgent:
                                     # Extract altitude and azimuth
                                     #obs_altitude = altaz_coords.alt.deg
                                     obs_target_azimuth = altaz_coords.az.deg
+                                    obs_target_altitude = altaz_coords.alt.deg
                                 
                                 else:
                                     obs_target_azimuth=obs_mount_dec=obs_mount_status['target_az']['val']
+                                    obs_target_altitude=obs_mount_dec=obs_mount_status['target_alt']['val']
+                                
+                                #### At this stage, we actually want to adjust the requested azimuth
+                                #### To move the dome slightly west or east depending on the 
+                                #### pierside of the telescope
+                                
+                                
+                                
+                                #breakpoint()
                                 
                                 if obs_target_azimuth == -500:
                                     #plog ("Target Azimuth for Scope not an actual skytarget, so not moving dome")
@@ -1002,13 +1061,40 @@ class WxEncAgent:
                                     dome_at_scope=True
                                     pass
                                 else:
+                                    
+                                    print ("Requested Azmituh: " + str(obs_target_azimuth))
+                                    
+                                    
+                                    
+                                    correct_dome_for_pier_effect=True
+                                    if correct_dome_for_pier_effect:
+                                        # Example usage
+                                        telescope_azimuth = obs_target_azimuth  # Example telescope azimuth
+                                        telescope_altitude = obs_target_altitude   # Example telescope altitude
+                                        if obs_mount_status['pier_side']['val'] == 1:
+                                            side_of_pier = 'W'        # 'E' or 'W'
+                                        else:
+                                            side_of_pier = 'E'        # 'E' or 'W'
+                                        dome_radius = g_dev['enc'].config['enclosure']['enclosure1']['dome_radius']           # Example dome radius in meters
+                                        telescope_offset = g_dev['enc'].config['enclosure']['enclosure1']['offset_from_ota_to_axis']     # Telescope offset from the center in meters
+                                        #dome_slit_offset =       # Small additional offset in degrees
+                                        
+                                        target_dome_azimuth = correct_dome_azimuth(telescope_azimuth, telescope_altitude, side_of_pier, dome_radius, telescope_offset)#, dome_slit_offset)
+    
+                                        #print ("Corrected Azmituh: " + str(corrected_dome_az))
+                                    else:
+                                        target_dome_azimuth=obs_target_azimuth
+                                    
+                                    
                                     #print(f"Time: {observation_time.iso}")
                                     plog ("Primary Obs Pointing")
                                     #plog(f"Altitude: {obs_altitude:.2f} degrees")
                                     
-                                    plog(f"Target Azimuth: {obs_target_azimuth:.2f} degrees")
+                                    plog(f"Target Telescope Azimuth: {obs_target_azimuth:.2f} degrees")
                                     
-                                    plog(f"Actual Azimuth: {obs_current_azimuth:.2f} degrees")
+                                    plog(f"Actual Telescope Azimuth: {obs_current_azimuth:.2f} degrees")
+                                    
+                                    plog(f"Target Dome Azimuth: {target_dome_azimuth:.2f} degrees")
                                                                     
                                     # Temporary hack - 
                                     target_azimuth = obs_target_azimuth + self.dome_offset
@@ -1023,17 +1109,18 @@ class WxEncAgent:
                                         plog(traceback.format_exc())
                                         plog ("DOME COMMAND GLITCHED OUT.")
                                     
-                                    dome_out_by=abs (current_dome_azimuth-target_azimuth)
-                                    if dome_out_by > 180:
-                                        dome_out_by=abs(dome_out_by-360)
+                                    plog(f"Current Dome Azimuth: {current_dome_azimuth:.2f} degrees")
                                     
+                                    dome_out_by=abs (current_dome_azimuth-target_dome_azimuth)
+                                    if dome_out_by > 180:
+                                        dome_out_by=abs(dome_out_by-360)                                   
                                     
                                     plog ("Dome out by: " + str (dome_out_by))
                                     if abs (dome_out_by) > 1:                       
                                         plog ("Moving Dome")
                                     
                                         try:
-                                            g_dev['enc'].enclosure.SlewToAzimuth(target_azimuth)
+                                            g_dev['enc'].enclosure.SlewToAzimuth(target_dome_azimuth)
                                             dome_at_scope=False
                                             #time.sleep(10)
                                         except:
@@ -1258,7 +1345,8 @@ class WxEncAgent:
     
             ocn_status['observing_conditions']['observing_conditions1']["OWM_weather_ok"] = self.weather_report_open_at_start
             
-    
+            if self.owm_active and not self.weather_report_open_at_start:
+                wx_reasons.append("OWM Report negative.")
     
             if self.local_weather_active and self.owm_active:
                 combined_weather_ok = self.local_weather_ok and self.weather_report_open_at_start
@@ -1818,9 +1906,14 @@ class WxEncAgent:
         if 'MaxDome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
             plog ("Detected Dome. Now waiting for official close command and then Parking the Dome.")
             
+            
+            closing_timeout_timer=time.time()
             while True:
                 enc_status = g_dev['enc'].get_status()
                 if enc_status['shutter_status'] in ['Closed', 'closed']:
+                    break
+                elif time.time()-closing_timeout_timer > 300:
+                    plog ("Never reported fully Closed! Parking the dome anyway assuming it is mostly shut")
                     break
                 else:
                     time.sleep(10)
@@ -1994,13 +2087,13 @@ class WxEncAgent:
                     if enc_status['shutter_status'] in ['Open', 'open']:
                         self.open_and_enabled_to_observe = True
 
-                        try:
-                            plog("Synchronising dome.")
-                            g_dev['enc'].sync_mount_command({}, {})
-                        except:
-                            pass
+                        # try:
+                        #     plog("Synchronising dome.")
+                        #     g_dev['enc'].sync_mount_command({}, {})
+                        # except:
+                        #     pass
                         # Prior to skyflats no dome following.
-                        self.dome_homed = False
+                        # self.dome_homed = False
 
                         return
 

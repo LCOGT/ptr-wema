@@ -52,7 +52,7 @@ import json
 
 #     return (T_sky_C - T_clear_C) / (T_cloud_C - T_clear_C)
 
-def calculate_cloud_fraction(T_sky_C, T_clear_C=-20, T_cloud_C=3, n=2):
+def calculate_cloud_fraction(T_sky_C, T_clear_C=-20, T_cloud_C=3, n=1):
     """
     Calculate fractional cloud cover based on a nonlinear function of sky temperature.
 
@@ -61,6 +61,8 @@ def calculate_cloud_fraction(T_sky_C, T_clear_C=-20, T_cloud_C=3, n=2):
     T_clear_C (float): Clear sky temperature in Celsius (default: -20C).
     T_cloud_C (float): Overcast sky temperature in Celsius (default: 3C).
     n (float): Nonlinearity exponent (default: 2, adjust based on empirical data).
+    
+    MTF - SO FAR, n=1 seems more realistic. Higher numbers underestimate cloud cover
 
     Returns:
     float: Fractional cloud cover (0 to 1)
