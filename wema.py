@@ -243,7 +243,11 @@ class WxEncAgent:
 
         # THIS IS JUST THE FIRST OF SOME DOMES
         # NEED TO MAKE THIS A CONFIG ITEM
-        self.dome_offset = self.config['enclosure']['enclosure1']['dome_offset_in_degrees'] ### THIS IS PURELY FOR LCS
+        try:
+            self.dome_offset = self.config['enclosure']['enclosure1']['dome_offset_in_degrees'] ### THIS IS PURELY FOR LCS
+        except:
+            plog ("Couldn't load dome offset. mayhaps not a dome")
+
 
         self.last_request = None
         self.stopped = False
