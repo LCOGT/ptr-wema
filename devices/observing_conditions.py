@@ -52,28 +52,67 @@ import json
 
 #     return (T_sky_C - T_clear_C) / (T_cloud_C - T_clear_C)
 
-def calculate_cloud_fraction(T_sky_C, T_clear_C=-20, T_cloud_C=3, n=1):
+# def calculate_cloud_fraction(T_sky_C, T_clear_C=-20, T_cloud_C=3, n=1):
+#     """
+#     Calculate fractional cloud cover based on a nonlinear function of sky temperature.
+
+#     Parameters:
+#     T_sky_C (float): Measured sky temperature in Celsius.
+#     T_clear_C (float): Clear sky temperature in Celsius (default: -20C).
+#     T_cloud_C (float): Overcast sky temperature in Celsius (default: 3C).
+#     n (float): Nonlinearity exponent (default: 2, adjust based on empirical data).
+    
+#     MTF - SO FAR, n=1 seems more realistic. Higher numbers underestimate cloud cover
+
+#     Returns:
+#     float: Fractional cloud cover (0 to 1)
+#     """
+#     if T_sky_C <= T_clear_C:
+#         return 0.0  # Fully clear sky
+#     elif T_sky_C >= T_cloud_C:
+#         return 1.0  # Fully overcast sky
+
+#     # Compute nonlinear cloud fraction
+#     return ((T_sky_C - T_clear_C) / (T_cloud_C - T_clear_C)) ** n
+
+
+
+def calculate_cloud_fraction(T_sky_C, T_ambient_C, RH, 
+                             T_cloud_C=3, n=1, avg_RH=50):
     """
-    Calculate fractional cloud cover based on a nonlinear function of sky temperature.
+    Improved cloud fraction estimation incorporating ambient temperature and humidity.
+    Uses an average humidity value when RH is set to -1.
 
     Parameters:
     T_sky_C (float): Measured sky temperature in Celsius.
-    T_clear_C (float): Clear sky temperature in Celsius (default: -20C).
+    T_ambient_C (float): Ambient air temperature in Celsius.
+    RH (float): Relative Humidity in percentage (0-100). Use -1 to apply average RH.
     T_cloud_C (float): Overcast sky temperature in Celsius (default: 3C).
-    n (float): Nonlinearity exponent (default: 2, adjust based on empirical data).
-    
-    MTF - SO FAR, n=1 seems more realistic. Higher numbers underestimate cloud cover
+    n (float): Nonlinearity exponent (default: 1, adjust based on empirical data).
+    avg_RH (float): Default average humidity percentage (default: 50%).
 
     Returns:
     float: Fractional cloud cover (0 to 1)
     """
-    if T_sky_C <= T_clear_C:
+    # If RH is -1, use the average value
+    if RH == -1:
+        RH = avg_RH
+
+    # Estimate clear sky temperature dynamically based on ambient temperature
+    # Empirical estimate: Clear sky is typically 20-30°C lower than ambient on dry nights
+    # Correction factor based on humidity
+    clear_sky_offset = -20 + (RH / 10)  # More humid air reduces cooling effect
+    T_clear_C_dynamic = T_ambient_C + clear_sky_offset
+    
+    # Boundaries check
+    if T_sky_C <= T_clear_C_dynamic:
         return 0.0  # Fully clear sky
     elif T_sky_C >= T_cloud_C:
         return 1.0  # Fully overcast sky
 
     # Compute nonlinear cloud fraction
-    return ((T_sky_C - T_clear_C) / (T_cloud_C - T_clear_C)) ** n
+    return ((T_sky_C - T_clear_C_dynamic) / (T_cloud_C - T_clear_C_dynamic)) ** n
+
 
 def linearize_unihedron(uni_value):  # Need to be coefficients in config.
     #  Based on 20180811 data
@@ -344,10 +383,12 @@ class ObservingConditions:
 
 
 
-
             # Convert AAG values into PTR values
-            T_sky_C = weather_data['clouds']
-            cloud_percentage = calculate_cloud_fraction(T_sky_C, self.config["observing_conditions"]["observing_conditions1"]['aagsolo_clear_skyT'], self.config["observing_conditions"]["observing_conditions1"]['aagsolo_cloudy_skyT']) * 100
+            # T_sky_C = weather_data['clouds']
+            # T_ambient_C=weather_data['temp']
+            # self.humidity=weather_data['hum']
+            
+            cloud_percentage = calculate_cloud_fraction(weather_data['clouds'], weather_data['temp'],weather_data['hum'])
             #print(f"Estimated fractional cloud cover: {cloud_fraction:.2f}")
 
             # rain_rate is either on or off

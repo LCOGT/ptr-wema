@@ -185,13 +185,13 @@ wema_config = {
     #############################################################
 
     # Whether these limits are on by default
-    'rain_limit_on': False,
-    'humidity_limit_on': False,
+    'rain_limit_on': True,
+    'humidity_limit_on': True,
     'windspeed_limit_on': True,
     'lightning_limit_on': True,
     'temperature_minus_dewpoint_limit_on': True,
     'sky_temperature_limit_on': False,
-    'cloud_cover_limit_on': False,
+    'cloud_cover_limit_on': True,
     'lowest_ambient_temperature_on': True,
     'highest_ambient_temperature_on': True,
     
@@ -203,12 +203,12 @@ wema_config = {
 
     # Local weather DANGER limits - will cause the roof to shut
     'rain_limit': 0,
-    'humidity_limit': 92,
+    'humidity_limit': 95,
     'windspeed_limit': 25,
     'lightning_limit': 15,
     'temperature_minus_dewpoint_limit': -2,
     'sky_temperature_limit': -12,
-    'cloud_cover_limit': 50,
+    'cloud_cover_limit': 65,
     'lowest_ambient_temperature': 1,
     'highest_ambient_temperature': 40,
     
@@ -319,10 +319,12 @@ wema_config = {
             'driver': 'MaxDome64.Dome',  #'ASCOM.DigitalDomeWorks.Dome',  #  ASCOMDome.Dome',  #  ASCOM.DeviceHub.Dome',  #  ASCOM.DigitalDomeWorks.Dome',  #"  ASCOMDome.Dome',
             'has_lights':  False,
             'controlled_by': 'mount1',
-			'encl_is_dome': False,
+			'encl_is_dome': True,
             'encl_is_rolloff': False,
             'rolloff_has_endwall': False,
             
+            
+            # Dome specific items
             'home_dome_after_opening' : True,
             'home_dome_before_parking' : True,
             'dome_home_azimuth' : 194,

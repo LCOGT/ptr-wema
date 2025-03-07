@@ -642,11 +642,18 @@ class WxEncAgent:
                     if home_on_boot:
                         try:
                             g_dev['enc'].enclosure.FindHome()
+                            enc_status = g_dev['enc'].get_status()
+                            self.send_enclosure_status(enc_status, [])
+                            
+                            
                             while not g_dev['enc'].enclosure.AtHome:
                                 plog ("Waiting for Home")
                                 time.sleep(5)
-                            
+                                
                             g_dev['enc'].enclosure.SyncToAzimuth(self.config['enclosure']['enclosure1']['dome_home_azimuth']) # If shutter home at 194, then park at 100.
+                            
+                            enc_status = g_dev['enc'].get_status()
+                            self.send_enclosure_status(enc_status, [])
                             
                             plog ("Successfully found Home. Ready to observe")
                         except:
@@ -984,6 +991,10 @@ class WxEncAgent:
                                 plog(traceback.format_exc())
                                 plog ("DOME COMMAND GLITCHED OUT.")
                             
+                            enc_status = g_dev['enc'].get_status()
+                            self.send_enclosure_status(enc_status, [])
+                            
+                            
                             # Call out to aws to get current main scope pointing and ra and dec
                             
                             uri_status = f"https://status.photonranch.org/status/{sync_obs}/device"
@@ -1119,8 +1130,11 @@ class WxEncAgent:
                                     if abs (dome_out_by) > 1:                       
                                         plog ("Moving Dome")
                                     
-                                        try:
+                                        try:                                            
                                             g_dev['enc'].enclosure.SlewToAzimuth(target_dome_azimuth)
+                                            enc_status = g_dev['enc'].get_status()
+                                            self.send_enclosure_status(enc_status, [])
+                                            
                                             dome_at_scope=False
                                             #time.sleep(10)
                                         except:
@@ -1238,6 +1252,12 @@ class WxEncAgent:
                 if rain_limit:
                     plog("Reported rain rate in mm/hr:  ", quick_status['rain_rate'])
                     wx_reasons.append('Rain > ' + str(self.rain_limit_setting))
+                    # Also here move the next allowed open time to much later
+                    # Like until 45 minutes later. If there is rain around
+                    # We have to be safe. This should continually update as the status
+                    # is updated such that the enclosure won't be able to open until
+                    # at least 45 minutes after the last reported rain fall
+                    self.enclosure_next_open_time = time.time() + 2700
             else:
                 rain_limit=False
             
@@ -1281,7 +1301,7 @@ class WxEncAgent:
                     #status['cloud_cover_%'] = round(cloud_cover_value, 0)
                     if cloud_cover_value <= self.cloud_cover_limit_setting:
                         cloud_cover = False
-                        wx_reasons.append('>=' + str(self.cloud_cover_limit_setting) + '% Cloudy')
+                        #wx_reasons.append('>=' + str(self.cloud_cover_limit_setting) + '% Cloudy')
                 
                     else:
                         cloud_cover = True
@@ -1478,6 +1498,26 @@ class WxEncAgent:
     def send_enclosure_status(self, enc_status, ocn_status):
 
         if enc_status is not None:
+            
+            #breakpoint()
+            
+            
+            # Reformulate a short enclosure status - bit of a hack for the moment.
+            try: 
+                print (enc_status['enclosure']['enclosure1']['shutter_status'] )
+                print ("good")
+            except:
+                enc_status_extended={}
+
+                enc_status_extended['enclosure'] ={}
+
+                enc_status_extended['enclosure']['enclosure1'] ={}
+                
+                enc_status_extended['enclosure']['enclosure1'] = enc_status
+                
+                enc_status=enc_status_extended
+                print ("bad")
+            
             # New Tim Entries
             if enc_status['enclosure']['enclosure1']['shutter_status']  is not None:
                 if enc_status['enclosure']['enclosure1']['shutter_status'] in ['Open', 'Sim Open']:
@@ -1543,6 +1583,17 @@ class WxEncAgent:
                     plog('could not send enclosure status')   
                     plog(traceback.format_exc())
                     #breakpoint()
+
+    # def update_enclosure_immediately(self, enc_status):
+        
+    #     lane = "enclosure"
+    #     print ("updating enclosure immediately")
+    #     wema = self.config['wema_name']  
+    #     try:                        
+    #         send_status(wema, lane, enc_status)
+    #     except:
+    #         plog('could not send enclosure status')   
+    #         plog(traceback.format_exc())
 
     def update(self):     ## NB NB NB This is essentially the Manager/Sequencer for the
         #breakpoint()                 ## enclosures managed by the WEMA
@@ -1714,6 +1765,8 @@ class WxEncAgent:
             if self.keep_closed_all_night:
                 roof_should_be_shut = True
                 self.open_and_enabled_to_observe = False
+            
+            
                 
             if enc_status['shutter_status'] == 'Open':
                 if roof_should_be_shut == True and not g_dev['enc'].mode == 'Manual':
@@ -1724,6 +1777,12 @@ class WxEncAgent:
                     if (not self.local_weather_ok and self.local_weather_active):
                         plog("Safety check notices that the local weather is not ok. Shutting the roof.")
                         self.park_enclosure_and_close()
+                
+                if g_dev['enc'].mode == 'Automatic':
+                    if (not self.weather_report_open_at_start) and self.owm_active:
+                        plog("Safety check notices that the weather report is not ok. Shutting the roof.")
+                        self.park_enclosure_and_close()
+                
 
             if enc_status['shutter_status'] == 'Closed' and self.keep_open_all_night and g_dev['enc'].mode in ['Automatic']:
 
@@ -1910,6 +1969,7 @@ class WxEncAgent:
             closing_timeout_timer=time.time()
             while True:
                 enc_status = g_dev['enc'].get_status()
+                self.send_enclosure_status(enc_status, [])
                 if enc_status['shutter_status'] in ['Closed', 'closed']:
                     break
                 elif time.time()-closing_timeout_timer > 300:
@@ -1924,13 +1984,23 @@ class WxEncAgent:
                 plog ("Homing Dome")
                 try:
                     g_dev['enc'].enclosure.FindHome()
-                    while not g_dev['enc'].enclosure.AtHome:
+                    enc_status = g_dev['enc'].get_status()
+                    self.send_enclosure_status(enc_status, [])
+                    home_wait_timeout=time.time()
+                    while not g_dev['enc'].enclosure.AtHome and (time.time()-home_wait_timeout < 300):
                         plog ("Waiting for Home")
                         time.sleep(5)
                 
-                    g_dev['enc'].enclosure.SyncToAzimuth(self.config['enclosure']['enclosure1']['dome_home_azimuth']) # If shutter home at 194, then park at 100.
+                    if g_dev['enc'].enclosure.AtHome:
+                        g_dev['enc'].enclosure.SyncToAzimuth(self.config['enclosure']['enclosure1']['dome_home_azimuth']) # If shutter home at 194, then park at 100.
+                        plog ("Successfully found Home. Ready to observe")
+                    else:
+                        plog ("Could not find Home reliably.")
+                    
+                    enc_status = g_dev['enc'].get_status()
+                    self.send_enclosure_status(enc_status, [])
                 
-                    plog ("Successfully found Home. Ready to observe")
+                    
                 except:
                     plog(traceback.format_exc())
                     plog ("DOME COMMAND GLITCHED OUT.")
@@ -1940,9 +2010,13 @@ class WxEncAgent:
                 #breakpoint()
                 try:
                     g_dev['enc'].enclosure.Park()
+                    enc_status = g_dev['enc'].get_status()
+                    self.send_enclosure_status(enc_status, [])
                     while not g_dev['enc'].enclosure.AtPark:
                         plog ("Waiting for Park")
                         time.sleep(5)
+                    enc_status = g_dev['enc'].get_status()
+                    self.send_enclosure_status(enc_status, [])
                 except:
                     plog(traceback.format_exc())
                     plog ("DOME COMMAND GLITCHED OUT.")
@@ -1950,10 +2024,14 @@ class WxEncAgent:
                 plog ("Parking Dome")
                 try:
                     g_dev['enc'].enclosure.SlewToAzimuth(self.config['enclosure']['enclosure1']['slew_park_azimuth'])
+                    enc_status = g_dev['enc'].get_status()
+                    self.send_enclosure_status(enc_status, [])
                     while g_dev['enc'].enclosure.Slewing:
                         plog("Waiting for Park")
                         #self.send_enclosure_status(self.enc_status, self.ocn_status)
                         time.sleep(5)
+                    enc_status = g_dev['enc'].get_status()
+                    self.send_enclosure_status(enc_status, [])
                 except:
                     plog(traceback.format_exc())
                     plog ("DOME COMMAND GLITCHED OUT.")
@@ -2055,9 +2133,16 @@ class WxEncAgent:
                     if 'MaxDome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
                         plog ("Detected Dome. Now waiting for official open command and then Homing the Dome.")
                         
+                        
+                        
+                        open_dome_timer=time.time()
                         while True:
                             enc_status = g_dev['enc'].get_status()
                             if enc_status['shutter_status'] in ['Open', 'open']:
+                                break
+                            elif (time.time() - open_dome_timer) > 300:
+                                plog ("dome open report timed out")
+                                plog ("moving on")
                                 break
                             else:
                                 time.sleep(2)
@@ -2071,9 +2156,13 @@ class WxEncAgent:
                             plog ("Homing Dome")
                             try:
                                 g_dev['enc'].enclosure.FindHome()
+                                enc_status = g_dev['enc'].get_status()
+                                self.send_enclosure_status(enc_status, [])
                                 while not g_dev['enc'].enclosure.AtHome:
                                     plog ("Waiting for Home")
                                     time.sleep(5)
+                                enc_status = g_dev['enc'].get_status()
+                                self.send_enclosure_status(enc_status, [])
                                 
                                 g_dev['enc'].enclosure.SyncToAzimuth(self.config['enclosure']['enclosure1']['dome_home_azimuth']) # If shutter home at 194, then park at 100.
                                 plog ("Successfully found Home. Ready to observe")
@@ -2083,7 +2172,9 @@ class WxEncAgent:
                             
                             
                         #breakpoint()
-
+                        enc_status = g_dev['enc'].get_status()
+                        
+                        
                     if enc_status['shutter_status'] in ['Open', 'open']:
                         self.open_and_enabled_to_observe = True
 
