@@ -393,7 +393,7 @@ class ObservingConditions:
 
             # rain_rate is either on or off
             # so one or zero
-            if weather_data['rain'] < self.config["observing_conditions"]["observing_conditions1"]['aagsolo_clear_skyT']:
+            if weather_data['rain'] < self.config["observing_conditions"]["observing_conditions1"]['aagsolo_rain_threshold']:
                 self.rain_rate=1
             else:
                 self.rain_rate=0

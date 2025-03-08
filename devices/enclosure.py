@@ -469,6 +469,9 @@ class Enclosure:
                     # breakpoint()
                     stat_string = "Error"
                     self.shutter_is_closed = False
+                    
+                                       
+                    
                     #g_dev['redis'].set('Shutter_is_open', False)
                 else:
                     stat_string = "Software Fault"

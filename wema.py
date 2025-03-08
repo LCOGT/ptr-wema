@@ -2176,8 +2176,12 @@ class WxEncAgent:
                             
                             
                         #breakpoint()
-                        enc_status = g_dev['enc'].get_status()
-                        
+                    
+                    time.sleep(5)
+                    
+                    enc_status = g_dev['enc'].get_status()
+                    
+                    #print (enc_status)
                         
                     if enc_status['shutter_status'] in ['Open', 'open']:
                         self.open_and_enabled_to_observe = True

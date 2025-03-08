@@ -294,9 +294,9 @@ wema_config = {
             # each different aagsolo that is set up in different ambient
             # conditions. So these values should be eyeballed from
             # the aagsolo/ webpage on the actual network            
-            'aagsolo_rain_threshold': 3200,
-            'aagsolo_clear_skyT': 2,
-            'aagsolo_cloudy_skyT': 15,
+            'aagsolo_rain_threshold': 3000,
+            # 'aagsolo_clear_skyT': 2,
+            # 'aagsolo_cloudy_skyT': 15,
             
             
             'share_path_name': 'F:/ptr/',
