@@ -1820,9 +1820,10 @@ class WxEncAgent:
             if (g_dev['events']['Close and Park'] <= ephem_now < g_dev['events']['Nightly Reset']) \
                     and g_dev['enc'].mode == 'Automatic':
 
-                if not ('closed' in enc_status['shutter_status'].lower()):
+                if not any(status in enc_status['shutter_status'].lower() for status in ('closed', 'closing')):
                     plog("Found shutter open after Close and Park, shutting up the shutter")
                     self.park_enclosure_and_close()
+
         
             if (g_dev['events']['Observing Ends'] <= ephem_now < g_dev['events']['Nightly Reset']) \
                     and g_dev['enc'].mode == 'Automatic' and enc_status['shutter_status'] in ['Open', 'open', 'Opening', 'opening']:
@@ -2181,7 +2182,8 @@ class WxEncAgent:
                     
                     enc_status = g_dev['enc'].get_status()
                     
-                    #print (enc_status)
+                    print ("Post dome shutter status:")
+                    print (enc_status)
                         
                     if enc_status['shutter_status'] in ['Open', 'open']:
                         self.open_and_enabled_to_observe = True
@@ -2196,7 +2198,7 @@ class WxEncAgent:
 
                         return
 
-                    else:
+                    elif not 'MaxDome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
                         plog("Failed to open roof. Sending the close command to the roof.")
                         plog("opens this eve: " + str(self.opens_this_evening))
                         plog("minutes until next open attempt ALLOWED: " + str(
@@ -2207,7 +2209,10 @@ class WxEncAgent:
                             g_dev['enc'].dummy_status='Closed'
 
                         return
-
+                    else:
+                        plog ("Skipping dome failure mode.... it was going to say failed to open .... but it usually isn't... need to find out what that is.")
+                        return
+                    
                 except Exception as e:
                     plog("Enclosure opening glitched out: ", e)
                     plog(traceback.format_exc())

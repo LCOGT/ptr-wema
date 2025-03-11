@@ -271,6 +271,8 @@ class Enclosure:
             self.dummy=False
 
         self.dummy_status='Open'
+        
+        self.driver=driver
 
         #    self.site_in_automatic = False
         #    self.site_mode = 'Shutdown'
@@ -470,7 +472,10 @@ class Enclosure:
                     stat_string = "Error"
                     self.shutter_is_closed = False
                     
-                                       
+                    
+                    # TEMPORARY HACK
+                    if 'MaxDome' in self.driver:
+                        stat_string = "Open"
                     
                     #g_dev['redis'].set('Shutter_is_open', False)
                 else:
