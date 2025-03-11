@@ -40,6 +40,7 @@ from dotenv import load_dotenv
 load_dotenv(".env")
 from wema_config import get_enc_status_custom
 from wema_config import get_ocn_status_custom
+import csv
 
 from astropy.coordinates import EarthLocation, AltAz, SkyCoord
 from astropy.time import Time
@@ -199,6 +200,8 @@ class WxEncAgent:
     """
 
     def __init__(self, name, config):
+
+        self.name=name        
 
         self.api = API_calls()
         self.command_interval = 30
@@ -1165,9 +1168,9 @@ class WxEncAgent:
                 enc_status['enclosure']={}
 
                 enc_status['enclosure']['enclosure1']= get_enc_status_custom()
-                self.run_nightly_weather_report(enc_status=enc_status['enclosure']['enclosure1'])
+                self.run_nightly_weather_report(enc_status=enc_status['enclosure']['enclosure1'], ocn_status=g_dev['ocn'].get_status())
             else:
-                self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status())
+                self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status(), ocn_status=g_dev['ocn'].get_status())
         
         
         # Enclosure and Weather Status
@@ -2217,7 +2220,7 @@ class WxEncAgent:
 
         return
 
-    def run_nightly_weather_report(self,enc_status=None):
+    def run_nightly_weather_report(self,enc_status=None, ocn_status=None):
        
         events = g_dev['events']
 
@@ -2480,6 +2483,57 @@ class WxEncAgent:
                 self.weather_text_report.append("-----------------------------")
 
            
+            # Output to the log the various interesting things about the weather
+            # Which will be used at some stage to calibrate the weather station
+            
+            line_of_weather_info=[]
+            line_of_weather_info.append(str(datetime.datetime.now()))
+            line_of_weather_info.append(time.time())
+            # Current cloud % from weather forecast
+            line_of_weather_info.append(one_call.current.clouds)
+            
+            # Reported cloud_cover
+            line_of_weather_info.append(ocn_status['cloud_cover_%'])
+            
+            # Current humidity
+            if ocn_status['humidity_%'] == -1:
+                line_of_weather_info.append(one_call.current.humidity)
+            else:
+                line_of_weather_info.append(ocn_status['humidity_%'])
+                        
+            # Measured sky_temp
+            line_of_weather_info.append(ocn_status['sky_temp_C'])
+        
+            # Measured temp
+            line_of_weather_info.append(ocn_status['temperature_C'])
+            
+            # Dewpoint
+            if ocn_status['dewpoint_C'] == 100:
+                line_of_weather_info.append(one_call.current.dewpoint - 273.15)
+            else:
+                line_of_weather_info.append(ocn_status['dewpoint_C'])
+            
+           
+            
+            # Rain Rate
+            line_of_weather_info.append(ocn_status['rain_rate'])
+            
+            # Wind Speed
+            line_of_weather_info.append(ocn_status['wind_m/s'])                        
+            
+                
+            # Open the file in append mode and write the line
+            try:
+                with open(self.wema_path+self.name + '_weatherlog.csv', mode='a', newline='') as file:
+                    writer = csv.writer(file)
+                    writer.writerow(line_of_weather_info)
+                    print(f"Data written at {datetime.datetime.now().isoformat()}")  # For logging
+            except:
+                plog ("failed to write weatherlog")
+                plog(traceback.format_exc())
+            #breakpoint()
+
+
             status = {}
             status['owm_report'] = json.dumps(self.weather_text_report)
             lane = "owm_report"
