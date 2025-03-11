@@ -2422,7 +2422,7 @@ class WxEncAgent:
                 'closed' in enc_status['shutter_status'].lower() and self.owm_active:
                     plog("Looks like the weather gets rough in the first hour, shutting up observatory.")
                     self.park_enclosure_and_close()
-            else:
+            except:
                 plog (plog(traceback.format_exc()))
                 plog (hours_bad_or_good)
                 plog ("Probably that there isn't actually three elements in the list?")
