@@ -2414,13 +2414,19 @@ class WxEncAgent:
            
             # If the first three hours are good, then open from the start
             self.weather_report_open_at_start = False
-            if (hours_bad_or_good[0][1] + hours_bad_or_good[1][1] +hours_bad_or_good[2][1] ) == 3:
-                plog("Looks like it is clear enough to open the observatory from the beginning.")
-                self.weather_report_open_at_start = True
-            elif (hours_bad_or_good[0][1]) == 0 and g_dev['enc'].mode == 'Automatic' and not \
-            'closed' in enc_status['shutter_status'].lower() and self.owm_active:
-                plog("Looks like the weather gets rough in the first hour, shutting up observatory.")
-                self.park_enclosure_and_close()
+            try:
+                if (hours_bad_or_good[0][1] + hours_bad_or_good[1][1] +hours_bad_or_good[2][1] ) == 3:
+                    plog("Looks like it is clear enough to open the observatory from the beginning.")
+                    self.weather_report_open_at_start = True
+                elif (hours_bad_or_good[0][1]) == 0 and g_dev['enc'].mode == 'Automatic' and not \
+                'closed' in enc_status['shutter_status'].lower() and self.owm_active:
+                    plog("Looks like the weather gets rough in the first hour, shutting up observatory.")
+                    self.park_enclosure_and_close()
+            else:
+                plog (plog(traceback.format_exc()))
+                plog (hours_bad_or_good)
+                plog ("Probably that there isn't actually three elements in the list?")
+                plog (len(hours_bad_or_good))
 
             # Look for three hour gaps in the weather throughout the night
             self.times_to_open=[]
