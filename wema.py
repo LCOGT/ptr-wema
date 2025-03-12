@@ -2517,7 +2517,7 @@ class WxEncAgent:
         
             # Measured temp
             line_of_weather_info.append(ocn_status['temperature_C'])
-            
+                        
             # Dewpoint
             if ocn_status['dewpoint_C'] == 100:
                 line_of_weather_info.append(one_call.current.dewpoint - 273.15)
@@ -2531,6 +2531,9 @@ class WxEncAgent:
             
             # Wind Speed
             line_of_weather_info.append(ocn_status['wind_m/s'])                        
+            
+            # OWM temperature - can be more reliable than weather station
+            line_of_weather_info.append(one_call.current.temp['temp']-273.15)
             
                 
             # Open the file in append mode and write the line
