@@ -52,6 +52,21 @@ import numpy as np
 #http.client.HTTPConnection.debuglevel = 1
 #logging.getLogger("urllib3").setLevel(logging.DEBUG)
 
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import sys
+from scipy.fft import fft, ifft, fftfreq
+import numpy as np
+from scipy.signal import correlate
+import seaborn as sns
+from sklearn.model_selection import train_test_split,cross_val_predict, KFold
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.preprocessing import PolynomialFeatures
+
+
+
 close_headers = {
     "Connection": "close"  # Forces the server to close the connection after the response
 }
@@ -59,7 +74,103 @@ close_headers = {
 import pytz
 import datetime
 
-import requests
+#import requests
+
+
+# Reload the function from the canvas
+def fit_cloud_prediction_model(df, directory):
+    
+    directory=directory+'/weatherfits'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    
+    file_date_string=str(datetime.datetime.now()).replace(' ','_').split('.')[0].replace(':','-')
+    
+    # Drop irrelevant columns
+    df_clean = df.drop(columns=['date', 'time', 'Local_clouds', 'time_in_days', 'time_in_years'], errors='ignore')
+
+    # Check the range of 'phase_of_year'
+    if 'phase_of_year' in df_clean.columns:
+        phase_of_year_range = df_clean['phase_of_year'].max() - df_clean['phase_of_year'].min()
+    else:
+        phase_of_year_range = 0
+
+    # Select features based on the range check
+    if phase_of_year_range > 0.9:
+        features = ['Humidity', 'sky-ambient', 'dew_point_depression', 'phase_of_day', 'phase_of_year']
+        
+    else:
+        features = ['Humidity', 'sky-ambient', 'dew_point_depression', 'phase_of_day']
+
+    # Prepare data with PolynomialFeatures
+    poly = PolynomialFeatures(degree=2, include_bias=False)
+    X = poly.fit_transform(df_clean[features])
+    y = df_clean['OWM_clouds']
+
+    # First pass: Fit Gradient Boosting model
+    gb_model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, random_state=42)
+    gb_model.fit(X, y)
+    y_pred = gb_model.predict(X)
+
+    # Outlier rejection based on straight cut of ±30 units
+    residuals = y - y_pred
+    mask = np.abs(residuals) <= 30
+    X = X[mask]
+    y = y[mask]
+
+    # Second pass: Refit the model without outliers
+    gb_model.fit(X, y)
+    y_pred = gb_model.predict(X)
+
+    # Plot predicted vs actual values
+    plt.figure(figsize=(8, 6))
+    plt.scatter(y, y_pred, alpha=0.7, color='black', marker='o')
+    plt.plot([y.min(), y.max()], [y.min(), y.max()], '--', color='red')
+    plt.xlabel('Actual OWM_clouds')
+    plt.ylabel('Predicted OWM_clouds')
+    plt.title('Predicted vs Actual OWM_clouds with Black Markers')
+    
+    #breakpoint()
+    plt.savefig(directory+'/ActualVSPredicted_' + str(file_date_string)+'.png', dpi=300, bbox_inches='tight')
+    #breakpoint()
+    #plt.show()
+
+    # # Interaction plot between 'sky-ambient' and 'phase_of_day'
+    # plt.figure(figsize=(8, 6))
+    # scatter = plt.scatter(X[:, 3], X[:, 1], c=y, cmap='viridis', alpha=0.6)  # Adjusting for expanded features
+    # plt.colorbar(scatter, label='Actual OWM_clouds')
+    # plt.xlabel('phase_of_day')
+    # plt.ylabel('sky-ambient')
+    # plt.title('Interaction Between phase_of_day and sky-ambient')
+    # plt.show()
+
+    # Heatmap of correlation between factors
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(pd.DataFrame(X).join(pd.Series(y, name='OWM_clouds')).corr(), annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
+    plt.title('Correlation Heatmap')
+    plt.savefig(directory+'/Correlation_' + str(file_date_string)+'.png', dpi=300, bbox_inches='tight')
+   
+    #plt.show()
+
+    # Evaluate performance
+    mse = mean_squared_error(y, y_pred)
+    r2 = r2_score(y, y_pred)
+
+    # Print performance metrics
+    print(f"Phase of Year Range: {phase_of_year_range:.3f}")
+    print(f"Mean Squared Error: {mse:.2f}")
+    print(f"R² Score: {r2:.2f}")
+
+    df_clean.loc[mask.index, 'predicted_clouds'] = y_pred
+    
+    
+    df_clean.to_csv(directory+'/WeatherData_' + str(file_date_string)+'.csv', index=False)
+    
+    
+    return gb_model, df_clean
+
+
+
 
 # Default headers to force closing connections
 # close_headers = {"Connection": "close"}
@@ -215,11 +326,14 @@ class WxEncAgent:
         self.height=0        
         self.observer_location = EarthLocation(lat=self.latitude*u.deg, lon=self.longitude*u.deg, height=self.height*u.m)
 
-
+        self.cloud_model=None
         self.ocn_status=None
         self.enc_status=None
 
         self.current_owm_humidity=-1
+        self.current_owm_ambient_temperature=0
+        self.current_owm_dewpoint=0
+
 
         # Initialise this variable
         self.open_and_enabled_to_observe=False
@@ -1700,6 +1814,43 @@ class WxEncAgent:
             if self.keep_closed_all_night:                
                 plog("Roof is being forced to stay CLOSED ALL NIGHT")
 
+            # Predicy clouds from model
+            #breakpoint()
+            
+            if ocn_status['humidity_%'] == -1:
+                model_humidity=self.current_owm_humidity
+            else:
+                model_humidity=ocn_status['humidity_%']
+            
+            
+            #breakpoint()
+            model_skyambient=ocn_status['sky_temp_C']-self.current_owm_ambient_temperature
+            
+            if ocn_status['dewpoint_C'] >99:
+                model_dewpoint=self.current_owm_dewpoint
+            else:
+                model_dewpoint=ocn_status['dewpoint_C']
+            
+            model_dewpointdepression=self.current_owm_ambient_temperature-model_dewpoint
+            
+           
+            model_phaseofday=((time.time() - 1735689600.0) /86400) % 1
+            
+            new_data = pd.DataFrame({
+                'Humidity': [model_humidity],
+                'sky-ambient': [model_skyambient],
+                'dew_point_depression': [model_dewpointdepression],
+                'phase_of_day': [model_phaseofday]
+            })
+            print (new_data)
+            # Apply the exact polynomial transformation you used in training
+            poly = PolynomialFeatures(degree=2, include_bias=False)
+            X_new_poly = poly.fit_transform(new_data)
+
+            # Predict clouds using your trained gb_model
+            predicted_clouds = self.cloud_model.predict(X_new_poly)
+            
+            plog(f"Predicted clouds: {predicted_clouds[0]:.2f}")
 
             plog("**************************************************************")
 
@@ -2260,6 +2411,8 @@ class WxEncAgent:
             
             # Keep this for weather stations that do not have current humidity
             self.current_owm_humidity=one_call.current.humidity
+            self.current_owm_ambient_temperature=one_call.current.temp['temp']- 273.15
+            self.current_owm_dewpoint=one_call.current.dewpoint - 273.15
             
         
             # Collect relevant info for fitzgerald weather number calculation
@@ -2546,6 +2699,40 @@ class WxEncAgent:
                 plog ("failed to write weatherlog")
                 plog(traceback.format_exc())
             #breakpoint()
+
+
+            ######## We also need to update our cloud prediction model.
+            # So lets open the weatherlog
+            # Assign column names manually
+            column_names = ['date','time','OWM_clouds','Local_clouds','Humidity','sky_temp_C','local_temperature_C', 'dewpoint', 'rain_rate','wind_m/s', 'OWM_temperature']
+            
+            # Read CSV without a header and assign column names
+            df = pd.read_csv(self.wema_path+self.name + '_weatherlog.csv', header=None, names=column_names)
+            
+            # Need to remove some rows with nan values
+            df = df.dropna()
+            
+            # Convert to years as main value
+            # Arbitrary reference point is the 1st of janurary 2025
+            # time.time() then is 1735689600.0
+            df['time_in_days']= df['time'] - 1735689600.0
+            df['time_in_days']= df['time_in_days'] / 86400 
+            df['phase_of_day']= df['time_in_days'] % 1
+            
+            df['time_in_years']= df['time'] - 1735689600.0
+            df['time_in_years']= df['time_in_years'] / 31536000
+            df['phase_of_year']= df['time_in_years'] % 1
+            
+            df['sky-ambient'] = df['sky_temp_C'] - df['OWM_temperature']
+            
+            # dew point depression
+            df['dew_point_depression'] =  df['OWM_temperature'] - df['dewpoint']
+
+            directory=self.wema_path+self.name
+            # Run the updated model with polynomial features included
+            self.cloud_model, updated_df = fit_cloud_prediction_model(df, directory)
+            
+
 
 
             status = {}
