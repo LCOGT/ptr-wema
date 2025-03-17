@@ -1851,23 +1851,29 @@ class WxEncAgent:
                 'phase_of_day': [model_phaseofday]
             })
             print (new_data)
-            # Apply the exact polynomial transformation you used in training
-            poly = PolynomialFeatures(degree=2, include_bias=False)
-            X_new_poly = poly.fit_transform(new_data)
+            try:
+                # Apply the exact polynomial transformation used in training
+                poly = PolynomialFeatures(degree=2, include_bias=False)
+                X_new_poly = poly.fit_transform(new_data)
+    
+                # Predict clouds using trained gb_model
+                predicted_clouds = self.cloud_model.predict(X_new_poly)
+                
+                self.cloud_tracker.append(predicted_clouds)
+                if len(self.cloud_tracker) > 10:
+                    self.cloud_tracker.pop(0)
+                #breakpoint()
+                
+                self.median_cloud_estimate=round(np.median(self.cloud_tracker),2)
+            
+                plog(f"Predicted clouds: {predicted_clouds[0]:.2f}")
+                plog ("Past clouds: " + str(self.cloud_tracker))
+                plog ("Median of last ten observations: " + str(round(np.median(self.cloud_tracker),2)) + " std " + str(round(np.std(self.cloud_tracker),2)))
 
-            # Predict clouds using your trained gb_model
-            predicted_clouds = self.cloud_model.predict(X_new_poly)
-            
-            self.cloud_tracker.append(predicted_clouds)
-            if len(self.cloud_tracker) > 10:
-                self.cloud_tracker.pop(0)
-            #breakpoint()
-            
-            self.median_cloud_estimate=round(np.median(self.cloud_tracker),2)
-            
-            plog(f"Predicted clouds: {predicted_clouds[0]:.2f}")
-            plog ("Past clouds: " + str(self.cloud_tracker))
-            plog ("Median of last ten observations: " + str(round(np.median(self.cloud_tracker),2)) + " std " + str(round(np.std(self.cloud_tracker),2)))
+            except:
+                plog ("failed model? Perhaps can happen if we haven't built up enough points yet.")
+                self.median_cloud_estimate=100
+                plog(traceback.format_exc())
 
             plog("**************************************************************")
 
@@ -2746,9 +2752,19 @@ class WxEncAgent:
             df['dew_point_depression'] =  df['OWM_temperature'] - df['dewpoint']
 
             directory=self.wema_path+self.name
-            # Run the updated model with polynomial features included
-            self.cloud_model, updated_df = fit_cloud_prediction_model(df, directory)
             
+            try:
+                # Trim the extreme values off... realistically MOST of the time it can be clear or cloudy
+                # and we even aren't too particularly interested in the extremes... more the range
+                df = df[~((df['OWM_clouds'] > 95) | (df['OWM_clouds'] < 5))]
+                #breakpoint()
+                
+                # Run the updated model with polynomial features included
+                self.cloud_model, updated_df = fit_cloud_prediction_model(df, directory)
+            
+            except:
+                plog ("failed model?")
+                plog(traceback.format_exc())
 
 
 
