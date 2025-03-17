@@ -334,6 +334,8 @@ class WxEncAgent:
         self.current_owm_ambient_temperature=0
         self.current_owm_dewpoint=0
 
+        self.cloud_tracker=[]
+        self.median_cloud_estimate=0
 
         # Initialise this variable
         self.open_and_enabled_to_observe=False
@@ -1359,6 +1361,12 @@ class WxEncAgent:
                 #breakpoint()
                 print ("OWM Humidity: " + str(self.current_owm_humidity))
             
+            
+            
+            # Simply override cloud_cover for the moment
+            quick_status['cloud_cover_%']=self.median_cloud_estimate
+            
+            
             wx_reasons = []
             #breakpoint()
             
@@ -1850,7 +1858,16 @@ class WxEncAgent:
             # Predict clouds using your trained gb_model
             predicted_clouds = self.cloud_model.predict(X_new_poly)
             
+            self.cloud_tracker.append(predicted_clouds)
+            if len(self.cloud_tracker) > 10:
+                self.cloud_tracker.pop(0)
+            #breakpoint()
+            
+            self.median_cloud_estimate=round(np.median(self.cloud_tracker),2)
+            
             plog(f"Predicted clouds: {predicted_clouds[0]:.2f}")
+            plog ("Past clouds: " + str(self.cloud_tracker))
+            plog ("Median of last ten observations: " + str(round(np.median(self.cloud_tracker),2)) + " std " + str(round(np.std(self.cloud_tracker),2)))
 
             plog("**************************************************************")
 
