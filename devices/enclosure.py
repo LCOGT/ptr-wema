@@ -493,7 +493,13 @@ class Enclosure:
 
         #status = {'shutter_status': 'Sim. Open'}    #Removed 10142023 WER  Not much of below is a lie!
         if self.is_dome:
-            status['dome_slewing'] = self.enclosure.Slewing
+            try:
+                status['dome_slewing'] = self.enclosure.Slewing
+            except:
+                status['dome_slewing'] = False
+                plog("Failed dome sleweing read. Assuming not slewing so as not to hang other commands waiting")
+                plog(traceback.format_exc())
+                
         else:
             status['dome_slewing'] = False
         

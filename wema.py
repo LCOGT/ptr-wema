@@ -754,6 +754,7 @@ class WxEncAgent:
         # If the WEMA code is restarted while the shutter is open, it needs to rehome
         # to figure out where it is. 
         
+        
         if 'MaxDome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
             home_on_boot=True
             
@@ -768,8 +769,8 @@ class WxEncAgent:
                             enc_status = g_dev['enc'].get_status()
                             self.send_enclosure_status(enc_status, [])
                             
-                            
-                            while not g_dev['enc'].enclosure.AtHome:
+                            home_wait_timeout=time.time()
+                            while not g_dev['enc'].enclosure.AtHome  and (time.time()-home_wait_timeout < 300):
                                 plog ("Waiting for Home")
                                 time.sleep(5)
                                 
@@ -1726,7 +1727,12 @@ class WxEncAgent:
 
     def update(self):     ## NB NB NB This is essentially the Manager/Sequencer for the
         #breakpoint()                 ## enclosures managed by the WEMA
-        self.update_status()
+        try:
+            self.update_status()
+        except:
+            
+            plog(traceback.format_exc())
+            plog ("failed to update status")
 
         if time.time() > self.scan_requests_timer + self.scan_requests_check_period:
             self.scan_requests_timer=time.time()
@@ -2340,7 +2346,8 @@ class WxEncAgent:
                                 g_dev['enc'].enclosure.FindHome()
                                 enc_status = g_dev['enc'].get_status()
                                 self.send_enclosure_status(enc_status, [])
-                                while not g_dev['enc'].enclosure.AtHome:
+                                home_wait_timeout=time.time()
+                                while not g_dev['enc'].enclosure.AtHome  and (time.time()-home_wait_timeout < 300):
                                     plog ("Waiting for Home")
                                     time.sleep(5)
                                 enc_status = g_dev['enc'].get_status()
