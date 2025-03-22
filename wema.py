@@ -755,6 +755,7 @@ class WxEncAgent:
         # to figure out where it is. 
         
         
+        
         if 'MaxDome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
             home_on_boot=True
             
@@ -1105,7 +1106,8 @@ class WxEncAgent:
                             #breakpoint()
                             report_timer=time.time() - 31
                             try:
-                                while g_dev['enc'].enclosure.Slewing:
+                                slew_timeout_timer=time.time()
+                                while g_dev['enc'].enclosure.Slewing and time.time()-slew_timeout_timer < 300:
                                     if time.time() - report_timer > 10:
                                         plog("Waiting for dome to stop slewing")
                                         report_timer=time.time()
@@ -2200,7 +2202,8 @@ class WxEncAgent:
                     g_dev['enc'].enclosure.Park()
                     enc_status = g_dev['enc'].get_status()
                     self.send_enclosure_status(enc_status, [])
-                    while not g_dev['enc'].enclosure.AtPark:
+                    park_timeout_timer=time.time()
+                    while not g_dev['enc'].enclosure.AtPark and time.time()-park_timeout_timer < 300:
                         plog ("Waiting for Park")
                         time.sleep(5)
                     enc_status = g_dev['enc'].get_status()
@@ -2214,7 +2217,8 @@ class WxEncAgent:
                     g_dev['enc'].enclosure.SlewToAzimuth(self.config['enclosure']['enclosure1']['slew_park_azimuth'])
                     enc_status = g_dev['enc'].get_status()
                     self.send_enclosure_status(enc_status, [])
-                    while g_dev['enc'].enclosure.Slewing:
+                    park_timeout_timer=time.time()
+                    while g_dev['enc'].enclosure.Slewing and time.time()-park_timeout_timer < 300:
                         plog("Waiting for Park")
                         #self.send_enclosure_status(self.enc_status, self.ocn_status)
                         time.sleep(5)
