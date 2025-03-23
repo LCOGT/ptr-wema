@@ -190,14 +190,14 @@ wema_config = {
 
     # Whether these limits are on by default
     'rain_limit_on': True,
-    'humidity_limit_on': True,
-    'windspeed_limit_on': True,
+    'humidity_limit_on': False,
+    'windspeed_limit_on': False,
     'lightning_limit_on': False,
     'temperature_minus_dewpoint_limit_on': False,
-    'sky_temperature_limit_on': True,
-    'cloud_cover_limit_on': False,
-    'lowest_ambient_temperature_on': True,
-    'highest_ambient_temperature_on': True,
+    'sky_temperature_limit_on': False,
+    'cloud_cover_limit_on': True,
+    'lowest_ambient_temperature_on': False,
+    'highest_ambient_temperature_on': False,
     
     #############################################################
     #### BE AWARE THAT THESE VALUES ARE JUST FOR INITILIASATION!#
@@ -212,7 +212,7 @@ wema_config = {
     'lightning_limit': 15,
     'temperature_minus_dewpoint_limit': 2,
     'sky_temperature_limit': -12,
-    'cloud_cover_limit': 50,
+    'cloud_cover_limit': 70,
     'lowest_ambient_temperature': -5,
     'highest_ambient_temperature': 60,
     
