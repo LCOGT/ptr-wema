@@ -95,16 +95,34 @@ def fit_cloud_prediction_model(df, directory):
     else:
         phase_of_year_range = 0
 
-    # Select features based on the range check
+
+
+    # Set up interesting feastures
+    # Manually add polynomial terms for specific features
+    df['Humidity^2'] = df['Humidity'] ** 2
+    df['sky-ambient^2'] = df['sky-ambient'] ** 2
+    
+    df['sky-ambientxphase_of_day'] = df['sky-ambient'] * df['phase_of_day']
+    df['sky-ambient^2xphase_of_day'] = df['sky-ambient^2'] * df['phase_of_day']
+    
+    
+    # df['sky_temp_Cxphase_of_day'] = df['sky_temp_C'] * df['phase_of_day']
+    # df['sky_temp_Cxphase_of_day^2'] = df['sky_temp_Cxphase_of_day'] ** 2
+    # Select features based on the range check  
+    
+    
+    
     if phase_of_year_range > 0.9:
-        features = ['Humidity', 'sky-ambient', 'dew_point_depression', 'phase_of_day', 'phase_of_year']
+        features = ['sky_temp_C', 'sky-ambient', 'dew_point_depression', 'phase_of_day', 'phase_of_year']
         
     else:
-        features = ['Humidity', 'sky-ambient', 'dew_point_depression', 'phase_of_day']
+        features = ['sky_temp_C', 'sky-ambient', 'dew_point_depression', 'phase_of_day', 'sky-ambient^2']#, 'sky-ambientxphase_of_day', 'sky-ambient^2xphase_of_day']#, 'sky_temp_Cxphase_of_day','sky_temp_Cxphase_of_day^2']
 
-    # Prepare data with PolynomialFeatures
-    poly = PolynomialFeatures(degree=2, include_bias=False)
-    X = poly.fit_transform(df_clean[features])
+    # # Prepare data with PolynomialFeatures
+    # poly = PolynomialFeatures(degree=2, include_bias=False)
+    # X = poly.fit_transform(df_clean[features])
+    
+    X = df[features].copy()
     y = df_clean['OWM_clouds']
 
     # First pass: Fit Gradient Boosting model
@@ -112,15 +130,15 @@ def fit_cloud_prediction_model(df, directory):
     gb_model.fit(X, y)
     y_pred = gb_model.predict(X)
 
-    # Outlier rejection based on straight cut of ±30 units
-    residuals = y - y_pred
-    mask = np.abs(residuals) <= 30
-    X = X[mask]
-    y = y[mask]
+    # # Outlier rejection based on straight cut of ±30 units
+    # residuals = y - y_pred
+    # mask = np.abs(residuals) <= 30
+    # X = X[mask]
+    # y = y[mask]
 
-    # Second pass: Refit the model without outliers
-    gb_model.fit(X, y)
-    y_pred = gb_model.predict(X)
+    # # Second pass: Refit the model without outliers
+    # gb_model.fit(X, y)
+    # y_pred = gb_model.predict(X)
 
     # Plot predicted vs actual values
     plt.figure(figsize=(8, 6))
@@ -129,20 +147,8 @@ def fit_cloud_prediction_model(df, directory):
     plt.xlabel('Actual OWM_clouds')
     plt.ylabel('Predicted OWM_clouds')
     plt.title('Predicted vs Actual OWM_clouds with Black Markers')
-    
-    #breakpoint()
-    plt.savefig(directory+'/ActualVSPredicted_' + str(file_date_string)+'.png', dpi=300, bbox_inches='tight')
-    #breakpoint()
-    #plt.show()
 
-    # # Interaction plot between 'sky-ambient' and 'phase_of_day'
-    # plt.figure(figsize=(8, 6))
-    # scatter = plt.scatter(X[:, 3], X[:, 1], c=y, cmap='viridis', alpha=0.6)  # Adjusting for expanded features
-    # plt.colorbar(scatter, label='Actual OWM_clouds')
-    # plt.xlabel('phase_of_day')
-    # plt.ylabel('sky-ambient')
-    # plt.title('Interaction Between phase_of_day and sky-ambient')
-    # plt.show()
+    plt.savefig(directory+'/ActualVSPredicted_' + str(file_date_string)+'.png', dpi=300, bbox_inches='tight')
 
     # Heatmap of correlation between factors
     plt.figure(figsize=(8, 6))
@@ -150,7 +156,6 @@ def fit_cloud_prediction_model(df, directory):
     plt.title('Correlation Heatmap')
     plt.savefig(directory+'/Correlation_' + str(file_date_string)+'.png', dpi=300, bbox_inches='tight')
    
-    #plt.show()
 
     # Evaluate performance
     mse = mean_squared_error(y, y_pred)
@@ -161,7 +166,7 @@ def fit_cloud_prediction_model(df, directory):
     print(f"Mean Squared Error: {mse:.2f}")
     print(f"R² Score: {r2:.2f}")
 
-    df_clean.loc[mask.index, 'predicted_clouds'] = y_pred
+    df_clean['predicted_clouds'] = y_pred
     
     
     df_clean.to_csv(directory+'/WeatherData_' + str(file_date_string)+'.csv', index=False)
@@ -169,7 +174,97 @@ def fit_cloud_prediction_model(df, directory):
     
     return gb_model, df_clean
 
+# # Reload the function from the canvas
+# def fit_cloud_prediction_model(df, directory):
+    
+#     directory=directory+'/weatherfits'
+#     if not os.path.exists(directory):
+#         os.makedirs(directory)
+    
+#     file_date_string=str(datetime.datetime.now()).replace(' ','_').split('.')[0].replace(':','-')
+    
+#     # Drop irrelevant columns
+#     df_clean = df.drop(columns=['date', 'time', 'Local_clouds', 'time_in_days', 'time_in_years'], errors='ignore')
 
+#     # Check the range of 'phase_of_year'
+#     if 'phase_of_year' in df_clean.columns:
+#         phase_of_year_range = df_clean['phase_of_year'].max() - df_clean['phase_of_year'].min()
+#     else:
+#         phase_of_year_range = 0
+
+#     # Select features based on the range check
+#     if phase_of_year_range > 0.9:
+#         features = ['Humidity', 'sky-ambient', 'dew_point_depression', 'phase_of_day', 'phase_of_year']
+        
+#     else:
+#         features = ['Humidity', 'sky-ambient', 'dew_point_depression', 'phase_of_day']
+
+#     # Prepare data with PolynomialFeatures
+#     poly = PolynomialFeatures(degree=2, include_bias=False)
+#     X = poly.fit_transform(df_clean[features])
+#     y = df_clean['OWM_clouds']
+
+#     # First pass: Fit Gradient Boosting model
+#     gb_model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, random_state=42)
+#     gb_model.fit(X, y)
+#     y_pred = gb_model.predict(X)
+
+#     # Outlier rejection based on straight cut of ±30 units
+#     residuals = y - y_pred
+#     mask = np.abs(residuals) <= 30
+#     X = X[mask]
+#     y = y[mask]
+
+#     # Second pass: Refit the model without outliers
+#     gb_model.fit(X, y)
+#     y_pred = gb_model.predict(X)
+
+#     # Plot predicted vs actual values
+#     plt.figure(figsize=(8, 6))
+#     plt.scatter(y, y_pred, alpha=0.7, color='black', marker='o')
+#     plt.plot([y.min(), y.max()], [y.min(), y.max()], '--', color='red')
+#     plt.xlabel('Actual OWM_clouds')
+#     plt.ylabel('Predicted OWM_clouds')
+#     plt.title('Predicted vs Actual OWM_clouds with Black Markers')
+    
+#     #breakpoint()
+#     plt.savefig(directory+'/ActualVSPredicted_' + str(file_date_string)+'.png', dpi=300, bbox_inches='tight')
+#     #breakpoint()
+#     #plt.show()
+
+#     # # Interaction plot between 'sky-ambient' and 'phase_of_day'
+#     # plt.figure(figsize=(8, 6))
+#     # scatter = plt.scatter(X[:, 3], X[:, 1], c=y, cmap='viridis', alpha=0.6)  # Adjusting for expanded features
+#     # plt.colorbar(scatter, label='Actual OWM_clouds')
+#     # plt.xlabel('phase_of_day')
+#     # plt.ylabel('sky-ambient')
+#     # plt.title('Interaction Between phase_of_day and sky-ambient')
+#     # plt.show()
+
+#     # Heatmap of correlation between factors
+#     plt.figure(figsize=(8, 6))
+#     sns.heatmap(pd.DataFrame(X).join(pd.Series(y, name='OWM_clouds')).corr(), annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
+#     plt.title('Correlation Heatmap')
+#     plt.savefig(directory+'/Correlation_' + str(file_date_string)+'.png', dpi=300, bbox_inches='tight')
+   
+#     #plt.show()
+
+#     # Evaluate performance
+#     mse = mean_squared_error(y, y_pred)
+#     r2 = r2_score(y, y_pred)
+
+#     # Print performance metrics
+#     print(f"Phase of Year Range: {phase_of_year_range:.3f}")
+#     print(f"Mean Squared Error: {mse:.2f}")
+#     print(f"R² Score: {r2:.2f}")
+
+#     df_clean.loc[mask.index, 'predicted_clouds'] = y_pred
+    
+    
+#     df_clean.to_csv(directory+'/WeatherData_' + str(file_date_string)+'.csv', index=False)
+    
+    
+#     return gb_model, df_clean
 
 
 # Default headers to force closing connections
@@ -1842,7 +1937,7 @@ class WxEncAgent:
             #breakpoint()
             model_skyambient=ocn_status['sky_temp_C']-self.current_owm_ambient_temperature
             
-            if ocn_status['dewpoint_C'] >99:
+            if ocn_status['dewpoint_C'] >99 or ocn_status['dewpoint_C'] < -5:
                 model_dewpoint=self.current_owm_dewpoint
             else:
                 model_dewpoint=ocn_status['dewpoint_C']
@@ -1853,19 +1948,31 @@ class WxEncAgent:
             model_phaseofday=((time.time() - 1735689600.0) /86400) % 1
             
             new_data = pd.DataFrame({
-                'Humidity': [model_humidity],
+                #'Humidity': [model_humidity],
+                'sky_temp_C': ocn_status['sky_temp_C'],
                 'sky-ambient': [model_skyambient],
                 'dew_point_depression': [model_dewpointdepression],
                 'phase_of_day': [model_phaseofday]
             })
+            
+            # Add the manual polynomial terms
+            #new_data['Humidity^2'] = new_data['Humidity'] ** 2
+            new_data['sky-ambient^2'] = new_data['sky-ambient'] ** 2
+            # new_data['sky-ambientxphase_of_day'] = new_data['sky-ambient'] * new_data['phase_of_day']
+            # new_data['sky-ambient^2xphase_of_day'] = new_data['sky-ambient^2'] * new_data['phase_of_day']
+            # new_data['sky_temp_Cxphase_of_day'] = new_data['sky_temp_C'] * new_data['phase_of_day']
+            # new_data['sky_temp_Cxphase_of_day^2'] = new_data['sky_temp_Cxphase_of_day'] ** 2
+            
             print (new_data)
             try:
-                # Apply the exact polynomial transformation used in training
-                poly = PolynomialFeatures(degree=2, include_bias=False)
-                X_new_poly = poly.fit_transform(new_data)
+                # # Apply the exact polynomial transformation used in training
+                # poly = PolynomialFeatures(degree=2, include_bias=False)
+                # X_new_poly = poly.fit_transform(new_data)
+                
+                # X = df[features].copy()
     
                 # Predict clouds using trained gb_model
-                predicted_clouds = self.cloud_model.predict(X_new_poly)
+                predicted_clouds = self.cloud_model.predict(new_data)
                 
                 self.cloud_tracker.append(predicted_clouds)
                 if len(self.cloud_tracker) > 10:
