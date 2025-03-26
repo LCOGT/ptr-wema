@@ -41,10 +41,17 @@ load_dotenv(".env")
 from wema_config import get_enc_status_custom
 from wema_config import get_ocn_status_custom
 import csv
-
+from requests.auth import HTTPBasicAuth
 from astropy.coordinates import EarthLocation, AltAz, SkyCoord
 from astropy.time import Time
 import astropy.units as u
+
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+# # Australian weather service
+# from weather_au import api
 
 from func_timeout import func_timeout, FunctionTimedOut
 import numpy as np
@@ -73,18 +80,17 @@ close_headers = {
 
 import pytz
 import datetime
+from datetime import timezone
 
 #import requests
 
-
-# Reload the function from the canvas
 def fit_cloud_prediction_model(df, directory):
     
-    directory=directory+'/weatherfits'
+    directory = directory + '/weatherfits'
     if not os.path.exists(directory):
         os.makedirs(directory)
     
-    file_date_string=str(datetime.datetime.now()).replace(' ','_').split('.')[0].replace(':','-')
+    file_date_string = str(datetime.datetime.now()).replace(' ', '_').split('.')[0].replace(':', '-')
     
     # Drop irrelevant columns
     df_clean = df.drop(columns=['date', 'time', 'Local_clouds', 'time_in_days', 'time_in_years'], errors='ignore')
@@ -95,52 +101,57 @@ def fit_cloud_prediction_model(df, directory):
     else:
         phase_of_year_range = 0
 
-
-
-    # Set up interesting feastures
     # Manually add polynomial terms for specific features
     df['Humidity^2'] = df['Humidity'] ** 2
     df['sky-ambient^2'] = df['sky-ambient'] ** 2
-    
     df['sky-ambientxphase_of_day'] = df['sky-ambient'] * df['phase_of_day']
     df['sky-ambient^2xphase_of_day'] = df['sky-ambient^2'] * df['phase_of_day']
-    
-    
-    # df['sky_temp_Cxphase_of_day'] = df['sky_temp_C'] * df['phase_of_day']
-    # df['sky_temp_Cxphase_of_day^2'] = df['sky_temp_Cxphase_of_day'] ** 2
-    # Select features based on the range check  
-    
-    
-    
+
+    # Add Fourier terms for seasonality
+    df['sin_hour'] = np.sin(2 * np.pi * df['phase_of_day'])
+    df['cos_hour'] = np.cos(2 * np.pi * df['phase_of_day'])
+    df['sin_year'] = np.sin(2 * np.pi * df['phase_of_year'])
+    df['cos_year'] = np.cos(2 * np.pi * df['phase_of_year'])
+
+    # Select features based on the range check
     if phase_of_year_range > 0.9:
         features = ['sky_temp_C', 'sky-ambient', 'dew_point_depression', 'phase_of_day', 'phase_of_year']
-        
     else:
-        features = ['sky_temp_C', 'sky-ambient', 'dew_point_depression', 'phase_of_day', 'sky-ambient^2']#, 'sky-ambientxphase_of_day', 'sky-ambient^2xphase_of_day']#, 'sky_temp_Cxphase_of_day','sky_temp_Cxphase_of_day^2']
+        features = ['sky_temp_C', 'sky-ambient', 'dew_point_depression', 'phase_of_day', 
+                    'sky-ambient^2', 'sin_hour', 'cos_hour']
 
-    # # Prepare data with PolynomialFeatures
-    # poly = PolynomialFeatures(degree=2, include_bias=False)
-    # X = poly.fit_transform(df_clean[features])
-    
     X = df[features].copy()
     y = df_clean['OWM_clouds']
 
-    # First pass: Fit Gradient Boosting model
+    ### ✅ First Pass: Fit Model and Remove Outliers
     gb_model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, random_state=42)
     gb_model.fit(X, y)
     y_pred = gb_model.predict(X)
 
-    # # Outlier rejection based on straight cut of ±30 units
-    # residuals = y - y_pred
-    # mask = np.abs(residuals) <= 30
-    # X = X[mask]
-    # y = y[mask]
+    # Outlier rejection - First Pass
+    residuals = y - y_pred
+    mask = np.abs(residuals) <= 30  # Remove large outliers (> 30 units)
+    X = X[mask]
+    y = y[mask]
 
-    # # Second pass: Refit the model without outliers
-    # gb_model.fit(X, y)
-    # y_pred = gb_model.predict(X)
+    print(f"First pass removed {len(residuals) - len(y)} outliers.")
 
-    # Plot predicted vs actual values
+    ### ✅ Second Pass: Refit Model and Remove Outliers Again
+    gb_model.fit(X, y)
+    y_pred = gb_model.predict(X)
+
+    residuals = y - y_pred
+    mask = np.abs(residuals) <= 30  # Remove outliers a second time
+    X = X[mask]
+    y = y[mask]
+
+    print(f"Second pass removed {len(residuals) - len(y)} outliers.")
+
+    ### ✅ Final Fit: Fit Model on Cleaned Data
+    gb_model.fit(X, y)
+    y_pred = gb_model.predict(X)
+
+    ### ✅ Plot predicted vs actual values
     plt.figure(figsize=(8, 6))
     plt.scatter(y, y_pred, alpha=0.7, color='black', marker='o')
     plt.plot([y.min(), y.max()], [y.min(), y.max()], '--', color='red')
@@ -148,31 +159,130 @@ def fit_cloud_prediction_model(df, directory):
     plt.ylabel('Predicted OWM_clouds')
     plt.title('Predicted vs Actual OWM_clouds with Black Markers')
 
-    plt.savefig(directory+'/ActualVSPredicted_' + str(file_date_string)+'.png', dpi=300, bbox_inches='tight')
+    plt.savefig(directory + '/ActualVSPredicted_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
 
-    # Heatmap of correlation between factors
+    ### ✅ Heatmap of correlation between factors
     plt.figure(figsize=(8, 6))
     sns.heatmap(pd.DataFrame(X).join(pd.Series(y, name='OWM_clouds')).corr(), annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
     plt.title('Correlation Heatmap')
-    plt.savefig(directory+'/Correlation_' + str(file_date_string)+'.png', dpi=300, bbox_inches='tight')
-   
+    plt.savefig(directory + '/Correlation_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
 
-    # Evaluate performance
+    ### ✅ Evaluate performance
     mse = mean_squared_error(y, y_pred)
+    rmse = np.sqrt(mse)
     r2 = r2_score(y, y_pred)
 
-    # Print performance metrics
+    ### ✅ Print performance metrics
     print(f"Phase of Year Range: {phase_of_year_range:.3f}")
     print(f"Mean Squared Error: {mse:.2f}")
+    print(f"Root Mean Squared Error: {rmse:.2f}")
     print(f"R² Score: {r2:.2f}")
 
-    df_clean['predicted_clouds'] = y_pred
-    
-    
-    df_clean.to_csv(directory+'/WeatherData_' + str(file_date_string)+'.csv', index=False)
-    
+    ### ✅ Save updated dataframe with predictions
+    df_clean.loc[X.index, 'predicted_clouds'] = y_pred
+    df_clean.to_csv(directory + '/WeatherData_' + str(file_date_string) + '.csv', index=False)
     
     return gb_model, df_clean
+# # Reload the function from the canvas
+# def fit_cloud_prediction_model(df, directory):
+    
+#     directory=directory+'/weatherfits'
+#     if not os.path.exists(directory):
+#         os.makedirs(directory)
+    
+#     file_date_string=str(datetime.datetime.now()).replace(' ','_').split('.')[0].replace(':','-')
+    
+#     # Drop irrelevant columns
+#     df_clean = df.drop(columns=['date', 'time', 'Local_clouds', 'time_in_days', 'time_in_years'], errors='ignore')
+
+#     # Check the range of 'phase_of_year'
+#     if 'phase_of_year' in df_clean.columns:
+#         phase_of_year_range = df_clean['phase_of_year'].max() - df_clean['phase_of_year'].min()
+#     else:
+#         phase_of_year_range = 0
+
+
+
+#     # Set up interesting feastures
+#     # Manually add polynomial terms for specific features
+#     df['Humidity^2'] = df['Humidity'] ** 2
+#     df['sky-ambient^2'] = df['sky-ambient'] ** 2
+    
+#     df['sky-ambientxphase_of_day'] = df['sky-ambient'] * df['phase_of_day']
+#     df['sky-ambient^2xphase_of_day'] = df['sky-ambient^2'] * df['phase_of_day']
+    
+    
+#     # df['sky_temp_Cxphase_of_day'] = df['sky_temp_C'] * df['phase_of_day']
+#     # df['sky_temp_Cxphase_of_day^2'] = df['sky_temp_Cxphase_of_day'] ** 2
+#     # Select features based on the range check  
+    
+#     # Add Fourier terms for seasonality
+#     df['sin_hour'] = np.sin(2 * np.pi * df['phase_of_day'])
+#     df['cos_hour'] = np.cos(2 * np.pi * df['phase_of_day'])
+#     df['sin_year'] = np.sin(2 * np.pi * df['phase_of_year'])
+#     df['cos_year'] = np.cos(2 * np.pi * df['phase_of_year'])
+    
+#     if phase_of_year_range > 0.9:
+#         features = ['sky_temp_C', 'sky-ambient', 'dew_point_depression', 'phase_of_day', 'phase_of_year']
+        
+#     else:
+#         features = ['sky_temp_C', 'sky-ambient', 'dew_point_depression', 'phase_of_day', 'sky-ambient^2', 'sin_hour','cos_hour']#, 'sky-ambientxphase_of_day', 'sky-ambient^2xphase_of_day']#, 'sky_temp_Cxphase_of_day','sky_temp_Cxphase_of_day^2']
+
+#     # # Prepare data with PolynomialFeatures
+#     # poly = PolynomialFeatures(degree=2, include_bias=False)
+#     # X = poly.fit_transform(df_clean[features])
+    
+#     X = df[features].copy()
+#     y = df_clean['OWM_clouds']
+
+#     # First pass: Fit Gradient Boosting model
+#     gb_model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, random_state=42)
+#     gb_model.fit(X, y)
+#     y_pred = gb_model.predict(X)
+
+#     # # Outlier rejection based on straight cut of ±30 units
+#     # residuals = y - y_pred
+#     # mask = np.abs(residuals) <= 30
+#     # X = X[mask]
+#     # y = y[mask]
+
+#     # # Second pass: Refit the model without outliers
+#     # gb_model.fit(X, y)
+#     # y_pred = gb_model.predict(X)
+
+#     # Plot predicted vs actual values
+#     plt.figure(figsize=(8, 6))
+#     plt.scatter(y, y_pred, alpha=0.7, color='black', marker='o')
+#     plt.plot([y.min(), y.max()], [y.min(), y.max()], '--', color='red')
+#     plt.xlabel('Actual OWM_clouds')
+#     plt.ylabel('Predicted OWM_clouds')
+#     plt.title('Predicted vs Actual OWM_clouds with Black Markers')
+
+#     plt.savefig(directory+'/ActualVSPredicted_' + str(file_date_string)+'.png', dpi=300, bbox_inches='tight')
+
+#     # Heatmap of correlation between factors
+#     plt.figure(figsize=(8, 6))
+#     sns.heatmap(pd.DataFrame(X).join(pd.Series(y, name='OWM_clouds')).corr(), annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
+#     plt.title('Correlation Heatmap')
+#     plt.savefig(directory+'/Correlation_' + str(file_date_string)+'.png', dpi=300, bbox_inches='tight')
+   
+
+#     # Evaluate performance
+#     mse = mean_squared_error(y, y_pred)
+#     r2 = r2_score(y, y_pred)
+
+#     # Print performance metrics
+#     print(f"Phase of Year Range: {phase_of_year_range:.3f}")
+#     print(f"Mean Squared Error: {mse:.2f}")
+#     print(f"R² Score: {r2:.2f}")
+
+#     df_clean['predicted_clouds'] = y_pred
+    
+    
+#     df_clean.to_csv(directory+'/WeatherData_' + str(file_date_string)+'.csv', index=False)
+    
+    
+#     return gb_model, df_clean
 
 # # Reload the function from the canvas
 # def fit_cloud_prediction_model(df, directory):
@@ -421,6 +531,22 @@ class WxEncAgent:
         self.height=0        
         self.observer_location = EarthLocation(lat=self.latitude*u.deg, lon=self.longitude*u.deg, height=self.height*u.m)
 
+
+
+        # Load up the secrets and passwords
+        with open('secrets.txt', "r") as file:
+            secrets=json.load(file)
+
+
+        
+        self.smtp_server=secrets["smtp_server"]
+        self.smtp_port=secrets["smtp_port"]
+        self.sender_email=secrets["sender_email"]
+        self.email_password=secrets["email_password"]
+        
+        self.owm_api_key=secrets["OWM_Key"]
+        self.weather_to_emails=secrets["weather_to_emails"]
+        
         self.cloud_model=None
         self.ocn_status=None
         self.enc_status=None
@@ -556,6 +682,14 @@ class WxEncAgent:
         # Obs under WEMA guidance
         self.obs_ids=self.config['obsp_ids']
         self.morning_flats_finished=False
+
+
+        self.owm_cloud_cover=0
+        self.open_meteo_cloud_cover=0
+        self.weatherapi_cloud_cover=0
+        self.virtualcrossing_cloud_cover=0
+        self.meteoblue_current_cloud_cover=0
+        self.averageforecast_current_cloud_cover=0
 
         # This prevents commands from previous nights/runs suddenly running
         # when wema.py is booted (has happened a bit!)
@@ -1462,7 +1596,7 @@ class WxEncAgent:
             
             
             # Simply override cloud_cover for the moment
-            quick_status['cloud_cover_%']=self.median_cloud_estimate
+            quick_status['cloud_cover_%']=self.averageforecast_current_cloud_cover
             
             
             wx_reasons = []
@@ -1963,6 +2097,13 @@ class WxEncAgent:
             # new_data['sky_temp_Cxphase_of_day'] = new_data['sky_temp_C'] * new_data['phase_of_day']
             # new_data['sky_temp_Cxphase_of_day^2'] = new_data['sky_temp_Cxphase_of_day'] ** 2
             
+            # Add Fourier terms for seasonality
+            new_data['sin_hour'] = np.sin(2 * np.pi * new_data['phase_of_day'])
+            new_data['cos_hour'] = np.cos(2 * np.pi * new_data['phase_of_day'])
+            # new_data['sin_year'] = np.sin(2 * np.pi * new_data['phase_of_year'])
+            # new_data['cos_year'] = np.cos(2 * np.pi * new_data['phase_of_year'])
+            
+            
             print (new_data)
             try:
                 # # Apply the exact polynomial transformation used in training
@@ -1984,6 +2125,14 @@ class WxEncAgent:
                 plog(f"Predicted clouds: {predicted_clouds[0]:.2f}")
                 plog ("Past clouds: " + str(self.cloud_tracker))
                 plog ("Median of last ten observations: " + str(round(np.median(self.cloud_tracker),2)) + " std " + str(round(np.std(self.cloud_tracker),2)))
+
+
+                plog("OWM cloud cover: " +str(self.owm_cloud_cover))
+                plog("Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover))
+                plog("OWM Next Hour: " +str(self.owm_cloud_cover_next_hour))
+                plog("Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour))
+                
+                plog("Average cloud cover: "+str(self.averageforecast_current_cloud_cover))
 
             except:
                 plog ("failed model? Perhaps can happen if we haven't built up enough points yet.")
@@ -2533,7 +2682,7 @@ class WxEncAgent:
             
             config_dict["subscription_type"] = SubscriptionType(name="professional", subdomain="pro", is_paid=False)            
 
-            owm = OWM('d5c3eae1b48bf7df3f240b8474af3ed0', config_dict)
+            owm = OWM(self.owm_api_key, config_dict)
             mgr = owm.weather_manager()
             
             #breakpoint()
@@ -2797,6 +2946,10 @@ class WxEncAgent:
             # Current cloud % from weather forecast
             line_of_weather_info.append(one_call.current.clouds)
             
+            print ("OWM current clouds: " + str(one_call.current.clouds))
+            self.owm_cloud_cover=one_call.current.clouds
+            self.owm_cloud_cover_next_hour=one_call.forecast_hourly[1].clouds
+            
             # Reported cloud_cover
             line_of_weather_info.append(ocn_status['cloud_cover_%'])
             
@@ -2829,6 +2982,93 @@ class WxEncAgent:
             # OWM temperature - can be more reliable than weather station
             line_of_weather_info.append(one_call.current.temp['temp']-273.15)
             
+            
+            # Open Meteo Cloud Cover
+            # Define the API endpoint and parameters
+            url = "https://api.open-meteo.com/v1/forecast"
+            params = {
+            'latitude': self.latitude,  # Melbourne latitude
+            'longitude': self.longitude,  # Melbourne longitude
+            'current': 'cloud_cover',  # Request cloud cover data
+            'hourly': 'cloudcover'
+                }
+            
+            # Send GET request
+            response = requests.get(url, params=params)
+            
+            # Check if request was successful
+            if response.status_code == 200:
+                data = response.json()
+                # Extract cloud cover percentage
+                self.open_meteo_cloud_cover = data.get('current', {}).get('cloud_cover')
+                #self.open_meteo_cloud_cover_next_hour= data['hourly']['cloudcover'][1]
+                print(f"Open Meteo Current cloud cover in Melbourne: {self.open_meteo_cloud_cover}%")
+            else:
+                print(f"Error: {response.status_code}, {response.text}")
+                
+            line_of_weather_info.append(self.open_meteo_cloud_cover)
+            
+            # Convert times from the response to datetime
+            time_list = [datetime.datetime.fromisoformat(t).replace(tzinfo=timezone.utc) for t in data['hourly']['time']]
+            cloud_list = data['hourly']['cloudcover']
+            # Get the current UTC time (since Open-Meteo time is in UTC unless you set timezone)
+            now = datetime.datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+
+            # then continue with:
+            for i, t in enumerate(time_list):
+                if t > now:
+                    self.open_meteo_cloud_cover_next_hour = cloud_list[i]
+                    #print(f"Cloud cover at {t} is {cloudcover_next_hour}%")
+                    break
+                      
+            
+            self.averageforecast_current_cloud_cover= (self.owm_cloud_cover+self.open_meteo_cloud_cover+self.owm_cloud_cover_next_hour+self.open_meteo_cloud_cover_next_hour)/4
+            line_of_weather_info.append(self.averageforecast_current_cloud_cover)
+
+            # Next hours
+            line_of_weather_info.append(self.open_meteo_cloud_cover_next_hour)
+            line_of_weather_info.append(self.owm_cloud_cover_next_hour)
+
+            
+            # Your cPanel email credentials
+            smtp_server = self.smtp_server
+            port = self.smtp_port  # For SSL
+            sender_email = self.sender_email
+            password = self.email_password
+            
+            
+            
+            # Receiver
+            receiver_email = self.weather_to_emails
+            
+            # Create the email
+            message = MIMEMultipart()
+            message['From'] = sender_email
+            message['To'] = receiver_email
+            message['Subject'] = 'Cloud Report'
+            
+            body = 'Hello, the clouds are now (hopefully): ' + str(self.averageforecast_current_cloud_cover) +'\n'
+            
+            body = body +"OWM cloud cover: " +str(self.owm_cloud_cover) +'\n'
+            body = body +"Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover)+'\n'
+            body = body +"OWM Next Hour: " +str(self.owm_cloud_cover_next_hour)+'\n'
+            body = body +"Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour)+'\n'
+            
+            
+            message.attach(MIMEText(body, 'plain'))
+            
+            # Send the email
+            try:
+                with smtplib.SMTP_SSL(smtp_server, port) as server:
+                    server.login(sender_email, password)
+                    server.sendmail(sender_email, receiver_email, message.as_string())
+                print("Email sent successfully!")
+            except Exception as e:
+                print(f"Error sending email: {e}")
+
+
+            
+            #breakpoint()
                 
             # Open the file in append mode and write the line
             try:
@@ -2841,7 +3081,7 @@ class WxEncAgent:
                 plog(traceback.format_exc())
             #breakpoint()
 
-
+            
             ######## We also need to update our cloud prediction model.
             # So lets open the weatherlog
             # Assign column names manually

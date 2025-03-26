@@ -12,3 +12,4 @@ sandbox/
 .pylint
 
 .DS_Store
+secrets.txt
