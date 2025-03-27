@@ -42,7 +42,7 @@ from wema_config import get_enc_status_custom
 from wema_config import get_ocn_status_custom
 import csv
 from requests.auth import HTTPBasicAuth
-from astropy.coordinates import EarthLocation, AltAz, SkyCoord
+from astropy.coordinates import EarthLocation, AltAz, SkyCoord, get_sun, get_moon, solar_system_ephemeris
 from astropy.time import Time
 import astropy.units as u
 
@@ -3029,6 +3029,73 @@ class WxEncAgent:
             line_of_weather_info.append(self.open_meteo_cloud_cover_next_hour)
             line_of_weather_info.append(self.owm_cloud_cover_next_hour)
 
+
+            #breakpoint()
+            # Get current time
+            obstime = Time.now()
+            
+            # Define the AltAz frame
+            altaz_frame = AltAz(obstime=obstime, location=self.observer_location)
+            
+            # Get the Sun's position
+            sun = get_sun(obstime)
+            
+            # Transform to AltAz
+            sun_altaz = sun.transform_to(altaz_frame)
+            
+            # Get the altitude
+            sun_altitude = sun_altaz.alt
+            print(f"Current Sun altitude: {sun_altitude:.2f}")
+            
+            
+            moon = get_moon(obstime, location=self.observer_location)
+            moon_altaz = moon.transform_to(altaz_frame)
+            moon_altitude = moon_altaz.alt
+            #print(f"Moon altitude: {moon_altitude:.2f}")
+            
+            
+           # altitude = moon_altaz.alt
+
+            # Skip if below horizon
+            if moon_altitude < 0 * u.deg:
+                print("Moon is below the horizon — no flux on ground.")
+            else:
+                # Illumination estimate (simplified using elongation)
+                sun = get_sun(obstime)
+                elongation = sun.separation(moon)
+                illumination = (1 + np.cos(elongation)) / 2
+            
+                # Apparent magnitude scaling (very approximate)
+                full_moon_mag = -12.74
+                moon_mag = full_moon_mag + 2.5 * np.log10(1 / illumination)
+            
+                # Flux above atmosphere (visible range)
+                F0 = 3.6e-8  # W/m² for mag 0
+                F_top = F0 * 10**(-0.4 * moon_mag)
+            
+                # Air mass approximation
+                zenith_angle = 90 * u.deg - moon_altitude
+                airmass = 1 / np.cos(zenith_angle.to(u.rad))
+            
+                # Atmospheric extinction (assuming extinction coefficient k ~ 0.2 mag/airmass)
+                k = 0.2  # typical in visual band
+                transmission = 10**(-0.4 * k * airmass)
+            
+                # Flux on ground
+                flux_ground = F_top * transmission * np.sin(moon_altitude.to(u.rad))
+            
+                print(f"Moon altitude: {moon_altitude:.2f}")
+                print(f"Moon illumination: {illumination:.2%}")
+                print(f"Approx. moon flux on ground: {flux_ground:.2e} W/m²")
+            
+            #breakpoint()
+            # Put in relevant sun and moon potential effects
+            line_of_weather_info.append(sun_altitude / u.deg)
+            line_of_weather_info.append(moon_altitude/ u.deg)
+            line_of_weather_info.append(illumination)
+            line_of_weather_info.append(flux_ground)
+            
+            #breakpoint()
             
             # Your cPanel email credentials
             smtp_server = self.smtp_server
