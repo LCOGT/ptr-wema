@@ -115,12 +115,12 @@ def fit_cloud_prediction_model(df, directory):
 
     # Select features based on the range check
     if phase_of_year_range > 0.9:
-        features = ['corrected_sky_temp_C', 'sky-ambient', 'dew_point_depression']#, 'phase_of_day', 'phase_of_year']
+        features = ['corrected_sky_temp_C', 'sky-ambient', 'dew_point_depression', 'sky-ambient^2']#, 'phase_of_day', 'phase_of_year']
     else:
         features = ['corrected_sky_temp_C', 'sky-ambient', 'dew_point_depression', 'sky-ambient^2']#'phase_of_day', 'sky-ambient^2', 'sin_hour', 'cos_hour']
 
     X = df[features].copy()
-    y = df_clean['OWM_clouds']
+    y = df_clean['avg_forecast_cloudcover']
 
     ### ✅ First Pass: Fit Model and Remove Outliers
     gb_model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, random_state=42)
@@ -2153,10 +2153,10 @@ class WxEncAgent:
             
             new_data = pd.DataFrame({
                 #'Humidity': [model_humidity],
-                'sky_temp_C':  ocn_status['sky_temp_C'],
-                'sun_altitude': sun_altitude,
-                'moon_flux_on_ground': flux_ground,
-                'sun_azimuth': sun_azimuth
+                #'sky_temp_C':  [ocn_status['sky_temp_C']],
+                'sun_altitude': [sun_altitude/ u.deg],
+                'moon_flux_on_ground': [flux_ground],
+                'sun_azimuth': [sun_azimuth/ u.deg]
             })
             
             
@@ -2177,12 +2177,12 @@ class WxEncAgent:
             
             new_data = pd.DataFrame({
                 #'Humidity': [model_humidity],
-                'sky_temp_C': corrected_sky_temp_C,
+                'corrected_sky_temp_C': corrected_sky_temp_C,
                 'sky-ambient': [model_skyambient],
                 'dew_point_depression': [model_dewpointdepression],
-                'phase_of_day': [model_phaseofday]
+                #'phase_of_day': [model_phaseofday]
             })
-            
+            #features = ['corrected_sky_temp_C', 'sky-ambient', 'dew_point_depression', 'sky-ambient^2']
             # Add the manual polynomial terms
             #new_data['Humidity^2'] = new_data['Humidity'] ** 2
             new_data['sky-ambient^2'] = new_data['sky-ambient'] ** 2
@@ -3317,7 +3317,7 @@ class WxEncAgent:
             try:
                 # Trim the extreme values off... realistically MOST of the time it can be clear or cloudy
                 # and we even aren't too particularly interested in the extremes... more the range
-                df = df[~((df['OWM_clouds'] > 95) | (df['OWM_clouds'] < 5))]
+                df = df[~((df['avg_forecast_cloudcover'] > 95) | (df['avg_forecast_cloudcover'] < 5))]
                 #breakpoint()
                 
                 # Run the updated model with polynomial features included
