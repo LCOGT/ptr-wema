@@ -2155,10 +2155,10 @@ class WxEncAgent:
                 #'Humidity': [model_humidity],
                 #'sky_temp_C':  [ocn_status['sky_temp_C']],
                 'sun_altitude': [sun_altitude/ u.deg],
-                'moon_flux_on_ground': [flux_ground],
-                'sun_azimuth': [sun_azimuth/ u.deg]
+                
+                'sun_azimuth': [sun_azimuth/ u.deg],
+                'moon_flux_on_ground': [flux_ground]
             })
-            
             
             predicted_contribution =  self.sky_temp_model.predict(new_data)
             
