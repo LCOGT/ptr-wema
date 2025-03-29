@@ -154,15 +154,15 @@ def fit_cloud_prediction_model(df, directory):
     plt.figure(figsize=(8, 6))
     plt.scatter(y, y_pred, alpha=0.7, color='black', marker='o')
     plt.plot([y.min(), y.max()], [y.min(), y.max()], '--', color='red')
-    plt.xlabel('Actual OWM_clouds')
-    plt.ylabel('Predicted OWM_clouds')
-    plt.title('Predicted vs Actual OWM_clouds with Black Markers')
+    plt.xlabel('Actual average weather report clouds')
+    plt.ylabel('Predicted average weather report clouds')
+    plt.title('Predicted vs Actual Clouds')
 
     plt.savefig(directory + '/ActualVSPredicted_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
 
     ### ✅ Heatmap of correlation between factors
     plt.figure(figsize=(8, 6))
-    sns.heatmap(pd.DataFrame(X).join(pd.Series(y, name='OWM_clouds')).corr(), annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
+    sns.heatmap(pd.DataFrame(X).join(pd.Series(y, name='avg_forecast_cloudcover')).corr(), annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
     plt.title('Correlation Heatmap')
     plt.savefig(directory + '/Correlation_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
 
@@ -2160,19 +2160,20 @@ class WxEncAgent:
                 'moon_flux_on_ground': [flux_ground]
             })
             
-            predicted_contribution =  self.sky_temp_model.predict(new_data)
-            
-            print ("Predicted skytemp contribution: " + str(predicted_contribution))
-            
-            corrected_sky_temp_C = ocn_status['sky_temp_C'] - predicted_contribution[0]
 
-            print(f"Corrected Sky Temperature: {corrected_sky_temp_C:.2f} °C")
-            
-            
+            try:
+                predicted_contribution =  self.sky_temp_model.predict(new_data)
+                
+                print ("Predicted skytemp contribution: " + str(predicted_contribution))
+                
+                corrected_sky_temp_C = ocn_status['sky_temp_C'] - predicted_contribution[0]
+    
+                print(f"Corrected Sky Temperature: {corrected_sky_temp_C:.2f} °C")
+            except:
+                print ("Failed to correct sky temperature. Maybe no weather log yet")
+                corrected_sky_temp_C=ocn_status['sky_temp_C']
             
             ########## THEN DO CLOUD MODEL
-            
-            
             
             
             new_data = pd.DataFrame({
@@ -2180,12 +2181,13 @@ class WxEncAgent:
                 'corrected_sky_temp_C': corrected_sky_temp_C,
                 'sky-ambient': [model_skyambient],
                 'dew_point_depression': [model_dewpointdepression],
+                'sky-ambient^2': [model_skyambient **2]
                 #'phase_of_day': [model_phaseofday]
             })
             #features = ['corrected_sky_temp_C', 'sky-ambient', 'dew_point_depression', 'sky-ambient^2']
             # Add the manual polynomial terms
             #new_data['Humidity^2'] = new_data['Humidity'] ** 2
-            new_data['sky-ambient^2'] = new_data['sky-ambient'] ** 2
+            #new_data['sky-ambient^2'] = new_data['sky-ambient'] ** 2
             # new_data['sky-ambientxphase_of_day'] = new_data['sky-ambient'] * new_data['phase_of_day']
             # new_data['sky-ambient^2xphase_of_day'] = new_data['sky-ambient^2'] * new_data['phase_of_day']
             # new_data['sky_temp_Cxphase_of_day'] = new_data['sky_temp_C'] * new_data['phase_of_day']
