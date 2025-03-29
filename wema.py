@@ -58,7 +58,7 @@ import numpy as np
 #import http.client
 #http.client.HTTPConnection.debuglevel = 1
 #logging.getLogger("urllib3").setLevel(logging.DEBUG)
-
+from sklearn.linear_model import LinearRegression
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -86,7 +86,7 @@ from datetime import timezone
 
 def fit_cloud_prediction_model(df, directory):
     
-    directory = directory + '/weatherfits'
+    #directory = directory + '/weatherfits'
     if not os.path.exists(directory):
         os.makedirs(directory)
     
@@ -115,10 +115,9 @@ def fit_cloud_prediction_model(df, directory):
 
     # Select features based on the range check
     if phase_of_year_range > 0.9:
-        features = ['sky_temp_C', 'sky-ambient', 'dew_point_depression', 'phase_of_day', 'phase_of_year']
+        features = ['corrected_sky_temp_C', 'sky-ambient', 'dew_point_depression']#, 'phase_of_day', 'phase_of_year']
     else:
-        features = ['sky_temp_C', 'sky-ambient', 'dew_point_depression', 'phase_of_day', 
-                    'sky-ambient^2', 'sin_hour', 'cos_hour']
+        features = ['corrected_sky_temp_C', 'sky-ambient', 'dew_point_depression', 'sky-ambient^2']#'phase_of_day', 'sky-ambient^2', 'sin_hour', 'cos_hour']
 
     X = df[features].copy()
     y = df_clean['OWM_clouds']
@@ -1068,6 +1067,63 @@ class WxEncAgent:
         response = self.api.authenticated_request("PUT", uri, self.config)
         if response:
             print("\n\nConfig uploaded successfully.")
+    def get_sun_and_moon_info(self):
+        #breakpoint()
+        # Get current time
+        obstime = Time.now()            
+        # Define the AltAz frame
+        altaz_frame = AltAz(obstime=obstime, location=self.observer_location)            
+        # Get the Sun's position
+        sun = get_sun(obstime)            
+        # Transform to AltAz
+        sun_altaz = sun.transform_to(altaz_frame)            
+        # Get the altitude
+        sun_altitude = sun_altaz.alt
+        sun_azimuth = sun_altaz.az
+        print(f"Current Sun altitude: {sun_altitude:.2f}")           
+        moon = get_moon(obstime, location=self.observer_location)
+        moon_altaz = moon.transform_to(altaz_frame)
+        moon_altitude = moon_altaz.alt
+        #print(f"Moon altitude: {moon_altitude:.2f}")          
+        # altitude = moon_altaz.alt
+        
+        # Skip if below horizon
+        if moon_altitude < 0 * u.deg:
+            print("Moon is below the horizon — no flux on ground.")
+            moon_illumination=0
+            flux_ground=0
+        else:
+            # Illumination estimate (simplified using elongation)
+            sun = get_sun(obstime)
+            elongation = sun.separation(moon)
+            moon_illumination = (1 + np.cos(elongation)) / 2
+            
+            # Apparent magnitude scaling (very approximate)
+            full_moon_mag = -12.74
+            moon_mag = full_moon_mag + 2.5 * np.log10(1 / moon_illumination)
+            
+            # Flux above atmosphere (visible range)
+            F0 = 3.6e-8  # W/m² for mag 0
+            F_top = F0 * 10**(-0.4 * moon_mag)
+            
+            # Air mass approximation
+            zenith_angle = 90 * u.deg - moon_altitude
+            airmass = 1 / np.cos(zenith_angle.to(u.rad))
+            
+            # Atmospheric extinction (assuming extinction coefficient k ~ 0.2 mag/airmass)
+            k = 0.2  # typical in visual band
+            transmission = 10**(-0.4 * k * airmass)
+            
+            # Flux on ground
+            flux_ground = F_top * transmission * np.sin(moon_altitude.to(u.rad))
+        
+        print(f"Moon altitude: {moon_altitude:.2f}")
+        print(f"Moon illumination: {moon_illumination:.2%}")
+        print(f"Approx. moon flux on ground: {flux_ground:.2e} W/m²")
+        
+        return sun_altitude, moon_altitude, moon_illumination, flux_ground, sun_azimuth
+     
+ 
 
     def scan_requests(self):
         """
@@ -2081,9 +2137,47 @@ class WxEncAgent:
            
             model_phaseofday=((time.time() - 1735689600.0) /86400) % 1
             
+            
+            ########## FIRST CORRECT SKY TEMPERATURE FOR SUN ADN MOON EFFECTS
+            
+            
+            sun_altitude, moon_altitude, moon_illumination, flux_ground, sun_azimuth = self.get_sun_and_moon_info()
+        
+            #breakpoint()
+            # Put in relevant sun and moon potential effects
+            # line_of_weather_info.append(sun_altitude / u.deg)
+            # line_of_weather_info.append(moon_altitude/ u.deg)
+            # line_of_weather_info.append(moon_illumination)
+            # line_of_weather_info.append(flux_ground)
+            # line_of_weather_info.append(sun_azimuth / u.deg)
+            
             new_data = pd.DataFrame({
                 #'Humidity': [model_humidity],
-                'sky_temp_C': ocn_status['sky_temp_C'],
+                'sky_temp_C':  ocn_status['sky_temp_C'],
+                'sun_altitude': sun_altitude,
+                'moon_flux_on_ground': flux_ground,
+                'sun_azimuth': sun_azimuth
+            })
+            
+            
+            predicted_contribution =  self.sky_temp_model.predict(new_data)
+            
+            print ("Predicted skytemp contribution: " + str(predicted_contribution))
+            
+            corrected_sky_temp_C = ocn_status['sky_temp_C'] - predicted_contribution[0]
+
+            print(f"Corrected Sky Temperature: {corrected_sky_temp_C:.2f} °C")
+            
+            
+            
+            ########## THEN DO CLOUD MODEL
+            
+            
+            
+            
+            new_data = pd.DataFrame({
+                #'Humidity': [model_humidity],
+                'sky_temp_C': corrected_sky_temp_C,
                 'sky-ambient': [model_skyambient],
                 'dew_point_depression': [model_dewpointdepression],
                 'phase_of_day': [model_phaseofday]
@@ -2098,11 +2192,21 @@ class WxEncAgent:
             # new_data['sky_temp_Cxphase_of_day^2'] = new_data['sky_temp_Cxphase_of_day'] ** 2
             
             # Add Fourier terms for seasonality
-            new_data['sin_hour'] = np.sin(2 * np.pi * new_data['phase_of_day'])
-            new_data['cos_hour'] = np.cos(2 * np.pi * new_data['phase_of_day'])
+            # new_data['sin_hour'] = np.sin(2 * np.pi * new_data['phase_of_day'])
+            # new_data['cos_hour'] = np.cos(2 * np.pi * new_data['phase_of_day'])
             # new_data['sin_year'] = np.sin(2 * np.pi * new_data['phase_of_year'])
             # new_data['cos_year'] = np.cos(2 * np.pi * new_data['phase_of_year'])
             
+            # Assuming your DataFrame is named df
+            
+            # Assuming your DataFrame is named df
+            # X = df[['sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
+            # y = df['sky_temp_C']
+            
+            # X = df[['sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
+            # y = df['sky_temp_C']
+            
+            #self.sky_temp_model
             
             print (new_data)
             try:
@@ -3030,71 +3134,16 @@ class WxEncAgent:
             line_of_weather_info.append(self.owm_cloud_cover_next_hour)
 
 
-            #breakpoint()
-            # Get current time
-            obstime = Time.now()
-            
-            # Define the AltAz frame
-            altaz_frame = AltAz(obstime=obstime, location=self.observer_location)
-            
-            # Get the Sun's position
-            sun = get_sun(obstime)
-            
-            # Transform to AltAz
-            sun_altaz = sun.transform_to(altaz_frame)
-            
-            # Get the altitude
-            sun_altitude = sun_altaz.alt
-            print(f"Current Sun altitude: {sun_altitude:.2f}")
-            
-            
-            moon = get_moon(obstime, location=self.observer_location)
-            moon_altaz = moon.transform_to(altaz_frame)
-            moon_altitude = moon_altaz.alt
-            #print(f"Moon altitude: {moon_altitude:.2f}")
-            
-            
-           # altitude = moon_altaz.alt
-
-            # Skip if below horizon
-            if moon_altitude < 0 * u.deg:
-                print("Moon is below the horizon — no flux on ground.")
-            else:
-                # Illumination estimate (simplified using elongation)
-                sun = get_sun(obstime)
-                elongation = sun.separation(moon)
-                illumination = (1 + np.cos(elongation)) / 2
-            
-                # Apparent magnitude scaling (very approximate)
-                full_moon_mag = -12.74
-                moon_mag = full_moon_mag + 2.5 * np.log10(1 / illumination)
-            
-                # Flux above atmosphere (visible range)
-                F0 = 3.6e-8  # W/m² for mag 0
-                F_top = F0 * 10**(-0.4 * moon_mag)
-            
-                # Air mass approximation
-                zenith_angle = 90 * u.deg - moon_altitude
-                airmass = 1 / np.cos(zenith_angle.to(u.rad))
-            
-                # Atmospheric extinction (assuming extinction coefficient k ~ 0.2 mag/airmass)
-                k = 0.2  # typical in visual band
-                transmission = 10**(-0.4 * k * airmass)
-            
-                # Flux on ground
-                flux_ground = F_top * transmission * np.sin(moon_altitude.to(u.rad))
-            
-                print(f"Moon altitude: {moon_altitude:.2f}")
-                print(f"Moon illumination: {illumination:.2%}")
-                print(f"Approx. moon flux on ground: {flux_ground:.2e} W/m²")
-            
+           
+            sun_altitude, moon_altitude, moon_illumination, flux_ground, sun_azimuth = self.get_sun_and_moon_info()
+        
             #breakpoint()
             # Put in relevant sun and moon potential effects
             line_of_weather_info.append(sun_altitude / u.deg)
             line_of_weather_info.append(moon_altitude/ u.deg)
-            line_of_weather_info.append(illumination)
+            line_of_weather_info.append(moon_illumination)
             line_of_weather_info.append(flux_ground)
-            
+            line_of_weather_info.append(sun_azimuth / u.deg)
             #breakpoint()
             
             # Your cPanel email credentials
@@ -3149,10 +3198,12 @@ class WxEncAgent:
             #breakpoint()
 
             
+            weather_directory=self.wema_path+self.name+ '/weatherfits'
+            file_date_string = str(datetime.datetime.now()).replace(' ', '_').split('.')[0].replace(':', '-')
             ######## We also need to update our cloud prediction model.
             # So lets open the weatherlog
             # Assign column names manually
-            column_names = ['date','time','OWM_clouds','Local_clouds','Humidity','sky_temp_C','local_temperature_C', 'dewpoint', 'rain_rate','wind_m/s', 'OWM_temperature']
+            column_names = ['date','time','OWM_clouds','Local_clouds','Humidity','sky_temp_C','local_temperature_C', 'dewpoint', 'rain_rate','wind_m/s', 'OWM_temperature','openmeteo_clouds', 'avg_forecast_cloudcover', 'OWMClouds_inanhour', 'openmeteoclouds_inanhour','sun_altitude','moon_altitude','moon_illumination','moon_flux_on_ground', 'sun_azimuth']
             
             # Read CSV without a header and assign column names
             df = pd.read_csv(self.wema_path+self.name + '_weatherlog.csv', header=None, names=column_names)
@@ -3171,12 +3222,97 @@ class WxEncAgent:
             df['time_in_years']= df['time_in_years'] / 31536000
             df['phase_of_year']= df['time_in_years'] % 1
             
-            df['sky-ambient'] = df['sky_temp_C'] - df['OWM_temperature']
+            
+            
+            # import pandas as pd
+            # import numpy as np
+            # from sklearn.model_selection import train_test_split
+            
+            
+            # Assuming your DataFrame is named df
+            X = df[['sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
+            y = df['sky_temp_C']
+            
+            # Train-test split (for verification purposes)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+            
+            # Initialize the model
+            self.sky_temp_model = LinearRegression()
+            
+            # Train the model
+            self.sky_temp_model.fit(X_train, y_train)
+            
+            # Predict the contributions of the factors to sky_temp_C
+            df['predicted_factor_contributions'] = self.sky_temp_model.predict(X)
+            
+            # Calculate corrected sky temperature
+            df['corrected_sky_temp_C'] = df['sky_temp_C'] - df['predicted_factor_contributions']
+            
+            # # Show the resulting DataFrame with corrections
+            # import ace_tools as tools; tools.display_dataframe_to_user(name="Corrected Sky Temperature Data", dataframe=df)
+
+            # Predict using the trained model on the whole dataset
+            df['predicted_factor_contributions'] = self.sky_temp_model.predict(X)
+            
+            # Calculate corrected sky temperature
+            df['corrected_sky_temp_C'] = df['sky_temp_C'] - df['predicted_factor_contributions']
+            
+            # Plotting before and after
+            plt.figure(figsize=(14, 6))
+            
+            # Original Sky Temperature Plot
+            plt.subplot(1, 2, 1)
+            sns.scatterplot(x=df.index, y=df['sky_temp_C'], label='Original Sky Temperature', color='blue')
+            plt.title(f'Original Sky Temperature\nR² = {r2_score(y, self.sky_temp_model.predict(X)):.2f}')
+            plt.xlabel('Index')
+            plt.ylabel('Sky Temperature (°C)')
+            
+            # Corrected Sky Temperature Plot
+            plt.subplot(1, 2, 2)
+            sns.scatterplot(x=df.index, y=df['corrected_sky_temp_C'], label='Corrected Sky Temperature', color='green')
+            plt.title('Corrected Sky Temperature (After Removing Factors)')
+            plt.xlabel('Index')
+            plt.ylabel('Sky Temperature (°C)')
+            
+            
+            plt.savefig(weather_directory + '/CorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+
+            
+            plt.tight_layout()
+            plt.show()
+            
+            
+            
+            # Checking if the required columns are present in the DataFrame
+            required_columns = ['avg_forecast_cloudcover', 'corrected_sky_temp_C']
+            
+            if all(col in df.columns for col in required_columns):
+                # Plotting avg_forecast_cloudcover vs corrected_sky_temp_C
+                plt.figure(figsize=(10, 6))
+                sns.scatterplot(data=df, x='avg_forecast_cloudcover', y='corrected_sky_temp_C', color='purple')
+                plt.title('Corrected Sky Temperature vs. Average Forecast Cloud Cover')
+                plt.xlabel('Average Forecast Cloud Cover (%)')
+                plt.ylabel('Corrected Sky Temperature (°C)')
+                plt.savefig(weather_directory + '/CloudsvsCorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+
+                plt.grid(True)
+                plt.show()
+            else:
+                missing_columns = [col for col in required_columns if col not in df.columns]
+                raise ValueError(f"The following columns are missing from the DataFrame: {missing_columns}")
+
+            
+            #breakpoint()
+            
+            
+            
+            
+            df['sky-ambient'] = df['corrected_sky_temp_C'] - df['OWM_temperature']
             
             # dew point depression
             df['dew_point_depression'] =  df['OWM_temperature'] - df['dewpoint']
 
-            directory=self.wema_path+self.name
+            
             
             try:
                 # Trim the extreme values off... realistically MOST of the time it can be clear or cloudy
@@ -3185,7 +3321,7 @@ class WxEncAgent:
                 #breakpoint()
                 
                 # Run the updated model with polynomial features included
-                self.cloud_model, updated_df = fit_cloud_prediction_model(df, directory)
+                self.cloud_model, updated_df = fit_cloud_prediction_model(df, weather_directory)
             
             except:
                 plog ("failed model?")
