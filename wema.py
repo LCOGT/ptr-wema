@@ -548,6 +548,7 @@ class WxEncAgent:
         self.email_password=secrets["email_password"]
         
         self.owm_api_key=secrets["OWM_Key"]
+        self.tomorrowio_APIkey=secrets['tomorrowio_Key']
         self.weather_to_emails=secrets["weather_to_emails"]
         
         self.cloud_model=None
@@ -3144,7 +3145,7 @@ class WxEncAgent:
             
             
             # Replace with your Tomorrow.io API Key
-            API_KEY = "3SBtRKJpjPX7UxmufMVAbULO18Mr953V"
+            API_KEY = self.tomorrowio_APIkey
             
             # Replace with your desired latitude and longitude
             latitude = self.latitude
