@@ -50,6 +50,10 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+
+# from sentinelsat import SentinelAPI, read_geojson, geojson_to_wkt
+# from datetime import date
+
 # # Australian weather service
 # from weather_au import api
 
@@ -72,7 +76,7 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import PolynomialFeatures
 
-
+#import rasterio
 
 close_headers = {
     "Connection": "close"  # Forces the server to close the connection after the response
@@ -82,7 +86,7 @@ import pytz
 import datetime
 from datetime import timezone
 
-#import requests
+
 
 def fit_cloud_prediction_model(df, directory):
     
@@ -2151,10 +2155,14 @@ class WxEncAgent:
             # line_of_weather_info.append(flux_ground)
             # line_of_weather_info.append(sun_azimuth / u.deg)
             
+            
+            
+            transformed_sun_altitude= np.exp( max(sun_altitude/ u.deg, -18) / 6.0)
+            
             new_data = pd.DataFrame({
                 #'Humidity': [model_humidity],
                 #'sky_temp_C':  [ocn_status['sky_temp_C']],
-                'sun_altitude': [sun_altitude/ u.deg],
+                'transformed_sun_altitude': [transformed_sun_altitude], # below -18, there is no solar flux
                 
                 'sun_azimuth': [sun_azimuth/ u.deg],
                 'moon_flux_on_ground': [flux_ground]
@@ -2237,6 +2245,9 @@ class WxEncAgent:
                 plog("Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover))
                 plog("OWM Next Hour: " +str(self.owm_cloud_cover_next_hour))
                 plog("Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour))
+                
+                plog("TomorrowIO Now: " +str(self.tomorrowio_cloud_now))
+                plog("TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour))
                 
                 plog("Average cloud cover: "+str(self.averageforecast_current_cloud_cover))
 
@@ -3126,9 +3137,64 @@ class WxEncAgent:
                     self.open_meteo_cloud_cover_next_hour = cloud_list[i]
                     #print(f"Cloud cover at {t} is {cloudcover_next_hour}%")
                     break
-                      
             
-            self.averageforecast_current_cloud_cover= (self.owm_cloud_cover+self.open_meteo_cloud_cover+self.owm_cloud_cover_next_hour+self.open_meteo_cloud_cover_next_hour)/4
+            
+            # Replace with your Tomorrow.io API Key
+            API_KEY = "3SBtRKJpjPX7UxmufMVAbULO18Mr953V"
+            
+            # Replace with your desired latitude and longitude
+            latitude = self.latitude
+            longitude = self.longitude
+            
+            # Tomorrow.io API URL
+            url = "https://api.tomorrow.io/v4/timelines"
+            
+            # Define the fields you want to retrieve
+            fields = ["cloudCover"]
+            
+            # Define the time frame for the data you want to retrieve (now and 1 hour later)
+            start_time = datetime.datetime.utcnow().isoformat() + "Z"
+            end_time = (datetime.datetime.utcnow() + datetime.timedelta(hours=1)).isoformat() + "Z"
+            
+            # Define the request payload
+            params = {
+                "apikey": API_KEY,
+                "location": f"{latitude},{longitude}",
+                "fields": ",".join(fields),
+                "timesteps": "current,1h",
+                "startTime": start_time,
+                "endTime": end_time,
+                "units": "metric"
+            }
+            
+            # Make the API request
+            response = requests.get(url, params=params)
+            
+            # Check if the request was successful
+            if response.status_code == 200:
+                data = response.json()
+                timelines = data.get("data", {}).get("timelines", [])
+            
+                # # Parse the cloud cover data
+                # if timelines:
+                #     for timeline in timelines:
+                #         for interval in timeline.get("intervals", []):
+                #             cloudtime = interval["startTime"]
+                #             cloud_cover = interval["values"]["cloudCover"]
+                #             print(f"Time: {cloudtime}, Cloud Cover: {cloud_cover}%")
+                #breakpoint()
+                self.tomorrowio_cloud_now=timelines[1]['intervals'][0]['values']['cloudCover']
+                self.tomorrowio_cloud_inanhour=timelines[0]['intervals'][1]['values']['cloudCover']
+                            
+            else:
+                print(f"Error: {response.status_code}, {response.text}")
+            #breakpoint()
+            plog("TomorrowIO Now: " +str(self.tomorrowio_cloud_now))
+            plog("TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour))
+            
+            
+            
+            self.averageforecast_current_cloud_cover= (self.owm_cloud_cover+self.open_meteo_cloud_cover+self.owm_cloud_cover_next_hour+self.open_meteo_cloud_cover_next_hour+self.tomorrowio_cloud_now+self.tomorrowio_cloud_inanhour)/6
             line_of_weather_info.append(self.averageforecast_current_cloud_cover)
 
             # Next hours
@@ -3139,6 +3205,8 @@ class WxEncAgent:
            
             sun_altitude, moon_altitude, moon_illumination, flux_ground, sun_azimuth = self.get_sun_and_moon_info()
         
+            
+        
             #breakpoint()
             # Put in relevant sun and moon potential effects
             line_of_weather_info.append(sun_altitude / u.deg)
@@ -3146,7 +3214,112 @@ class WxEncAgent:
             line_of_weather_info.append(moon_illumination)
             line_of_weather_info.append(flux_ground)
             line_of_weather_info.append(sun_azimuth / u.deg)
+            line_of_weather_info.append(self.tomorrowio_cloud_now)
+            line_of_weather_info.append(self.tomorrowio_cloud_inanhour)
             #breakpoint()
+            
+            
+            
+            # import boto3
+            # import botocore
+            # def download_himawari_image(longitude, latitude, band='B03', resolution='2000', satellite='himawari8'):
+            #     """
+            #     Download a Himawari-8 image for the current hour from AWS.
+            
+            #     Args:
+            #         longitude (float): Longitude of the location.
+            #         latitude (float): Latitude of the location.
+            #         band (str): The channel to download (e.g., 'B03' for visible imagery).
+            #         resolution (str): Resolution in meters ('2000' for 2km, '1000' for 1km, etc.).
+            #         satellite (str): Satellite name (default is 'himawari8').
+            
+            #     Returns:
+            #         str: Local file path of the downloaded image.
+            #     """
+            #     # Set up AWS S3 connection
+            #     s3_client = boto3.client(
+            #         's3',
+            #         region_name='ap-northeast-1',
+            #         config=botocore.config.Config(signature_version=botocore.UNSIGNED)
+            #     )
+            
+            #     now = datetime.datetime.utcnow()
+            #     # Round down to the nearest 10-minute interval
+            #     nearest_time = now - datetime.timedelta(minutes=now.minute % 10, seconds=now.second, microseconds=now.microsecond)
+                
+            #     # List of time slots to check: Current & Previous 10-minute intervals
+            #     time_slots = [nearest_time, nearest_time - datetime.timedelta(minutes=10), nearest_time - datetime.timedelta(minutes=20)]
+             
+            #     for current_time in time_slots:
+            #         year = current_time.strftime('%Y')
+            #         month = current_time.strftime('%m')
+            #         day = current_time.strftime('%d')
+            #         hour = current_time.strftime('%H')
+            #         minute = current_time.strftime('%M')
+             
+            #         # AWS path for Himawari-8 Full Disk data (Band-specific folder structure)
+            #         prefix = f'Himawari8/FullDisk/{resolution}m/{year}/{month}/{day}/{hour}{minute}/'
+             
+            #         try:
+            #             response = s3_client.list_objects_v2(Bucket='noaa-himawari8', Prefix=prefix)
+            #             if 'Contents' not in response:
+            #                 print(f"No files found for time slot: {hour}:{minute} UTC")
+            #                 continue
+             
+            #             # Filter files to find the correct band
+            #             files = [obj['Key'] for obj in response['Contents'] if f'{band}.tif' in obj['Key']]
+                        
+            #             if not files:
+            #                 print(f"No files for band {band} found for time slot: {hour}:{minute} UTC")
+            #                 continue
+             
+            #             # Select the first file found
+            #             file_key = files[0]
+            #             local_file = file_key.split('/')[-1]
+             
+            #             # Download the file
+            #             s3_client.download_file('noaa-himawari8', file_key, local_file)
+            #             print(f"Downloaded: {local_file} for time slot: {hour}:{minute} UTC")
+            #             return local_file
+             
+            #         except botocore.exceptions.ClientError as e:
+            #             print(f"AWS Client Error: {e}")
+                
+            #     raise FileNotFoundError("No files found for the last 30 minutes (3 attempts).")
+            
+            # # Example usage
+            # download_himawari_image(longitude=self.longitude, latitude=self.latitude, band='B03', resolution='2000')
+            
+            # import xarray as xr
+            # def load_and_display_himawari(file_path, band_name='CMI'):
+            #     """
+            #     Load and display Himawari-8 data from a NetCDF file.
+                
+            #     Args:
+            #         file_path (str): Path to the Himawari-8 .nc file.
+            #         band_name (str): The name of the data variable to load (default is 'CMI').
+            #     """
+            #     # Load the NetCDF file using xarray
+            #     dataset = xr.open_dataset(file_path)
+                
+            #     # Display the dataset metadata
+            #     print(dataset)
+                
+            #     # Select the band of interest (e.g., 'CMI' for Channel 3 or Channel 13)
+            #     band_data = dataset[band_name].data
+                
+            #     # Display the image using matplotlib
+            #     plt.figure(figsize=(10, 10))
+            #     plt.imshow(band_data, cmap='gray')
+            #     plt.colorbar(label='Pixel Intensity')
+            #     plt.title(f'Himawari-8 - {band_name}')
+            #     plt.axis('off')
+            #     plt.show()
+            
+            # # Example usage
+            # load_and_display_himawari('path_to_your_file.nc')
+            # breakpoint()
+            
             
             # Your cPanel email credentials
             smtp_server = self.smtp_server
@@ -3171,7 +3344,8 @@ class WxEncAgent:
             body = body +"Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover)+'\n'
             body = body +"OWM Next Hour: " +str(self.owm_cloud_cover_next_hour)+'\n'
             body = body +"Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour)+'\n'
-            
+            body = body +"TomorrowIO Now: " +str(self.tomorrowio_cloud_now)+'\n'
+            body = body +"TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour)+'\n'
             
             message.attach(MIMEText(body, 'plain'))
             
@@ -3205,7 +3379,7 @@ class WxEncAgent:
             ######## We also need to update our cloud prediction model.
             # So lets open the weatherlog
             # Assign column names manually
-            column_names = ['date','time','OWM_clouds','Local_clouds','Humidity','sky_temp_C','local_temperature_C', 'dewpoint', 'rain_rate','wind_m/s', 'OWM_temperature','openmeteo_clouds', 'avg_forecast_cloudcover', 'OWMClouds_inanhour', 'openmeteoclouds_inanhour','sun_altitude','moon_altitude','moon_illumination','moon_flux_on_ground', 'sun_azimuth']
+            column_names = ['date','time','OWM_clouds','Local_clouds','Humidity','sky_temp_C','local_temperature_C', 'dewpoint', 'rain_rate','wind_m/s', 'OWM_temperature','openmeteo_clouds', 'avg_forecast_cloudcover', 'OWMClouds_inanhour', 'openmeteoclouds_inanhour','sun_altitude','moon_altitude','moon_illumination','moon_flux_on_ground', 'sun_azimuth', 'tomorrowio_nowclouds','tomorrowio_nexthourclouds']
             
             # Read CSV without a header and assign column names
             df = pd.read_csv(self.wema_path+self.name + '_weatherlog.csv', header=None, names=column_names)
@@ -3231,8 +3405,16 @@ class WxEncAgent:
             # from sklearn.model_selection import train_test_split
             
             
+            # Solar flux is essentially zero at -18 so set minimum sun altitude to -18
+            df['sun_altitude'] = df['sun_altitude'].clip(lower=-18)
+            
+            
+            #To transform the sun altitude so that the relationship with solar flux becomes linear.
+            df['transformed_sun_altitude']= np.exp( df['sun_altitude'] / 6.0)
+            
+            
             # Assuming your DataFrame is named df
-            X = df[['sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
+            X = df[['transformed_sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
             y = df['sky_temp_C']
             
             # Train-test split (for verification purposes)
@@ -3280,8 +3462,8 @@ class WxEncAgent:
             plt.savefig(weather_directory + '/CorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
 
             
-            plt.tight_layout()
-            plt.show()
+            # plt.tight_layout()
+            # plt.show()
             
             
             
@@ -3297,8 +3479,8 @@ class WxEncAgent:
                 plt.ylabel('Corrected Sky Temperature (°C)')
                 plt.savefig(weather_directory + '/CloudsvsCorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
 
-                plt.grid(True)
-                plt.show()
+                # plt.grid(True)
+                # plt.show()
             else:
                 missing_columns = [col for col in required_columns if col not in df.columns]
                 raise ValueError(f"The following columns are missing from the DataFrame: {missing_columns}")

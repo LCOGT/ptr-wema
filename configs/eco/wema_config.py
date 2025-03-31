@@ -24,7 +24,7 @@ wema_config = {
     'wema_name': 'eco',
     'instance_type': 'wema',
 
-    'obsp_ids': ['eco1', 'eco2'],  # a list of the obsp's in an enclosure.  
+    'obsp_ids': ['eco1', 'eco2', 'eco3'],  # a list of the obsp's in an enclosure.  
 
     #'obs_id': None,  # a WEMA is not a telescope aka Observatory
     #'observatory_location': site_name.lower(),  # in LCO case, an airport code such as OGG
