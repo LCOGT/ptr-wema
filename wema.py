@@ -2241,20 +2241,24 @@ class WxEncAgent:
                 plog ("Median of last ten observations: " + str(round(np.median(self.cloud_tracker),2)) + " std " + str(round(np.std(self.cloud_tracker),2)))
 
 
-                plog("OWM cloud cover: " +str(self.owm_cloud_cover))
-                plog("Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover))
-                plog("OWM Next Hour: " +str(self.owm_cloud_cover_next_hour))
-                plog("Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour))
                 
-                plog("TomorrowIO Now: " +str(self.tomorrowio_cloud_now))
-                plog("TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour))
-                
-                plog("Average cloud cover: "+str(self.averageforecast_current_cloud_cover))
 
             except:
                 plog ("failed model? Perhaps can happen if we haven't built up enough points yet.")
                 self.median_cloud_estimate=100
                 plog(traceback.format_exc())
+
+            plog ("****************************")
+            plog("FORECAST DERIVED CLOUD COVER")
+            plog("OWM cloud cover: " +str(self.owm_cloud_cover))
+            plog("Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover))
+            plog("OWM Next Hour: " +str(self.owm_cloud_cover_next_hour))
+            plog("Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour))
+            
+            plog("TomorrowIO Now: " +str(self.tomorrowio_cloud_now))
+            plog("TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour))
+            
+            plog("Average cloud cover: "+str(self.averageforecast_current_cloud_cover))
 
             plog("**************************************************************")
 
