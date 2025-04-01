@@ -3147,7 +3147,7 @@ class WxEncAgent:
                     self.open_meteo_cloud_cover=None
                     self.open_meteo_cloud_cover_next_hour=None
             except:    
-                print(f"Error: {response.status_code}, {response.text}")
+                plog(traceback.format_exc())
                 self.open_meteo_cloud_cover=None
                 self.open_meteo_cloud_cover_next_hour=None
             
