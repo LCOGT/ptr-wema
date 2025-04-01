@@ -688,14 +688,12 @@ class WxEncAgent:
         self.morning_flats_finished=False
 
 
-        self.owm_cloud_cover=0
-        self.open_meteo_cloud_cover=0
-        self.weatherapi_cloud_cover=0
-        self.virtualcrossing_cloud_cover=0
-        self.meteoblue_current_cloud_cover=0
-        self.averageforecast_current_cloud_cover=0
-        self.tomorrowio_cloud_now=0
-        self.tomorrowio_cloud_inanhour=0
+        self.owm_cloud_cover=None
+        self.open_meteo_cloud_cover=None
+        self.open_meteo_cloud_cover_next_hour=None
+        self.averageforecast_current_cloud_cover=None
+        self.tomorrowio_cloud_now=None
+        self.tomorrowio_cloud_inanhour=None
 
         # This prevents commands from previous nights/runs suddenly running
         # when wema.py is booted (has happened a bit!)
@@ -2251,19 +2249,21 @@ class WxEncAgent:
                 self.median_cloud_estimate=100
                 plog(traceback.format_exc())
 
-            plog ("****************************")
-            plog("FORECAST DERIVED CLOUD COVER")
-            plog("OWM cloud cover: " +str(self.owm_cloud_cover))
-            plog("Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover))
-            plog("OWM Next Hour: " +str(self.owm_cloud_cover_next_hour))
-            plog("Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour))
-            
-            plog("TomorrowIO Now: " +str(self.tomorrowio_cloud_now))
-            plog("TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour))
-            
-            plog("Average cloud cover: "+str(self.averageforecast_current_cloud_cover))
-
-            plog("**************************************************************")
+            try:
+                plog ("****************************")
+                plog("FORECAST DERIVED CLOUD COVER")
+                plog("OWM cloud cover: " +str(self.owm_cloud_cover))
+                plog("Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover))
+                plog("TomorrowIO Now: " +str(self.tomorrowio_cloud_now))
+                plog("OWM Next Hour: " +str(self.owm_cloud_cover_next_hour))
+                plog("Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour))
+                plog("TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour))
+                
+                plog("Average cloud cover: "+str(self.averageforecast_current_cloud_cover))
+    
+                plog("**************************************************************")
+            except:
+                plog(traceback.format_exc())
 
             if (g_dev['events']['Nightly Reset'] <= ephem.now() < g_dev['events']['End Nightly Reset']):
                 if self.nightly_reset_complete == False:
@@ -3118,32 +3118,38 @@ class WxEncAgent:
                 }
             
             # Send GET request
-            response = requests.get(url, params=params)
-            
-            # Check if request was successful
-            if response.status_code == 200:
-                data = response.json()
-                # Extract cloud cover percentage
-                self.open_meteo_cloud_cover = data.get('current', {}).get('cloud_cover')
-                #self.open_meteo_cloud_cover_next_hour= data['hourly']['cloudcover'][1]
-                print(f"Open Meteo Current cloud cover in Melbourne: {self.open_meteo_cloud_cover}%")
-            else:
-                print(f"Error: {response.status_code}, {response.text}")
+            try:
+                response = requests.get(url, params=params)
                 
-            line_of_weather_info.append(self.open_meteo_cloud_cover)
-            
-            # Convert times from the response to datetime
-            time_list = [datetime.datetime.fromisoformat(t).replace(tzinfo=timezone.utc) for t in data['hourly']['time']]
-            cloud_list = data['hourly']['cloudcover']
-            # Get the current UTC time (since Open-Meteo time is in UTC unless you set timezone)
-            now = datetime.datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
-
-            # then continue with:
-            for i, t in enumerate(time_list):
-                if t > now:
-                    self.open_meteo_cloud_cover_next_hour = cloud_list[i]
-                    #print(f"Cloud cover at {t} is {cloudcover_next_hour}%")
-                    break
+                # Check if request was successful
+                if response.status_code == 200:
+                    data = response.json()
+                    # Extract cloud cover percentage
+                    self.open_meteo_cloud_cover = data.get('current', {}).get('cloud_cover')
+                    #self.open_meteo_cloud_cover_next_hour= data['hourly']['cloudcover'][1]
+                    print(f"Open Meteo Current cloud cover in Melbourne: {self.open_meteo_cloud_cover}%")
+                    line_of_weather_info.append(self.open_meteo_cloud_cover)
+                    
+                    # Convert times from the response to datetime
+                    time_list = [datetime.datetime.fromisoformat(t).replace(tzinfo=timezone.utc) for t in data['hourly']['time']]
+                    cloud_list = data['hourly']['cloudcover']
+                    # Get the current UTC time (since Open-Meteo time is in UTC unless you set timezone)
+                    now = datetime.datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+    
+                    # then continue with:
+                    for i, t in enumerate(time_list):
+                        if t > now:
+                            self.open_meteo_cloud_cover_next_hour = cloud_list[i]
+                            #print(f"Cloud cover at {t} is {cloudcover_next_hour}%")
+                            break
+                else:
+                    print(f"Error: {response.status_code}, {response.text}")
+                    self.open_meteo_cloud_cover=None
+                    self.open_meteo_cloud_cover_next_hour=None
+            except:    
+                print(f"Error: {response.status_code}, {response.text}")
+                self.open_meteo_cloud_cover=None
+                self.open_meteo_cloud_cover_next_hour=None
             
             
             # Replace with your Tomorrow.io API Key
@@ -3174,37 +3180,44 @@ class WxEncAgent:
                 "units": "metric"
             }
             
-            # Make the API request
-            response = requests.get(url, params=params)
-            
-            # Check if the request was successful
-            if response.status_code == 200:
-                data = response.json()
-                timelines = data.get("data", {}).get("timelines", [])
-            
-                # # Parse the cloud cover data
-                # if timelines:
-                #     for timeline in timelines:
-                #         for interval in timeline.get("intervals", []):
-                #             cloudtime = interval["startTime"]
-                #             cloud_cover = interval["values"]["cloudCover"]
-                #             print(f"Time: {cloudtime}, Cloud Cover: {cloud_cover}%")
+            try:
+                # Make the API request
+                response = requests.get(url, params=params)
+                
+                # Check if the request was successful
+                if response.status_code == 200:
+                    data = response.json()
+                    timelines = data.get("data", {}).get("timelines", [])
+                
+                    # # Parse the cloud cover data
+                    # if timelines:
+                    #     for timeline in timelines:
+                    #         for interval in timeline.get("intervals", []):
+                    #             cloudtime = interval["startTime"]
+                    #             cloud_cover = interval["values"]["cloudCover"]
+                    #             print(f"Time: {cloudtime}, Cloud Cover: {cloud_cover}%")
+                    #breakpoint()
+                    self.tomorrowio_cloud_now=timelines[1]['intervals'][0]['values']['cloudCover']
+                    self.tomorrowio_cloud_inanhour=timelines[0]['intervals'][1]['values']['cloudCover']
+                                
+                else:
+                    print(f"Error: {response.status_code}, {response.text}")
+                    self.tomorrowio_cloud_now=None
+                    self.tomorrowio_cloud_inanhour=None
+                    
                 #breakpoint()
-                self.tomorrowio_cloud_now=timelines[1]['intervals'][0]['values']['cloudCover']
-                self.tomorrowio_cloud_inanhour=timelines[0]['intervals'][1]['values']['cloudCover']
-                            
-            else:
-                print(f"Error: {response.status_code}, {response.text}")
+                plog("TomorrowIO Now: " +str(self.tomorrowio_cloud_now))
+                plog("TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour))
+            except:
+                plog ("failed to write weatherlog")
+                plog(traceback.format_exc())
                 self.tomorrowio_cloud_now=None
                 self.tomorrowio_cloud_inanhour=None
-                
-            #breakpoint()
-            plog("TomorrowIO Now: " +str(self.tomorrowio_cloud_now))
-            plog("TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour))
             
-            
-            
-            self.averageforecast_current_cloud_cover= (self.owm_cloud_cover+self.open_meteo_cloud_cover+self.owm_cloud_cover_next_hour+self.open_meteo_cloud_cover_next_hour+self.tomorrowio_cloud_now+self.tomorrowio_cloud_inanhour)/6
+            try:
+                self.averageforecast_current_cloud_cover= (self.owm_cloud_cover+self.open_meteo_cloud_cover+self.owm_cloud_cover_next_hour+self.open_meteo_cloud_cover_next_hour+self.tomorrowio_cloud_now+self.tomorrowio_cloud_inanhour)/6
+            except:
+                self.averageforecast_current_cloud_cover=None
             line_of_weather_info.append(self.averageforecast_current_cloud_cover)
 
             # Next hours
@@ -3330,7 +3343,6 @@ class WxEncAgent:
             # load_and_display_himawari('path_to_your_file.nc')
             # breakpoint()
             
-            
             # Your cPanel email credentials
             smtp_server = self.smtp_server
             port = self.smtp_port  # For SSL
@@ -3351,10 +3363,10 @@ class WxEncAgent:
             body = 'Hello, the clouds are now (hopefully): ' + str(self.averageforecast_current_cloud_cover) +'\n'
             
             body = body +"OWM cloud cover: " +str(self.owm_cloud_cover) +'\n'
-            body = body +"Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover)+'\n'
+            body = body +"Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover)+'\n'            
+            body = body +"TomorrowIO Now: " +str(self.tomorrowio_cloud_now)+'\n\n'
             body = body +"OWM Next Hour: " +str(self.owm_cloud_cover_next_hour)+'\n'
             body = body +"Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour)+'\n'
-            body = body +"TomorrowIO Now: " +str(self.tomorrowio_cloud_now)+'\n'
             body = body +"TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour)+'\n'
             
             message.attach(MIMEText(body, 'plain'))
@@ -3373,17 +3385,18 @@ class WxEncAgent:
             #breakpoint()
                 
             # Open the file in append mode and write the line
-            try:
-                with open(self.wema_path+self.name + '_weatherlog.csv', mode='a', newline='') as file:
-                    writer = csv.writer(file)
-                    writer.writerow(line_of_weather_info)
-                    print(f"Data written at {datetime.datetime.now().isoformat()}")  # For logging
-            except:
-                plog ("failed to write weatherlog")
-                plog(traceback.format_exc())
+            if not self.averageforecast_current_cloud_cover == None:
+                try:
+                    with open(self.wema_path+self.name + '_weatherlog.csv', mode='a', newline='') as file:
+                        writer = csv.writer(file)
+                        writer.writerow(line_of_weather_info)
+                        print(f"Data written at {datetime.datetime.now().isoformat()}")  # For logging
+                except:
+                    plog ("failed to write weatherlog")
+                    plog(traceback.format_exc())
             #breakpoint()
 
-            
+            #breakpoint()
             weather_directory=self.wema_path+self.name+ '/weatherfits'
             file_date_string = str(datetime.datetime.now()).replace(' ', '_').split('.')[0].replace(':', '-')
             ######## We also need to update our cloud prediction model.
