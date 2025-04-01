@@ -694,6 +694,8 @@ class WxEncAgent:
         self.virtualcrossing_cloud_cover=0
         self.meteoblue_current_cloud_cover=0
         self.averageforecast_current_cloud_cover=0
+        self.tomorrowio_cloud_now=0
+        self.tomorrowio_cloud_inanhour=0
 
         # This prevents commands from previous nights/runs suddenly running
         # when wema.py is booted (has happened a bit!)
@@ -3193,6 +3195,9 @@ class WxEncAgent:
                             
             else:
                 print(f"Error: {response.status_code}, {response.text}")
+                self.tomorrowio_cloud_now=None
+                self.tomorrowio_cloud_inanhour=None
+                
             #breakpoint()
             plog("TomorrowIO Now: " +str(self.tomorrowio_cloud_now))
             plog("TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour))
