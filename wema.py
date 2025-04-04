@@ -119,9 +119,9 @@ def fit_cloud_prediction_model(df, directory):
 
     # Select features based on the range check
     if phase_of_year_range > 0.9:
-        features = ['corrected_sky_temp_C', 'sky-ambient', 'dew_point_depression', 'sky-ambient^2']#, 'phase_of_day', 'phase_of_year']
+        features = ['corrected_sky_temp_C', 'sky-ambient',  'sky-ambient^2']#, 'phase_of_day', 'phase_of_year'] 'dew_point_depression',
     else:
-        features = ['corrected_sky_temp_C', 'sky-ambient', 'dew_point_depression', 'sky-ambient^2']#'phase_of_day', 'sky-ambient^2', 'sin_hour', 'cos_hour']
+        features = ['corrected_sky_temp_C', 'sky-ambient',  'sky-ambient^2']#'phase_of_day', 'sky-ambient^2', 'sin_hour', 'cos_hour'] 'dew_point_depression',
 
     X = df[features].copy()
     y = df_clean['avg_forecast_cloudcover']
@@ -186,229 +186,6 @@ def fit_cloud_prediction_model(df, directory):
     df_clean.to_csv(directory + '/WeatherData_' + str(file_date_string) + '.csv', index=False)
     
     return gb_model, df_clean
-# # Reload the function from the canvas
-# def fit_cloud_prediction_model(df, directory):
-    
-#     directory=directory+'/weatherfits'
-#     if not os.path.exists(directory):
-#         os.makedirs(directory)
-    
-#     file_date_string=str(datetime.datetime.now()).replace(' ','_').split('.')[0].replace(':','-')
-    
-#     # Drop irrelevant columns
-#     df_clean = df.drop(columns=['date', 'time', 'Local_clouds', 'time_in_days', 'time_in_years'], errors='ignore')
-
-#     # Check the range of 'phase_of_year'
-#     if 'phase_of_year' in df_clean.columns:
-#         phase_of_year_range = df_clean['phase_of_year'].max() - df_clean['phase_of_year'].min()
-#     else:
-#         phase_of_year_range = 0
-
-
-
-#     # Set up interesting feastures
-#     # Manually add polynomial terms for specific features
-#     df['Humidity^2'] = df['Humidity'] ** 2
-#     df['sky-ambient^2'] = df['sky-ambient'] ** 2
-    
-#     df['sky-ambientxphase_of_day'] = df['sky-ambient'] * df['phase_of_day']
-#     df['sky-ambient^2xphase_of_day'] = df['sky-ambient^2'] * df['phase_of_day']
-    
-    
-#     # df['sky_temp_Cxphase_of_day'] = df['sky_temp_C'] * df['phase_of_day']
-#     # df['sky_temp_Cxphase_of_day^2'] = df['sky_temp_Cxphase_of_day'] ** 2
-#     # Select features based on the range check  
-    
-#     # Add Fourier terms for seasonality
-#     df['sin_hour'] = np.sin(2 * np.pi * df['phase_of_day'])
-#     df['cos_hour'] = np.cos(2 * np.pi * df['phase_of_day'])
-#     df['sin_year'] = np.sin(2 * np.pi * df['phase_of_year'])
-#     df['cos_year'] = np.cos(2 * np.pi * df['phase_of_year'])
-    
-#     if phase_of_year_range > 0.9:
-#         features = ['sky_temp_C', 'sky-ambient', 'dew_point_depression', 'phase_of_day', 'phase_of_year']
-        
-#     else:
-#         features = ['sky_temp_C', 'sky-ambient', 'dew_point_depression', 'phase_of_day', 'sky-ambient^2', 'sin_hour','cos_hour']#, 'sky-ambientxphase_of_day', 'sky-ambient^2xphase_of_day']#, 'sky_temp_Cxphase_of_day','sky_temp_Cxphase_of_day^2']
-
-#     # # Prepare data with PolynomialFeatures
-#     # poly = PolynomialFeatures(degree=2, include_bias=False)
-#     # X = poly.fit_transform(df_clean[features])
-    
-#     X = df[features].copy()
-#     y = df_clean['OWM_clouds']
-
-#     # First pass: Fit Gradient Boosting model
-#     gb_model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, random_state=42)
-#     gb_model.fit(X, y)
-#     y_pred = gb_model.predict(X)
-
-#     # # Outlier rejection based on straight cut of ±30 units
-#     # residuals = y - y_pred
-#     # mask = np.abs(residuals) <= 30
-#     # X = X[mask]
-#     # y = y[mask]
-
-#     # # Second pass: Refit the model without outliers
-#     # gb_model.fit(X, y)
-#     # y_pred = gb_model.predict(X)
-
-#     # Plot predicted vs actual values
-#     plt.figure(figsize=(8, 6))
-#     plt.scatter(y, y_pred, alpha=0.7, color='black', marker='o')
-#     plt.plot([y.min(), y.max()], [y.min(), y.max()], '--', color='red')
-#     plt.xlabel('Actual OWM_clouds')
-#     plt.ylabel('Predicted OWM_clouds')
-#     plt.title('Predicted vs Actual OWM_clouds with Black Markers')
-
-#     plt.savefig(directory+'/ActualVSPredicted_' + str(file_date_string)+'.png', dpi=300, bbox_inches='tight')
-
-#     # Heatmap of correlation between factors
-#     plt.figure(figsize=(8, 6))
-#     sns.heatmap(pd.DataFrame(X).join(pd.Series(y, name='OWM_clouds')).corr(), annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
-#     plt.title('Correlation Heatmap')
-#     plt.savefig(directory+'/Correlation_' + str(file_date_string)+'.png', dpi=300, bbox_inches='tight')
-   
-
-#     # Evaluate performance
-#     mse = mean_squared_error(y, y_pred)
-#     r2 = r2_score(y, y_pred)
-
-#     # Print performance metrics
-#     print(f"Phase of Year Range: {phase_of_year_range:.3f}")
-#     print(f"Mean Squared Error: {mse:.2f}")
-#     print(f"R² Score: {r2:.2f}")
-
-#     df_clean['predicted_clouds'] = y_pred
-    
-    
-#     df_clean.to_csv(directory+'/WeatherData_' + str(file_date_string)+'.csv', index=False)
-    
-    
-#     return gb_model, df_clean
-
-# # Reload the function from the canvas
-# def fit_cloud_prediction_model(df, directory):
-    
-#     directory=directory+'/weatherfits'
-#     if not os.path.exists(directory):
-#         os.makedirs(directory)
-    
-#     file_date_string=str(datetime.datetime.now()).replace(' ','_').split('.')[0].replace(':','-')
-    
-#     # Drop irrelevant columns
-#     df_clean = df.drop(columns=['date', 'time', 'Local_clouds', 'time_in_days', 'time_in_years'], errors='ignore')
-
-#     # Check the range of 'phase_of_year'
-#     if 'phase_of_year' in df_clean.columns:
-#         phase_of_year_range = df_clean['phase_of_year'].max() - df_clean['phase_of_year'].min()
-#     else:
-#         phase_of_year_range = 0
-
-#     # Select features based on the range check
-#     if phase_of_year_range > 0.9:
-#         features = ['Humidity', 'sky-ambient', 'dew_point_depression', 'phase_of_day', 'phase_of_year']
-        
-#     else:
-#         features = ['Humidity', 'sky-ambient', 'dew_point_depression', 'phase_of_day']
-
-#     # Prepare data with PolynomialFeatures
-#     poly = PolynomialFeatures(degree=2, include_bias=False)
-#     X = poly.fit_transform(df_clean[features])
-#     y = df_clean['OWM_clouds']
-
-#     # First pass: Fit Gradient Boosting model
-#     gb_model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, random_state=42)
-#     gb_model.fit(X, y)
-#     y_pred = gb_model.predict(X)
-
-#     # Outlier rejection based on straight cut of ±30 units
-#     residuals = y - y_pred
-#     mask = np.abs(residuals) <= 30
-#     X = X[mask]
-#     y = y[mask]
-
-#     # Second pass: Refit the model without outliers
-#     gb_model.fit(X, y)
-#     y_pred = gb_model.predict(X)
-
-#     # Plot predicted vs actual values
-#     plt.figure(figsize=(8, 6))
-#     plt.scatter(y, y_pred, alpha=0.7, color='black', marker='o')
-#     plt.plot([y.min(), y.max()], [y.min(), y.max()], '--', color='red')
-#     plt.xlabel('Actual OWM_clouds')
-#     plt.ylabel('Predicted OWM_clouds')
-#     plt.title('Predicted vs Actual OWM_clouds with Black Markers')
-    
-#     #breakpoint()
-#     plt.savefig(directory+'/ActualVSPredicted_' + str(file_date_string)+'.png', dpi=300, bbox_inches='tight')
-#     #breakpoint()
-#     #plt.show()
-
-#     # # Interaction plot between 'sky-ambient' and 'phase_of_day'
-#     # plt.figure(figsize=(8, 6))
-#     # scatter = plt.scatter(X[:, 3], X[:, 1], c=y, cmap='viridis', alpha=0.6)  # Adjusting for expanded features
-#     # plt.colorbar(scatter, label='Actual OWM_clouds')
-#     # plt.xlabel('phase_of_day')
-#     # plt.ylabel('sky-ambient')
-#     # plt.title('Interaction Between phase_of_day and sky-ambient')
-#     # plt.show()
-
-#     # Heatmap of correlation between factors
-#     plt.figure(figsize=(8, 6))
-#     sns.heatmap(pd.DataFrame(X).join(pd.Series(y, name='OWM_clouds')).corr(), annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
-#     plt.title('Correlation Heatmap')
-#     plt.savefig(directory+'/Correlation_' + str(file_date_string)+'.png', dpi=300, bbox_inches='tight')
-   
-#     #plt.show()
-
-#     # Evaluate performance
-#     mse = mean_squared_error(y, y_pred)
-#     r2 = r2_score(y, y_pred)
-
-#     # Print performance metrics
-#     print(f"Phase of Year Range: {phase_of_year_range:.3f}")
-#     print(f"Mean Squared Error: {mse:.2f}")
-#     print(f"R² Score: {r2:.2f}")
-
-#     df_clean.loc[mask.index, 'predicted_clouds'] = y_pred
-    
-    
-#     df_clean.to_csv(directory+'/WeatherData_' + str(file_date_string)+'.csv', index=False)
-    
-    
-#     return gb_model, df_clean
-
-
-# Default headers to force closing connections
-# close_headers = {"Connection": "close"}
-
-# def global_request(method, url, **kwargs):
-#     """ Wrapper around requests to enforce default options and ensure response is closed """
-#     kwargs.setdefault("allow_redirects", False)
-#     kwargs.setdefault("headers", close_headers)
-#     kwargs.setdefault("stream", False)
-#     kwargs.setdefault("timeout", 5)  # Optional: Set a global timeout
-    
-#     # Send the request
-#     response = requests.request(method, url, **kwargs)
-
-
-#     # Read the response content (to ensure the connection can be closed)
-#     content = response.content  # Ensure the body is downloaded before closing
-#     status_code = response.status_code
-#     headers = response.headers
-
-#     # Close the response immediately
-#     response.close()
-
-#     # Return relevant response data (since original response object is closed)
-#     return {
-#         "status_code": status_code,
-#         "content": content,
-#         "headers": headers
-#     }
-
 
 def correct_dome_azimuth(telescope_az, telescope_alt, side_of_pier, dome_radius, telescope_offset):#, dome_slit_offset=0):
     """
@@ -550,6 +327,8 @@ class WxEncAgent:
         self.owm_api_key=secrets["OWM_Key"]
         self.tomorrowio_APIkey=secrets['tomorrowio_Key']
         self.weather_to_emails=secrets["weather_to_emails"]
+        self.pirateapi_key=secrets["pirateapi_Key"]
+        self.metocean_apikey=secrets["metocean_key"]
         
         self.cloud_model=None
         self.ocn_status=None
@@ -691,7 +470,7 @@ class WxEncAgent:
         self.owm_cloud_cover=None
         self.open_meteo_cloud_cover=None
         self.open_meteo_cloud_cover_next_hour=None
-        self.averageforecast_current_cloud_cover=None
+        self.medianforecast_current_cloud_cover=None
         self.tomorrowio_cloud_now=None
         self.tomorrowio_cloud_inanhour=None
 
@@ -1657,7 +1436,7 @@ class WxEncAgent:
             
             
             # Simply override cloud_cover for the moment
-            quick_status['cloud_cover_%']=self.averageforecast_current_cloud_cover
+            quick_status['cloud_cover_%']=self.medianforecast_current_cloud_cover
             
             
             wx_reasons = []
@@ -2189,7 +1968,7 @@ class WxEncAgent:
                 #'Humidity': [model_humidity],
                 'corrected_sky_temp_C': corrected_sky_temp_C,
                 'sky-ambient': [model_skyambient],
-                'dew_point_depression': [model_dewpointdepression],
+                #'dew_point_depression': [model_dewpointdepression],
                 'sky-ambient^2': [model_skyambient **2]
                 #'phase_of_day': [model_phaseofday]
             })
@@ -2233,7 +2012,6 @@ class WxEncAgent:
                 self.cloud_tracker.append(predicted_clouds)
                 if len(self.cloud_tracker) > 10:
                     self.cloud_tracker.pop(0)
-                #breakpoint()
                 
                 self.median_cloud_estimate=round(np.median(self.cloud_tracker),2)
             
@@ -2255,11 +2033,19 @@ class WxEncAgent:
                 plog("OWM cloud cover: " +str(self.owm_cloud_cover))
                 plog("Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover))
                 plog("TomorrowIO Now: " +str(self.tomorrowio_cloud_now))
+                plog("Pirate Now: " +str(self.pirate_clouds_now))
+                plog("Metocean Now: " +str(self.metocean_clouds_now))
+                
                 plog("OWM Next Hour: " +str(self.owm_cloud_cover_next_hour))
                 plog("Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour))
                 plog("TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour))
                 
-                plog("Average cloud cover: "+str(self.averageforecast_current_cloud_cover))
+                
+                plog("Pirate Now: " +str(self.pirate_clouds_inanhour))
+                
+                plog("Metocean Now: " +str(self.metocean_clouds_inanhour))
+                
+                plog("Median cloud cover: "+str(self.medianforecast_current_cloud_cover))
     
                 plog("**************************************************************")
             except:
@@ -3214,11 +3000,77 @@ class WxEncAgent:
                 self.tomorrowio_cloud_now=None
                 self.tomorrowio_cloud_inanhour=None
             
+
             try:
-                self.averageforecast_current_cloud_cover= (self.owm_cloud_cover+self.open_meteo_cloud_cover+self.owm_cloud_cover_next_hour+self.open_meteo_cloud_cover_next_hour+self.tomorrowio_cloud_now+self.tomorrowio_cloud_inanhour)/6
+                # NOTE: don't for get to set "apikey" env, or the default below.
+                resp = requests.post(
+                    "https://forecast-v2.metoceanapi.com/point/time",
+                    headers={"x-api-key": self.metocean_apikey},
+                    json={
+                        "points": [{
+                            "lon": self.longitude,
+                            "lat": self.latitude
+                        }],
+                        "variables": [
+                            "cloud.cover"
+                        ],
+                        "time": {
+                            "from": "{:%Y-%m-%dT%H:%M:00Z}".format(datetime.datetime.now(timezone.utc)),
+                            "interval": "1h",
+                            "repeat": 1
+                        }
+                    }
+                )
+    
+                        
+                self.metocean_clouds_now=resp.json()['variables']['cloud.cover']['data'][0]
+                self.metocean_clouds_inanhour=resp.json()['variables']['cloud.cover']['data'][1]
             except:
-                self.averageforecast_current_cloud_cover=None
-            line_of_weather_info.append(self.averageforecast_current_cloud_cover)
+                self.metocean_clouds_now=None
+                self.metocean_clouds_inanhour=None
+                
+                
+            # PIRATE API
+            try:
+                API_KEY=self.pirateapi_key
+            
+                # Get the current timestamp and the timestamp an hour from now
+                now = datetime.datetime.now().timestamp()
+                one_hour_from_now = (datetime.datetime.now() + datetime.timedelta(hours=1)).timestamp()
+                
+                url = f"https://api.pirateweather.net/forecast/{API_KEY}/{self.latitude},{self.longitude}?units=si"
+                
+                response = requests.get(url)
+                data = response.json()
+                
+                # Get current cloud cover
+                current_cloud_cover = data['currently']['cloudCover'] * 100  # percentage
+                
+                # Get cloud cover forecasted an hour from now
+                hourly_data = data['hourly']['data']
+                cloud_cover_in_an_hour = None
+                
+                for hour in hourly_data:
+                    if abs(hour['time'] - one_hour_from_now) < 1800:  # within 30 minutes of the target time
+                        cloud_cover_in_an_hour = hour['cloudCover'] * 100
+                        break
+                                
+            
+                self.pirate_clouds_now=current_cloud_cover
+                self.pirate_clouds_inanhour=cloud_cover_in_an_hour
+            except:
+                self.pirate_clouds_now=None
+                self.pirate_clouds_inanhour=None
+                
+                        
+            try:
+                #self.medianforecast_current_cloud_cover= (self.owm_cloud_cover+self.open_meteo_cloud_cover+self.owm_cloud_cover_next_hour+self.open_meteo_cloud_cover_next_hour+self.tomorrowio_cloud_now+self.tomorrowio_cloud_inanhour+ self.pirate_clouds_now + self.pirate_clouds_inanhour + self.metocean_clouds_now + self.metocean_clouds_inanhour)/10
+                self.medianforecast_current_cloud_cover= np.median(np.asarray([self.owm_cloud_cover,self.open_meteo_cloud_cover,self.owm_cloud_cover_next_hour,self.open_meteo_cloud_cover_next_hour,self.tomorrowio_cloud_now,self.tomorrowio_cloud_inanhour, self.pirate_clouds_now ,self.pirate_clouds_inanhour ,self.metocean_clouds_now, self.metocean_clouds_inanhour]))
+            
+            except:                
+                plog(traceback.format_exc())
+                self.medianforecast_current_cloud_cover=None
+            line_of_weather_info.append(self.medianforecast_current_cloud_cover)
 
             # Next hours
             line_of_weather_info.append(self.open_meteo_cloud_cover_next_hour)
@@ -3228,9 +3080,6 @@ class WxEncAgent:
            
             sun_altitude, moon_altitude, moon_illumination, flux_ground, sun_azimuth = self.get_sun_and_moon_info()
         
-            
-        
-            #breakpoint()
             # Put in relevant sun and moon potential effects
             line_of_weather_info.append(sun_altitude / u.deg)
             line_of_weather_info.append(moon_altitude/ u.deg)
@@ -3238,110 +3087,13 @@ class WxEncAgent:
             line_of_weather_info.append(flux_ground)
             line_of_weather_info.append(sun_azimuth / u.deg)
             line_of_weather_info.append(self.tomorrowio_cloud_now)
-            line_of_weather_info.append(self.tomorrowio_cloud_inanhour)
-            #breakpoint()
+            line_of_weather_info.append(self.tomorrowio_cloud_inanhour)            
             
-            
-            
-            # import boto3
-            # import botocore
-            # def download_himawari_image(longitude, latitude, band='B03', resolution='2000', satellite='himawari8'):
-            #     """
-            #     Download a Himawari-8 image for the current hour from AWS.
-            
-            #     Args:
-            #         longitude (float): Longitude of the location.
-            #         latitude (float): Latitude of the location.
-            #         band (str): The channel to download (e.g., 'B03' for visible imagery).
-            #         resolution (str): Resolution in meters ('2000' for 2km, '1000' for 1km, etc.).
-            #         satellite (str): Satellite name (default is 'himawari8').
-            
-            #     Returns:
-            #         str: Local file path of the downloaded image.
-            #     """
-            #     # Set up AWS S3 connection
-            #     s3_client = boto3.client(
-            #         's3',
-            #         region_name='ap-northeast-1',
-            #         config=botocore.config.Config(signature_version=botocore.UNSIGNED)
-            #     )
-            
-            #     now = datetime.datetime.utcnow()
-            #     # Round down to the nearest 10-minute interval
-            #     nearest_time = now - datetime.timedelta(minutes=now.minute % 10, seconds=now.second, microseconds=now.microsecond)
-                
-            #     # List of time slots to check: Current & Previous 10-minute intervals
-            #     time_slots = [nearest_time, nearest_time - datetime.timedelta(minutes=10), nearest_time - datetime.timedelta(minutes=20)]
-             
-            #     for current_time in time_slots:
-            #         year = current_time.strftime('%Y')
-            #         month = current_time.strftime('%m')
-            #         day = current_time.strftime('%d')
-            #         hour = current_time.strftime('%H')
-            #         minute = current_time.strftime('%M')
-             
-            #         # AWS path for Himawari-8 Full Disk data (Band-specific folder structure)
-            #         prefix = f'Himawari8/FullDisk/{resolution}m/{year}/{month}/{day}/{hour}{minute}/'
-             
-            #         try:
-            #             response = s3_client.list_objects_v2(Bucket='noaa-himawari8', Prefix=prefix)
-            #             if 'Contents' not in response:
-            #                 print(f"No files found for time slot: {hour}:{minute} UTC")
-            #                 continue
-             
-            #             # Filter files to find the correct band
-            #             files = [obj['Key'] for obj in response['Contents'] if f'{band}.tif' in obj['Key']]
-                        
-            #             if not files:
-            #                 print(f"No files for band {band} found for time slot: {hour}:{minute} UTC")
-            #                 continue
-             
-            #             # Select the first file found
-            #             file_key = files[0]
-            #             local_file = file_key.split('/')[-1]
-             
-            #             # Download the file
-            #             s3_client.download_file('noaa-himawari8', file_key, local_file)
-            #             print(f"Downloaded: {local_file} for time slot: {hour}:{minute} UTC")
-            #             return local_file
-             
-            #         except botocore.exceptions.ClientError as e:
-            #             print(f"AWS Client Error: {e}")
-                
-            #     raise FileNotFoundError("No files found for the last 30 minutes (3 attempts).")
-            
-            # # Example usage
-            # download_himawari_image(longitude=self.longitude, latitude=self.latitude, band='B03', resolution='2000')
-            
-            # import xarray as xr
-            # def load_and_display_himawari(file_path, band_name='CMI'):
-            #     """
-            #     Load and display Himawari-8 data from a NetCDF file.
-                
-            #     Args:
-            #         file_path (str): Path to the Himawari-8 .nc file.
-            #         band_name (str): The name of the data variable to load (default is 'CMI').
-            #     """
-            #     # Load the NetCDF file using xarray
-            #     dataset = xr.open_dataset(file_path)
-                
-            #     # Display the dataset metadata
-            #     print(dataset)
-                
-            #     # Select the band of interest (e.g., 'CMI' for Channel 3 or Channel 13)
-            #     band_data = dataset[band_name].data
-                
-            #     # Display the image using matplotlib
-            #     plt.figure(figsize=(10, 10))
-            #     plt.imshow(band_data, cmap='gray')
-            #     plt.colorbar(label='Pixel Intensity')
-            #     plt.title(f'Himawari-8 - {band_name}')
-            #     plt.axis('off')
-            #     plt.show()
-            
-            # # Example usage
-            # load_and_display_himawari('path_to_your_file.nc')
-            # breakpoint()
+            line_of_weather_info.append(self.pirate_clouds_now) 
+            line_of_weather_info.append(self.pirate_clouds_inanhour)
+            line_of_weather_info.append(self.metocean_clouds_now)
+            line_of_weather_info.append(self.metocean_clouds_inanhour)
+
             
             # Your cPanel email credentials
             smtp_server = self.smtp_server
@@ -3349,8 +3101,7 @@ class WxEncAgent:
             sender_email = self.sender_email
             password = self.email_password
             
-            
-            
+                       
             # Receiver
             receiver_email = self.weather_to_emails
             
@@ -3360,14 +3111,20 @@ class WxEncAgent:
             message['To'] = receiver_email
             message['Subject'] = 'Cloud Report'
             
-            body = 'Hello, the clouds are now (hopefully): ' + str(self.averageforecast_current_cloud_cover) +'\n'
+            body = 'Hello, the clouds are now (hopefully): ' + str(self.medianforecast_current_cloud_cover) +'\n'
             
             body = body +"OWM cloud cover: " +str(self.owm_cloud_cover) +'\n'
-            body = body +"Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover)+'\n'            
+            body = body +"Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover)+'\n'    
+            body = body +"Metocean Now: " +str(self.metocean_clouds_now)+'\n'
+            body = body +"Pirate Now: " +str(self.pirate_clouds_now)+'\n'
             body = body +"TomorrowIO Now: " +str(self.tomorrowio_cloud_now)+'\n\n'
             body = body +"OWM Next Hour: " +str(self.owm_cloud_cover_next_hour)+'\n'
             body = body +"Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour)+'\n'
             body = body +"TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour)+'\n'
+            
+            
+            body = body +"Metocean Next Hour: " +str(self.metocean_clouds_inanhour)+'\n'
+            body = body +"Pirate Next Hour: " +str(self.pirate_clouds_inanhour)+'\n'
             
             message.attach(MIMEText(body, 'plain'))
             
@@ -3385,7 +3142,7 @@ class WxEncAgent:
             #breakpoint()
                 
             # Open the file in append mode and write the line
-            if not self.averageforecast_current_cloud_cover == None:
+            if not self.medianforecast_current_cloud_cover == None:
                 try:
                     with open(self.wema_path+self.name + '_weatherlog.csv', mode='a', newline='') as file:
                         writer = csv.writer(file)
@@ -3402,7 +3159,9 @@ class WxEncAgent:
             ######## We also need to update our cloud prediction model.
             # So lets open the weatherlog
             # Assign column names manually
-            column_names = ['date','time','OWM_clouds','Local_clouds','Humidity','sky_temp_C','local_temperature_C', 'dewpoint', 'rain_rate','wind_m/s', 'OWM_temperature','openmeteo_clouds', 'avg_forecast_cloudcover', 'OWMClouds_inanhour', 'openmeteoclouds_inanhour','sun_altitude','moon_altitude','moon_illumination','moon_flux_on_ground', 'sun_azimuth', 'tomorrowio_nowclouds','tomorrowio_nexthourclouds']
+            column_names = ['date','time','OWM_clouds','Local_clouds','Humidity','sky_temp_C','local_temperature_C', 'dewpoint', 'rain_rate','wind_m/s', 'OWM_temperature','openmeteo_clouds', 'avg_forecast_cloudcover', 'OWMClouds_inanhour', 'openmeteoclouds_inanhour','sun_altitude','moon_altitude','moon_illumination','moon_flux_on_ground', 'sun_azimuth', 'tomorrowio_nowclouds','tomorrowio_nexthourclouds','pirate_clouds_now','pirate_clouds_inanhour','metocean_clouds_now','metocean_clouds_inanhour']
+            
+            
             
             # Read CSV without a header and assign column names
             df = pd.read_csv(self.wema_path+self.name + '_weatherlog.csv', header=None, names=column_names)
