@@ -36,6 +36,7 @@ wema_config = {
 
     'wema_name': 'aro',
     'instance_type': 'wema',
+    'instance_is_public': True,
     'obsp_ids': ['aro1'], #, 'aro2','aro3', 'aro4']  #Possible hint to site about who are its children.
 
     'debug_mode': False,

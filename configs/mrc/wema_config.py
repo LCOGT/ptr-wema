@@ -41,6 +41,7 @@ wema_config = {
 
     'wema_name': 'mrc',
     'instance_type': 'wema',
+    'instance_is_public': True,
     'obsp_ids': ['mrc1', 'mrc2'],  # a list of the obsp's in an enclosure.  
 
     'debug_mode': False,
