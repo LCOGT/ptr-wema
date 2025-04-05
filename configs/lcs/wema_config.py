@@ -23,7 +23,7 @@ wema_config = {
     #'wema': 'eco',
     'wema_name': 'lcs',
     'instance_type': 'wema',
-    'instance_is_public': False,
+    'instance_is_public': True,
 
     'obsp_ids': ['lcs1'],  # a list of the obsp's in an enclosure.  
 
