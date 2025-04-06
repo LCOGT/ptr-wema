@@ -23,7 +23,7 @@ wema_config = {
     #'wema': 'eco',
     'wema_name': 'eco',
     'instance_type': 'wema',
-    'instance_is_public': True,
+    'instance_is_private': False,
 
     'obsp_ids': ['eco1', 'eco2'],  # a list of the obsp's in an enclosure.  
 
