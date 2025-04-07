@@ -1465,8 +1465,9 @@ class WxEncAgent:
             
             # Simply override cloud_cover for the moment
             quick_status['forecast_cloud_cover_%']=self.medianforecast_current_cloud_cover
-            try:            
-                quick_status['local_cloud_cover_%']=self.predicted_clouds
+            try:           
+                quick_status['local_cloud_cover_%']=self.predicted_clouds[0]
+                print ("goog " + str(self.predicted_clouds[0]))
             except:
                 plog ("Can't use predicted clouds for local cloud cover... usually because this is booting up and hasn't run a model yet. ")
                 quick_status['local_cloud_cover_%']=self.medianforecast_current_cloud_cover
@@ -2068,7 +2069,7 @@ class WxEncAgent:
                 # Predict clouds using trained gb_model
                 self.predicted_clouds = self.cloud_model.predict(new_data)
                 
-                self.cloud_tracker.append(self.predicted_clouds)
+                self.cloud_tracker.append(self.predicted_clouds[0])
                 if len(self.cloud_tracker) > 10:
                     self.cloud_tracker.pop(0)
                 
@@ -2094,15 +2095,21 @@ class WxEncAgent:
                 plog("TomorrowIO Now: " +str(self.tomorrowio_cloud_now))
                 plog("Pirate Now: " +str(self.pirate_clouds_now))
                 plog("Metocean Now: " +str(self.metocean_clouds_now))
+                plog("Worldweather Now: " +str(self.worldweather_current_cloud))
+                
+                plog('')
                 
                 plog("OWM Next Hour: " +str(self.owm_cloud_cover_next_hour))
                 plog("Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour))
                 plog("TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour))
                 
-                
                 plog("Pirate Next Hour: " +str(self.pirate_clouds_inanhour))
                 
                 plog("Metocean Next Hour: " +str(self.metocean_clouds_inanhour))
+                
+                plog("Worldweather Next Hour: " +str(self.worldweather_nexthour_cloud))
+                
+                plog('')
                 
                 plog("Median cloud cover: "+str(self.medianforecast_current_cloud_cover))
     
@@ -2921,7 +2928,7 @@ class WxEncAgent:
             
             # Reported cloud_cover
             try:
-                line_of_weather_info.append(self.predicted_clouds)
+                line_of_weather_info.append(self.predicted_clouds[0])
             except:
                 line_of_weather_info.append(None)
                 plog ("using none rather than predicted clouds for weatherline")
@@ -3148,24 +3155,24 @@ class WxEncAgent:
                 response = requests.get("https://api.worldweatheronline.com/premium/v1/weather.ashx", params=params)
                 data = response.json()
             
-                # Get current time in UTC
-                current_time = datetime.datetime.utcnow().strftime('%H%M')
-                next_hour_time = (datetime.datetime.utcnow() + datetime.timedelta(hours=1)).strftime('%H%M')
+                # # Get current time in UTC
+                # current_time = datetime.datetime.utcnow().strftime('%H%M')
+                # next_hour_time = (datetime.datetime.utcnow() + datetime.timedelta(hours=1)).strftime('%H%M')
             
                 # Extract hourly data
                 hourly_data = data['data']['weather'][0]['hourly']
                 
-                current_cloud = None
-                next_hour_cloud = None
+                current_cloud = hourly_data[0]['cloudcover']
+                next_hour_cloud = hourly_data[1]['cloudcover']
             
-                #print (current_time)
+                # #print (current_time)
             
-                for hour in hourly_data:
-                    #print (hour['time'])
-                    if int(hour['time']) - 50 < int(current_time):
-                        current_cloud = hour['cloudcover']
-                    elif int(hour['time']) - 50 < int(next_hour_time):
-                        next_hour_cloud = hour['cloudcover']
+                # for hour in hourly_data:
+                #     #print (hour['time'])
+                #     if int(hour['time']) - 50 < int(current_time):
+                #         current_cloud = hour['cloudcover']
+                #     elif int(hour['time']) - 50 < int(next_hour_time):
+                #         next_hour_cloud = hour['cloudcover']
             
                 print(f"WorldWeather Current Cloud Cover: {current_cloud}%")
                 print(f"WorldWeather Next Hour Cloud Cover: {next_hour_cloud}%")
@@ -3177,7 +3184,7 @@ class WxEncAgent:
                 self.worldweather_nexthour_cloud = None
                 # plog(traceback.format_exc())
                 # breakpoint()
-                      
+            
                         
             try:
                 #self.medianforecast_current_cloud_cover= (self.owm_cloud_cover+self.open_meteo_cloud_cover+self.owm_cloud_cover_next_hour+self.open_meteo_cloud_cover_next_hour+self.tomorrowio_cloud_now+self.tomorrowio_cloud_inanhour+ self.pirate_clouds_now + self.pirate_clouds_inanhour + self.metocean_clouds_now + self.metocean_clouds_inanhour)/10

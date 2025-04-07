@@ -214,7 +214,7 @@ wema_config = {
     'lightning_limit': 15,
     'temperature_minus_dewpoint_limit': 2,
     'sky_temperature_limit': -12,
-    'local_cloud_cover_limit': 85,
+    'local_cloud_cover_limit': 70,
     'forecast_cloud_cover_limit' : 70,
     'lowest_ambient_temperature': -5,
     'highest_ambient_temperature': 60,
