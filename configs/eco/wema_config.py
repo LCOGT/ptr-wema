@@ -196,7 +196,8 @@ wema_config = {
     'lightning_limit_on': False,
     'temperature_minus_dewpoint_limit_on': False,
     'sky_temperature_limit_on': False,
-    'cloud_cover_limit_on': True,
+    'local_cloud_cover_limit_on': True,
+    'forecast_cloud_cover_limit_on': True,
     'lowest_ambient_temperature_on': False,
     'highest_ambient_temperature_on': False,
     
@@ -213,7 +214,8 @@ wema_config = {
     'lightning_limit': 15,
     'temperature_minus_dewpoint_limit': 2,
     'sky_temperature_limit': -12,
-    'cloud_cover_limit': 85,
+    'local_cloud_cover_limit': 85,
+    'forecast_cloud_cover_limit' : 70,
     'lowest_ambient_temperature': -5,
     'highest_ambient_temperature': 60,
     
@@ -230,7 +232,8 @@ wema_config = {
     'warning_lightning_limit': 10,
     'warning_temperature_minus_dewpoint_limit': 2,
     'warning_sky_temperature_limit': -17,
-    'warning_cloud_cover_limit': 25,
+    'warning_local_cloud_cover_limit': 25,
+    'warning_forecast_cloud_cover_limit': 25,
     'warning_lowest_ambient_temperature': 5,
     'warning_highest_ambient_temperature': 35,
 

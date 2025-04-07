@@ -427,7 +427,8 @@ class WxEncAgent:
         # This is a flag that enables or disables observing for all OBS in the WEMA.
         self.observing_mode = 'active'
         self.rain_limit_quiet=False
-        self.cloud_limit_quiet=False
+        self.local_cloud_limit_quiet=False
+        self.forecast_cloud_limit_quiet=False
         self.humidity_limit_quiet=False
         self.windspeed_limit_quiet=False
         self.lightning_limit_quiet=False
@@ -511,7 +512,8 @@ class WxEncAgent:
             self.lightning_limit_setting = self.config['lightning_limit']
             self.temp_minus_dew_setting = self.config['temperature_minus_dewpoint_limit']
             self.sky_temp_limit_setting = self.config['sky_temperature_limit']
-            self.cloud_cover_limit_setting = self.config['cloud_cover_limit']
+            self.local_cloud_cover_limit_setting = self.config['local_cloud_cover_limit']
+            self.forecast_cloud_cover_limit_setting = self.config['forecast_cloud_cover_limit']
             self.lowest_temperature_setting = self.config['lowest_ambient_temperature']
             self.highest_temperature_setting = self.config['highest_ambient_temperature']
 
@@ -521,7 +523,8 @@ class WxEncAgent:
             self.warning_lightning_limit_setting = self.config['warning_lightning_limit']
             self.warning_temp_minus_dew_setting = self.config['warning_temperature_minus_dewpoint_limit']
             self.warning_sky_temp_limit_setting = self.config['warning_sky_temperature_limit']
-            self.warning_cloud_cover_limit_setting = self.config['warning_cloud_cover_limit']
+            self.warning_local_cloud_cover_limit_setting = self.config['warning_local_cloud_cover_limit']
+            self.warning_forecast_cloud_cover_limit_setting = self.config['warning_forecast_cloud_cover_limit']
             self.warning_lowest_temperature_setting = self.config['warning_lowest_ambient_temperature']
             self.warning_highest_temperature_setting = self.config['warning_highest_ambient_temperature']
 
@@ -531,7 +534,8 @@ class WxEncAgent:
             self.lightning_limit_on = self.config['lightning_limit_on']
             self.temp_minus_dew_on = self.config['temperature_minus_dewpoint_limit_on']
             self.sky_temperature_limit_on = self.config['sky_temperature_limit_on']
-            self.cloud_cover_limit_on = self.config['cloud_cover_limit_on']
+            self.local_cloud_cover_limit_on = self.config['local_cloud_cover_limit_on']
+            self.forecast_cloud_cover_limit_on = self.config['forecast_cloud_cover_limit_on']
             self.lowest_temperature_on = self.config['lowest_ambient_temperature_on']
             self.highest_temperature_on = self.config['highest_ambient_temperature_on']
                     
@@ -539,9 +543,13 @@ class WxEncAgent:
             wema_settings_shelf['warning_rain_limit_setting'] = self.warning_rain_limit_setting
             wema_settings_shelf['rain_limit_setting'] = self.rain_limit_setting
             
-            wema_settings_shelf['cloud_cover_limit_on'] = self.cloud_cover_limit_on
-            wema_settings_shelf['warning_cloud_cover_limit_setting'] = self.warning_cloud_cover_limit_setting
-            wema_settings_shelf['cloud_cover_limit_setting'] = self.cloud_cover_limit_setting
+            wema_settings_shelf['local_cloud_cover_limit_on'] = self.local_cloud_cover_limit_on
+            wema_settings_shelf['forecast_cloud_cover_limit_on'] = self.forecast_cloud_cover_limit_on
+            wema_settings_shelf['warning_local_cloud_cover_limit_setting'] = self.warning_local_cloud_cover_limit_setting
+            wema_settings_shelf['warning_forecast_cloud_cover_limit_setting'] = self.warning_forecast_cloud_cover_limit_setting
+            wema_settings_shelf['local_cloud_cover_limit_setting'] = self.local_cloud_cover_limit_setting
+            wema_settings_shelf['forecast_cloud_cover_limit_setting'] = self.forecast_cloud_cover_limit_setting
+            
             
             wema_settings_shelf['humidity_limit_on'] = self.humidity_limit_on
             wema_settings_shelf['warning_humidity_limit_setting'] = self.warning_humidity_limit_setting
@@ -612,9 +620,11 @@ class WxEncAgent:
                     self.warning_rain_limit_setting=wema_settings_shelf['warning_rain_limit_setting']
                     self.rain_limit_setting=wema_settings_shelf['rain_limit_setting']
                     
-                    self.cloud_cover_limit_on=wema_settings_shelf['cloud_cover_limit_on']
+                    self.local_cloud_cover_limit_on=wema_settings_shelf['local_cloud_cover_limit_on']
+                    self.forecast_cloud_cover_limit_on=wema_settings_shelf['forecast_cloud_cover_limit_on']
                     self.warning_cloud_cover_limit_setting=wema_settings_shelf['warning_cloud_cover_limit_setting']
-                    self.cloud_cover_limit_setting=wema_settings_shelf['cloud_cover_limit_setting']
+                    self.local_cloud_cover_limit_setting=wema_settings_shelf['local_cloud_cover_limit_setting']
+                    self.forecast_cloud_cover_limit_setting=wema_settings_shelf['forecast_cloud_cover_limit_setting']
                     
                     self.humidity_limit_on=wema_settings_shelf['humidity_limit_on']
                     self.warning_humidity_limit_setting=wema_settings_shelf['warning_humidity_limit_setting']
@@ -662,7 +672,8 @@ class WxEncAgent:
                     self.lightning_limit_setting = self.config['lightning_limit']
                     self.temp_minus_dew_setting = self.config['temperature_minus_dewpoint_limit']
                     self.sky_temp_limit_setting = self.config['sky_temperature_limit']
-                    self.cloud_cover_limit_setting = self.config['cloud_cover_limit']
+                    self.local_cloud_cover_limit_setting = self.config['local_cloud_cover_limit']                    
+                    self.forecast_cloud_cover_limit_setting = self.config['forecast_cloud_cover_limit']
                     self.lowest_temperature_setting = self.config['lowest_ambient_temperature']
                     self.highest_temperature_setting = self.config['highest_ambient_temperature']
 
@@ -672,7 +683,9 @@ class WxEncAgent:
                     self.warning_lightning_limit_setting = self.config['warning_lightning_limit']
                     self.warning_temp_minus_dew_setting = self.config['warning_temperature_minus_dewpoint_limit']
                     self.warning_sky_temp_limit_setting = self.config['warning_sky_temperature_limit']
-                    self.warning_cloud_cover_limit_setting = self.config['warning_cloud_cover_limit']
+                    self.warning_local_cloud_cover_limit_setting = self.config['warning_local_cloud_cover_limit']
+                    self.warning_forecast_cloud_cover_limit_setting = self.config['warning_forecast_cloud_cover_limit']
+                    
                     self.warning_lowest_temperature_setting = self.config['warning_lowest_ambient_temperature']
                     self.warning_highest_temperature_setting = self.config['warning_highest_ambient_temperature']
 
@@ -682,7 +695,8 @@ class WxEncAgent:
                     self.lightning_limit_on = self.config['lightning_limit_on']
                     self.temp_minus_dew_on = self.config['temperature_minus_dewpoint_limit_on']
                     self.sky_temperature_limit_on = self.config['sky_temperature_limit_on']
-                    self.cloud_cover_limit_on = self.config['cloud_cover_limit_on']
+                    self.local_cloud_cover_limit_on = self.config['local_cloud_cover_limit_on']
+                    self.forecast_cloud_cover_limit_on = self.config['forecast_cloud_cover_limit_on']
                     self.lowest_temperature_on = self.config['lowest_ambient_temperature_on']
                     self.highest_temperature_on = self.config['highest_ambient_temperature_on']
                     
@@ -719,9 +733,13 @@ class WxEncAgent:
                     wema_settings_shelf['warning_rain_limit_setting'] = self.warning_rain_limit_setting
                     wema_settings_shelf['rain_limit_setting'] = self.rain_limit_setting
                     
-                    wema_settings_shelf['cloud_cover_limit_on'] = self.cloud_cover_limit_on
-                    wema_settings_shelf['warning_cloud_cover_limit_setting'] = self.warning_cloud_cover_limit_setting
-                    wema_settings_shelf['cloud_cover_limit_setting'] = self.cloud_cover_limit_setting
+                    wema_settings_shelf['local_cloud_cover_limit_on'] = self.local_cloud_cover_limit_on
+                    wema_settings_shelf['forecast_cloud_cover_limit_on'] = self.forecast_cloud_cover_limit_on
+                    wema_settings_shelf['warning_local_cloud_cover_limit_setting'] = self.warning_local_cloud_cover_limit_setting
+                    wema_settings_shelf['warning_forecast_cloud_cover_limit_setting'] = self.warning_forecast_cloud_cover_limit_setting
+                    wema_settings_shelf['local_cloud_cover_limit_setting'] = self.local_cloud_cover_limit_setting
+                    wema_settings_shelf['forecast_cloud_cover_limit_setting'] = self.forecast_cloud_cover_limit_setting
+                    
                     
                     wema_settings_shelf['humidity_limit_on'] = self.humidity_limit_on
                     wema_settings_shelf['warning_humidity_limit_setting'] = self.warning_humidity_limit_setting
@@ -1036,9 +1054,13 @@ class WxEncAgent:
                             self.warning_rain_limit_setting=tempval['rain']['warning_level']
                             self.rain_limit_setting=tempval['rain']['danger_level']
                             
-                            self.cloud_cover_limit_on='on' in tempval['clouds']['status']
-                            self.warning_cloud_cover_limit_setting=tempval['clouds']['warning_level']
-                            self.cloud_cover_limit_setting=tempval['clouds']['danger_level']
+                            self.local_cloud_cover_limit_on='on' in tempval['local_clouds']['status']
+                            self.warning_local_cloud_cover_limit_setting=tempval['local_clouds']['warning_level']
+                            self.local_cloud_cover_limit_setting=tempval['local_clouds']['danger_level']
+                            
+                            self.forecast_cloud_cover_limit_on='on' in tempval['forecast_clouds']['status']
+                            self.warning_forecast_cloud_cover_limit_setting=tempval['forecast_clouds']['warning_level']
+                            self.forecast_cloud_cover_limit_setting=tempval['forecast_clouds']['danger_level']
                             
                             self.humidity_limit_on='on' in tempval['humidity']['status']
                             self.warning_humidity_limit_setting=tempval['humidity']['warning_level']
@@ -1082,9 +1104,14 @@ class WxEncAgent:
                     wema_settings_shelf['warning_rain_limit_setting']=self.warning_rain_limit_setting
                     wema_settings_shelf['rain_limit_setting']=self.rain_limit_setting
                     
-                    wema_settings_shelf['cloud_cover_limit_on']=self.cloud_cover_limit_on
-                    wema_settings_shelf['warning_cloud_cover_limit_setting']=self.warning_cloud_cover_limit_setting
-                    wema_settings_shelf['cloud_cover_limit_setting']=self.cloud_cover_limit_setting
+                    wema_settings_shelf['local_cloud_cover_limit_on']=self.local_cloud_cover_limit_on
+                    wema_settings_shelf['warning_local_cloud_cover_limit_setting']=self.warning_local_cloud_cover_limit_setting
+                    wema_settings_shelf['local_cloud_cover_limit_setting']=self.local_cloud_cover_limit_setting
+                    
+                    wema_settings_shelf['forecastl_cloud_cover_limit_on']=self.forecast_cloud_cover_limit_on
+                    wema_settings_shelf['warning_forecast_cloud_cover_limit_setting']=self.warning_forecast_cloud_cover_limit_setting
+                    wema_settings_shelf['forecast_cloud_cover_limit_setting']=self.forecast_cloud_cover_limit_setting
+                    
                     
                     wema_settings_shelf['humidity_limit_on']=self.humidity_limit_on
                     wema_settings_shelf['warning_humidity_limit_setting']=self.warning_humidity_limit_setting
@@ -1437,8 +1464,16 @@ class WxEncAgent:
             
             
             # Simply override cloud_cover for the moment
-            quick_status['cloud_cover_%']=self.medianforecast_current_cloud_cover
+            quick_status['forecast_cloud_cover_%']=self.medianforecast_current_cloud_cover
+            try:            
+                quick_status['local_cloud_cover_%']=self.predicted_clouds
+            except:
+                plog ("Can't use predicted clouds for local cloud cover... usually because this is booting up and hasn't run a model yet. ")
+                quick_status['local_cloud_cover_%']=self.medianforecast_current_cloud_cover
             
+            
+            #breakpoint()
+            #LOOKHEREMATE
             
             wx_reasons = []
             #breakpoint()
@@ -1497,22 +1532,39 @@ class WxEncAgent:
             else:
                 sky_amb_limit=True
             
-            if self.cloud_cover_limit_on:
+            if self.local_cloud_cover_limit_on:
                 try:
-                    cloud_cover_value = float(quick_status['cloud_cover_%'])
+                    local_cloud_cover_value = float(quick_status['local_cloud_cover_%'])
                     #status['cloud_cover_%'] = round(cloud_cover_value, 0)
-                    if cloud_cover_value <= self.cloud_cover_limit_setting:
-                        cloud_cover = False
+                    if local_cloud_cover_value <= self.local_cloud_cover_limit_setting:
+                        local_cloud_cover = False
                         #wx_reasons.append('>=' + str(self.cloud_cover_limit_setting) + '% Cloudy')
                 
                     else:
-                        cloud_cover = True
-                        wx_reasons.append('>=' + str(self.cloud_cover_limit_setting) + '% Cloudy')
+                        local_cloud_cover = True
+                        wx_reasons.append('>=' + str(self.local_cloud_cover_limit_setting) + '% Cloudy Local Sensor')
                 except:
                     #status['cloud_cover_%'] = "no report"
-                    cloud_cover = True  # We cannot use this signal to force a wX hold or close
+                    local_cloud_cover = True  # We cannot use this signal to force a wX hold or close
             else:
-                cloud_cover = False
+                local_cloud_cover = False
+            
+            if self.forecast_cloud_cover_limit_on:
+                try:
+                    forecast_cloud_cover_value = float(quick_status['forecast_cloud_cover_%'])
+                    #status['cloud_cover_%'] = round(cloud_cover_value, 0)
+                    if forecast_cloud_cover_value <= self.forecast_cloud_cover_limit_setting:
+                        forecast_cloud_cover = False
+                        #wx_reasons.append('>=' + str(self.cloud_cover_limit_setting) + '% Cloudy')
+                
+                    else:
+                        forecast_cloud_cover = True
+                        wx_reasons.append('>=' + str(self.forecast_cloud_cover_limit_setting) + '% Cloudy Forecast')
+                except:
+                    #status['cloud_cover_%'] = "no report"
+                    forecast_cloud_cover = True  # We cannot use this signal to force a wX hold or close
+            else:
+                forecast_cloud_cover = False
             
             
             if self.lowest_temperature_on:
@@ -1540,20 +1592,20 @@ class WxEncAgent:
             #         and not (cloud_cover and self.cloud_cover_limit_on)
             # )
             #breakpoint()
-            self.local_weather_ok = dewpoint_gap and temp_bounds and wind_limit and sky_amb_limit and humidity_limit and not rain_limit and not cloud_cover  
+            self.local_weather_ok = dewpoint_gap and temp_bounds and wind_limit and sky_amb_limit and humidity_limit and not rain_limit and not local_cloud_cover and not forecast_cloud_cover 
             
             #  NB wx_is_ok does not include ambient light or altitude of the Sun
             # the notion of Obs OK should bring in Sun Elevation and or ambient light.
             
             #breakpoint()
     
-            if quick_status['rain_rate']> 0.0:
-                #plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
-                #plog("Rain Rate is 1.0")
-                # plog('Rain > ' + str(rain_limit_setting))
-                plog("For SkyAlerts: Rain Flag is 1: This is usually a glitch so ignoring.")
-                plog("May be unevaporated rain, ice, or a bird dropping.")
-                #plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
+            # if quick_status['rain_rate']> 0.0:
+            #     #plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
+            #     #plog("Rain Rate is 1.0")
+            #     # plog('Rain > ' + str(rain_limit_setting))
+            #     plog("For SkyAlerts: Rain Flag is 1: This is usually a glitch so ignoring.")
+            #     plog("May be unevaporated rain, ice, or a bird dropping.")
+            #     #plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
     
             if self.local_weather_ok:
                 #wx_str = "Yes"
@@ -1646,10 +1698,16 @@ class WxEncAgent:
                 status['wema_settings']['rain_limit_warning_level'] = self.warning_rain_limit_setting
                 status['wema_settings']['rain_limit_danger_level'] = self.rain_limit_setting
                 
-                status['wema_settings']['cloud_limit_on'] = self.cloud_cover_limit_on
-                status['wema_settings']['cloud_limit_quiet'] = self.cloud_limit_quiet
-                status['wema_settings']['cloud_limit_warning_level'] = self.warning_cloud_cover_limit_setting
-                status['wema_settings']['cloud_limit_danger_level'] = self.cloud_cover_limit_setting
+                status['wema_settings']['local_cloud_limit_on'] = self.local_cloud_cover_limit_on
+                status['wema_settings']['local_cloud_limit_quiet'] = self.local_cloud_limit_quiet
+                status['wema_settings']['local_cloud_limit_warning_level'] = self.warning_local_cloud_cover_limit_setting
+                status['wema_settings']['local_cloud_limit_danger_level'] = self.local_cloud_cover_limit_setting
+                
+                status['wema_settings']['forecast_cloud_limit_on'] = self.forecast_cloud_cover_limit_on
+                status['wema_settings']['forecast_cloud_limit_quiet'] = self.forecast_cloud_limit_quiet
+                status['wema_settings']['forecast_cloud_limit_warning_level'] = self.warning_forecast_cloud_cover_limit_setting
+                status['wema_settings']['forecast_cloud_limit_danger_level'] = self.forecast_cloud_cover_limit_setting
+                
                 
                 status['wema_settings']['humidity_limit_on']  = self.humidity_limit_on
                 status['wema_settings']['humidity_limit_quiet'] = self.humidity_limit_quiet
@@ -2008,15 +2066,15 @@ class WxEncAgent:
                 # X = df[features].copy()
     
                 # Predict clouds using trained gb_model
-                predicted_clouds = self.cloud_model.predict(new_data)
+                self.predicted_clouds = self.cloud_model.predict(new_data)
                 
-                self.cloud_tracker.append(predicted_clouds)
+                self.cloud_tracker.append(self.predicted_clouds)
                 if len(self.cloud_tracker) > 10:
                     self.cloud_tracker.pop(0)
                 
                 self.median_cloud_estimate=round(np.median(self.cloud_tracker),2)
             
-                plog(f"Predicted clouds: {predicted_clouds[0]:.2f}")
+                plog(f"Predicted clouds: {self.predicted_clouds[0]:.2f}")
                 plog ("Past clouds: " + str(self.cloud_tracker))
                 plog ("Median of last ten observations: " + str(round(np.median(self.cloud_tracker),2)) + " std " + str(round(np.std(self.cloud_tracker),2)))
 
@@ -2862,7 +2920,11 @@ class WxEncAgent:
             self.owm_cloud_cover_next_hour=one_call.forecast_hourly[1].clouds
             
             # Reported cloud_cover
-            line_of_weather_info.append(ocn_status['cloud_cover_%'])
+            try:
+                line_of_weather_info.append(self.predicted_clouds)
+            except:
+                line_of_weather_info.append(None)
+                plog ("using none rather than predicted clouds for weatherline")
             
             # Current humidity
             if ocn_status['humidity_%'] == -1:
@@ -2893,50 +2955,7 @@ class WxEncAgent:
             # OWM temperature - can be more reliable than weather station
             line_of_weather_info.append(one_call.current.temp['temp']-273.15)
             
-            
-            # # Open Meteo Cloud Cover
-            # # Define the API endpoint and parameters
-            # url = "https://api.open-meteo.com/v1/forecast"
-            # params = {
-            # 'latitude': self.latitude,  # Melbourne latitude
-            # 'longitude': self.longitude,  # Melbourne longitude
-            # 'current': 'cloud_cover',  # Request cloud cover data
-            # 'hourly': 'cloudcover'
-            #     }
-            
-            # # Send GET request
-            # try:
-            #     response = requests.get(url, params=params)
-                
-            #     # Check if request was successful
-            #     if response.status_code == 200:
-            #         data = response.json()
-            #         # Extract cloud cover percentage
-            #         self.open_meteo_cloud_cover = data.get('current', {}).get('cloud_cover')
-            #         #self.open_meteo_cloud_cover_next_hour= data['hourly']['cloudcover'][1]
-            #         print(f"Open Meteo Current cloud cover in Melbourne: {self.open_meteo_cloud_cover}%")
-            #         line_of_weather_info.append(self.open_meteo_cloud_cover)
-                    
-            #         # Convert times from the response to datetime
-            #         time_list = [datetime.datetime.fromisoformat(t).replace(tzinfo=timezone.utc) for t in data['hourly']['time']]
-            #         cloud_list = data['hourly']['cloudcover']
-            #         # Get the current UTC time (since Open-Meteo time is in UTC unless you set timezone)
-            #         now = datetime.datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
-    
-            #         # then continue with:
-            #         for i, t in enumerate(time_list):
-            #             if t > now:
-            #                 self.open_meteo_cloud_cover_next_hour = cloud_list[i]
-            #                 #print(f"Cloud cover at {t} is {cloudcover_next_hour}%")
-            #                 break
-            #     else:
-            #         print(f"Error: {response.status_code}, {response.text}")
-            #         self.open_meteo_cloud_cover=None
-            #         self.open_meteo_cloud_cover_next_hour=None
-            # except:    
-            #     plog(traceback.format_exc())
-            #     self.open_meteo_cloud_cover=None
-            #     self.open_meteo_cloud_cover_next_hour=None
+        
             
             # Define the API endpoint and parameters
             url = "https://api.open-meteo.com/v1/forecast"
@@ -3031,14 +3050,6 @@ class WxEncAgent:
                     data = response.json()
                     timelines = data.get("data", {}).get("timelines", [])
                 
-                    # # Parse the cloud cover data
-                    # if timelines:
-                    #     for timeline in timelines:
-                    #         for interval in timeline.get("intervals", []):
-                    #             cloudtime = interval["startTime"]
-                    #             cloud_cover = interval["values"]["cloudCover"]
-                    #             print(f"Time: {cloudtime}, Cloud Cover: {cloud_cover}%")
-                    #breakpoint()
                     self.tomorrowio_cloud_now=timelines[1]['intervals'][0]['values']['cloudCover']
                     self.tomorrowio_cloud_inanhour=timelines[0]['intervals'][1]['values']['cloudCover']
                                 
