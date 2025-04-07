@@ -329,6 +329,7 @@ class WxEncAgent:
         self.weather_to_emails=secrets["weather_to_emails"]
         self.pirateapi_key=secrets["pirateapi_Key"]
         self.metocean_apikey=secrets["metocean_key"]
+        self.worldweather_key=secrets["worldweather_key"]
         
         self.cloud_model=None
         self.ocn_status=None
@@ -2041,9 +2042,9 @@ class WxEncAgent:
                 plog("TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour))
                 
                 
-                plog("Pirate Now: " +str(self.pirate_clouds_inanhour))
+                plog("Pirate Next Hour: " +str(self.pirate_clouds_inanhour))
                 
-                plog("Metocean Now: " +str(self.metocean_clouds_inanhour))
+                plog("Metocean Next Hour: " +str(self.metocean_clouds_inanhour))
                 
                 plog("Median cloud cover: "+str(self.medianforecast_current_cloud_cover))
     
@@ -2893,15 +2894,58 @@ class WxEncAgent:
             line_of_weather_info.append(one_call.current.temp['temp']-273.15)
             
             
-            # Open Meteo Cloud Cover
+            # # Open Meteo Cloud Cover
+            # # Define the API endpoint and parameters
+            # url = "https://api.open-meteo.com/v1/forecast"
+            # params = {
+            # 'latitude': self.latitude,  # Melbourne latitude
+            # 'longitude': self.longitude,  # Melbourne longitude
+            # 'current': 'cloud_cover',  # Request cloud cover data
+            # 'hourly': 'cloudcover'
+            #     }
+            
+            # # Send GET request
+            # try:
+            #     response = requests.get(url, params=params)
+                
+            #     # Check if request was successful
+            #     if response.status_code == 200:
+            #         data = response.json()
+            #         # Extract cloud cover percentage
+            #         self.open_meteo_cloud_cover = data.get('current', {}).get('cloud_cover')
+            #         #self.open_meteo_cloud_cover_next_hour= data['hourly']['cloudcover'][1]
+            #         print(f"Open Meteo Current cloud cover in Melbourne: {self.open_meteo_cloud_cover}%")
+            #         line_of_weather_info.append(self.open_meteo_cloud_cover)
+                    
+            #         # Convert times from the response to datetime
+            #         time_list = [datetime.datetime.fromisoformat(t).replace(tzinfo=timezone.utc) for t in data['hourly']['time']]
+            #         cloud_list = data['hourly']['cloudcover']
+            #         # Get the current UTC time (since Open-Meteo time is in UTC unless you set timezone)
+            #         now = datetime.datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+    
+            #         # then continue with:
+            #         for i, t in enumerate(time_list):
+            #             if t > now:
+            #                 self.open_meteo_cloud_cover_next_hour = cloud_list[i]
+            #                 #print(f"Cloud cover at {t} is {cloudcover_next_hour}%")
+            #                 break
+            #     else:
+            #         print(f"Error: {response.status_code}, {response.text}")
+            #         self.open_meteo_cloud_cover=None
+            #         self.open_meteo_cloud_cover_next_hour=None
+            # except:    
+            #     plog(traceback.format_exc())
+            #     self.open_meteo_cloud_cover=None
+            #     self.open_meteo_cloud_cover_next_hour=None
+            
             # Define the API endpoint and parameters
             url = "https://api.open-meteo.com/v1/forecast"
             params = {
-            'latitude': self.latitude,  # Melbourne latitude
-            'longitude': self.longitude,  # Melbourne longitude
-            'current': 'cloud_cover',  # Request cloud cover data
-            'hourly': 'cloudcover'
-                }
+                'latitude': self.latitude,  # Melbourne latitude
+                'longitude': self.longitude,  # Melbourne longitude
+                'hourly': 'cloudcover',  # Request cloud cover data
+                'timezone': 'UTC'
+            }
             
             # Send GET request
             try:
@@ -2910,33 +2954,45 @@ class WxEncAgent:
                 # Check if request was successful
                 if response.status_code == 200:
                     data = response.json()
-                    # Extract cloud cover percentage
-                    self.open_meteo_cloud_cover = data.get('current', {}).get('cloud_cover')
-                    #self.open_meteo_cloud_cover_next_hour= data['hourly']['cloudcover'][1]
-                    print(f"Open Meteo Current cloud cover in Melbourne: {self.open_meteo_cloud_cover}%")
-                    line_of_weather_info.append(self.open_meteo_cloud_cover)
                     
-                    # Convert times from the response to datetime
-                    time_list = [datetime.datetime.fromisoformat(t).replace(tzinfo=timezone.utc) for t in data['hourly']['time']]
-                    cloud_list = data['hourly']['cloudcover']
-                    # Get the current UTC time (since Open-Meteo time is in UTC unless you set timezone)
-                    now = datetime.datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
-    
-                    # then continue with:
-                    for i, t in enumerate(time_list):
-                        if t > now:
-                            self.open_meteo_cloud_cover_next_hour = cloud_list[i]
-                            #print(f"Cloud cover at {t} is {cloudcover_next_hour}%")
-                            break
+                    if 'hourly' in data and 'cloudcover' in data['hourly']:
+                        time_list = [datetime.datetime.fromisoformat(t).replace(tzinfo=timezone.utc) for t in data['hourly']['time']]
+                        cloud_list = data['hourly']['cloudcover']
+                        
+                        # Get the current UTC time rounded to the nearest hour
+                        now = datetime.datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+                        
+                        # Find the closest timestamp to the current time
+                        closest_time = min(time_list, key=lambda x: abs(x - now))
+                        closest_index = time_list.index(closest_time)
+                        
+                        self.open_meteo_cloud_cover = cloud_list[closest_index]
+                        print(f"Open Meteo Current Estimated Cloud Cover: {self.open_meteo_cloud_cover}%")
+                        line_of_weather_info.append(self.open_meteo_cloud_cover)
+                        
+                        # Get next hour's cloud cover
+                        if closest_index + 1 < len(cloud_list):
+                            self.open_meteo_cloud_cover_next_hour = cloud_list[closest_index + 1]
+                            print(f"Open Meteo Cloud Cover for Next Hour: {self.open_meteo_cloud_cover_next_hour}%")
+                        else:
+                            self.open_meteo_cloud_cover_next_hour = None
+                            print("No data for the next hour.")
+                            
+                    else:
+                        print("Hourly cloud cover data not available.")
+            
                 else:
                     print(f"Error: {response.status_code}, {response.text}")
-                    self.open_meteo_cloud_cover=None
-                    self.open_meteo_cloud_cover_next_hour=None
-            except:    
-                plog(traceback.format_exc())
-                self.open_meteo_cloud_cover=None
-                self.open_meteo_cloud_cover_next_hour=None
+                    self.open_meteo_cloud_cover = None
+                    self.open_meteo_cloud_cover_next_hour = None
             
+            except Exception as e:    
+                print(f"An error occurred: {str(e)}")
+                self.open_meteo_cloud_cover = None
+                self.open_meteo_cloud_cover_next_hour = None
+
+            
+            #breakpoint()
             
             # Replace with your Tomorrow.io API Key
             API_KEY = self.tomorrowio_APIkey
@@ -3062,10 +3118,59 @@ class WxEncAgent:
                 self.pirate_clouds_now=None
                 self.pirate_clouds_inanhour=None
                 
+                
+                
+                
+                
+                
+            # WORLDWEATHER API
+            try:
+            
+                params = {
+                    'key': self.worldweather_key,
+                    'q': f'{self.latitude},{self.longitude}',
+                    'format': 'json',
+                    'num_of_days': 1,
+                    'tp': 1  # Hourly intervals
+                }
+            
+                response = requests.get("https://api.worldweatheronline.com/premium/v1/weather.ashx", params=params)
+                data = response.json()
+            
+                # Get current time in UTC
+                current_time = datetime.datetime.utcnow().strftime('%H%M')
+                next_hour_time = (datetime.datetime.utcnow() + datetime.timedelta(hours=1)).strftime('%H%M')
+            
+                # Extract hourly data
+                hourly_data = data['data']['weather'][0]['hourly']
+                
+                current_cloud = None
+                next_hour_cloud = None
+            
+                #print (current_time)
+            
+                for hour in hourly_data:
+                    #print (hour['time'])
+                    if int(hour['time']) - 50 < int(current_time):
+                        current_cloud = hour['cloudcover']
+                    elif int(hour['time']) - 50 < int(next_hour_time):
+                        next_hour_cloud = hour['cloudcover']
+            
+                print(f"WorldWeather Current Cloud Cover: {current_cloud}%")
+                print(f"WorldWeather Next Hour Cloud Cover: {next_hour_cloud}%")
+                
+                self.worldweather_current_cloud = float(current_cloud)
+                self.worldweather_nexthour_cloud = float(next_hour_cloud)
+            except:
+                self.worldweather_current_cloud = None
+                self.worldweather_nexthour_cloud = None
+                # plog(traceback.format_exc())
+                # breakpoint()
+                      
                         
             try:
                 #self.medianforecast_current_cloud_cover= (self.owm_cloud_cover+self.open_meteo_cloud_cover+self.owm_cloud_cover_next_hour+self.open_meteo_cloud_cover_next_hour+self.tomorrowio_cloud_now+self.tomorrowio_cloud_inanhour+ self.pirate_clouds_now + self.pirate_clouds_inanhour + self.metocean_clouds_now + self.metocean_clouds_inanhour)/10
-                self.medianforecast_current_cloud_cover= np.median(np.asarray([self.owm_cloud_cover,self.open_meteo_cloud_cover,self.owm_cloud_cover_next_hour,self.open_meteo_cloud_cover_next_hour,self.tomorrowio_cloud_now,self.tomorrowio_cloud_inanhour, self.pirate_clouds_now ,self.pirate_clouds_inanhour ,self.metocean_clouds_now, self.metocean_clouds_inanhour]))
+                self.medianforecast_current_cloud_cover= np.median(np.asarray([self.owm_cloud_cover,self.open_meteo_cloud_cover,self.owm_cloud_cover_next_hour,self.open_meteo_cloud_cover_next_hour,self.tomorrowio_cloud_now,self.tomorrowio_cloud_inanhour, self.pirate_clouds_now ,self.pirate_clouds_inanhour ,self.metocean_clouds_now, self.metocean_clouds_inanhour, self.worldweather_current_cloud, self.worldweather_nexthour_cloud]))
             
             except:                
                 plog(traceback.format_exc())
@@ -3093,7 +3198,8 @@ class WxEncAgent:
             line_of_weather_info.append(self.pirate_clouds_inanhour)
             line_of_weather_info.append(self.metocean_clouds_now)
             line_of_weather_info.append(self.metocean_clouds_inanhour)
-
+            line_of_weather_info.append(self.worldweather_current_cloud)
+            line_of_weather_info.append(self.worldweather_nexthour_cloud)
             
             # Your cPanel email credentials
             smtp_server = self.smtp_server
@@ -3117,15 +3223,17 @@ class WxEncAgent:
             body = body +"Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover)+'\n'    
             body = body +"Metocean Now: " +str(self.metocean_clouds_now)+'\n'
             body = body +"Pirate Now: " +str(self.pirate_clouds_now)+'\n'
+            body = body +"WorldWeather Now: " +str(self.worldweather_current_cloud)+'\n'
             body = body +"TomorrowIO Now: " +str(self.tomorrowio_cloud_now)+'\n\n'
             body = body +"OWM Next Hour: " +str(self.owm_cloud_cover_next_hour)+'\n'
             body = body +"Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour)+'\n'
             body = body +"TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour)+'\n'
             
-            
+            body = body +"WorldWeather Next Hour: " +str(self.worldweather_nexthour_cloud)+'\n'
             body = body +"Metocean Next Hour: " +str(self.metocean_clouds_inanhour)+'\n'
             body = body +"Pirate Next Hour: " +str(self.pirate_clouds_inanhour)+'\n'
             
+
             message.attach(MIMEText(body, 'plain'))
             
             # Send the email
@@ -3159,7 +3267,7 @@ class WxEncAgent:
             ######## We also need to update our cloud prediction model.
             # So lets open the weatherlog
             # Assign column names manually
-            column_names = ['date','time','OWM_clouds','Local_clouds','Humidity','sky_temp_C','local_temperature_C', 'dewpoint', 'rain_rate','wind_m/s', 'OWM_temperature','openmeteo_clouds', 'avg_forecast_cloudcover', 'OWMClouds_inanhour', 'openmeteoclouds_inanhour','sun_altitude','moon_altitude','moon_illumination','moon_flux_on_ground', 'sun_azimuth', 'tomorrowio_nowclouds','tomorrowio_nexthourclouds','pirate_clouds_now','pirate_clouds_inanhour','metocean_clouds_now','metocean_clouds_inanhour']
+            column_names = ['date','time','OWM_clouds','Local_clouds','Humidity','sky_temp_C','local_temperature_C', 'dewpoint', 'rain_rate','wind_m/s', 'OWM_temperature','openmeteo_clouds', 'avg_forecast_cloudcover', 'OWMClouds_inanhour', 'openmeteoclouds_inanhour','sun_altitude','moon_altitude','moon_illumination','moon_flux_on_ground', 'sun_azimuth', 'tomorrowio_nowclouds','tomorrowio_nexthourclouds','pirate_clouds_now','pirate_clouds_inanhour','metocean_clouds_now','metocean_clouds_inanhour','worldweather_clouds_now','worldweather_clouds_inanhour']
             
             
             
