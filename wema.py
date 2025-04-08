@@ -28,21 +28,21 @@ import wema_events
 from devices.observing_conditions import ObservingConditions
 from devices.enclosure import Enclosure
 from global_yard import g_dev
-import logging
+#import logging
 from wema_utility import plog
-from pyowm import OWM
-from pyowm.utils import config
-from pyowm.utils import timestamps
-from pyowm.utils.config import get_default_config
-from pyowm.commons.databoxes import SubscriptionType
+# from pyowm import OWM
+# from pyowm.utils import config
+# from pyowm.utils import timestamps
+# from pyowm.utils.config import get_default_config
+# from pyowm.commons.databoxes import SubscriptionType
 #from requests.adapters import HTTPAdapter, Retry
 from dotenv import load_dotenv
 load_dotenv(".env")
 from wema_config import get_enc_status_custom
 from wema_config import get_ocn_status_custom
 import csv
-from requests.auth import HTTPBasicAuth
-from astropy.coordinates import EarthLocation, AltAz, SkyCoord, get_sun, get_moon, solar_system_ephemeris
+#from requests.auth import HTTPBasicAuth
+from astropy.coordinates import EarthLocation, AltAz, SkyCoord, get_sun, get_moon#, solar_system_ephemeris
 from astropy.time import Time
 import astropy.units as u
 
@@ -57,7 +57,7 @@ from email.mime.multipart import MIMEMultipart
 # # Australian weather service
 # from weather_au import api
 
-from func_timeout import func_timeout, FunctionTimedOut
+#from func_timeout import func_timeout, FunctionTimedOut
 import numpy as np
 #import http.client
 #http.client.HTTPConnection.debuglevel = 1
@@ -66,15 +66,15 @@ from sklearn.linear_model import LinearRegression
 
 import matplotlib.pyplot as plt
 import pandas as pd
-import sys
-from scipy.fft import fft, ifft, fftfreq
-import numpy as np
-from scipy.signal import correlate
+# import sys
+# from scipy.fft import fft, ifft, fftfreq
+# import numpy as np
+# from scipy.signal import correlate
 import seaborn as sns
-from sklearn.model_selection import train_test_split,cross_val_predict, KFold
+from sklearn.model_selection import train_test_split#,cross_val_predict, KFold
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.preprocessing import PolynomialFeatures
+#from sklearn.preprocessing import PolynomialFeatures
 
 #import rasterio
 
@@ -1467,7 +1467,7 @@ class WxEncAgent:
             quick_status['forecast_cloud_cover_%']=self.medianforecast_current_cloud_cover
             try:           
                 quick_status['local_cloud_cover_%']=self.predicted_clouds[0]
-                print ("goog " + str(self.predicted_clouds[0]))
+                #print ("goog " + str(self.predicted_clouds[0]))
             except:
                 plog ("Can't use predicted clouds for local cloud cover... usually because this is booting up and hasn't run a model yet. ")
                 quick_status['local_cloud_cover_%']=self.medianforecast_current_cloud_cover
@@ -2097,7 +2097,7 @@ class WxEncAgent:
                 plog("Metocean Now: " +str(self.metocean_clouds_now))
                 plog("Worldweather Now: " +str(self.worldweather_current_cloud))
                 
-                plog('')
+                plog('**')
                 
                 plog("OWM Next Hour: " +str(self.owm_cloud_cover_next_hour))
                 plog("Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour))
@@ -2109,7 +2109,7 @@ class WxEncAgent:
                 
                 plog("Worldweather Next Hour: " +str(self.worldweather_nexthour_cloud))
                 
-                plog('')
+                plog('**')
                 
                 plog("Median cloud cover: "+str(self.medianforecast_current_cloud_cover))
     
@@ -2654,31 +2654,45 @@ class WxEncAgent:
         try: 
             plog("Appraising quality of evening from Open Weather Map.")
             
-            config_dict = get_default_config()
+            # config_dict = get_default_config()
             
-            config_dict["subscription_type"] = SubscriptionType(name="professional", subdomain="pro", is_paid=False)            
+            # config_dict["subscription_type"] = SubscriptionType(name="professional", subdomain="pro", is_paid=True)            
 
-            owm = OWM(self.owm_api_key, config_dict)
-            mgr = owm.weather_manager()
+            # owm = OWM(self.owm_api_key, config_dict)
+            # mgr = owm.weather_manager()
             
-            #breakpoint()
-            try:
-                one_call = mgr.one_call(lat=self.config["latitude"], lon=self.config["longitude"],exclude=["alerts", "minutely" ,"daily"])
-            except:
-                plog ("Connection glitch probably. Bailing out, will try again soon")
-                plog(traceback.format_exc())
-                time.sleep(10)
+            # #breakpoint()
+            # try:
+            #     one_call = mgr.one_call(lat=self.config["latitude"], lon=self.config["longitude"],exclude=["alerts", "minutely" ,"daily"])
+            # except:
+            #     plog ("Connection glitch probably. Bailing out, will try again soon")
+            #     plog(traceback.format_exc())
+            #     #time.sleep(10)
                 
-                return
+            #     #return
             
+            
+            # Pro users use the pro subdomain
+            url = "https://pro.openweathermap.org/data/3.0/onecall"
+            params = {
+                "lat": self.latitude,
+                "lon": self.longitude,
+                "appid": self.owm_api_key,
+                "exclude": "minutely,alerts",  # Customize what to exclude
+                "units": "metric"
+            }
+            
+            response = requests.get(url, params=params)
+            data = response.json()
+            
+
             #breakpoint()
-            
             self.weather_report_run_timer = time.time()
             
             # Keep this for weather stations that do not have current humidity
-            self.current_owm_humidity=one_call.current.humidity
-            self.current_owm_ambient_temperature=one_call.current.temp['temp']- 273.15
-            self.current_owm_dewpoint=one_call.current.dewpoint - 273.15
+            self.current_owm_humidity=data['current']['humidity']
+            self.current_owm_ambient_temperature=data['current']['temp']
+            self.current_owm_dewpoint=data['current']['dew_point']
             
         
             # Collect relevant info for fitzgerald weather number calculation
@@ -2692,45 +2706,48 @@ class WxEncAgent:
             
             OWM_status_json={}
             OWM_status_json["timestamp"] = round(time.time(), 1)
-            for hourly_report in one_call.forecast_hourly:
+            for hourly_report in data['hourly']:
                 
+                dt = datetime.datetime.utcfromtimestamp(hourly_report['dt'])  # or .fromtimestamp() for local time
+                iso_time = dt.isoformat()  # '2025-05-08T07:00:00'
+                clock_hour = iso_time.split('T')[1].split(':')[0] 
                 
-                clock_hour=int(hourly_report.reference_time('iso').split(' ')[1].split(':')[0])
+                # clock_hour=int(hourly_report.reference_time('iso').split(' ')[1].split(':')[0])
 
                 # Calculate Fitzgerald number for this hour
                 tempFn=0
                 # Add humidity score up
-                if 80 < hourly_report.humidity <= 85:
+                if 80 < hourly_report['humidity'] <= 85:
                     tempFn=tempFn+4
-                elif 85 < hourly_report.humidity <= 90:
+                elif 85 < hourly_report['humidity'] <= 90:
                     tempFn=tempFn+20
-                elif 90 < hourly_report.humidity <= 100:
+                elif 90 < hourly_report['humidity'] <= 100:
                     tempFn=tempFn+101
 
                 # Add cloud score up
-                if 20 < hourly_report.clouds <= 40:
+                if 20 < hourly_report['clouds'] <= 40:
                     tempFn=tempFn+10
-                elif 40 < hourly_report.clouds <= 60:
+                elif 40 < hourly_report['clouds'] <= 60:
                     tempFn=tempFn+40
-                elif 60 < hourly_report.clouds <= 80:
+                elif 60 < hourly_report['clouds'] <= 80:
                     tempFn=tempFn+60
-                elif 80 < hourly_report.clouds <= 100:
+                elif 80 < hourly_report['clouds'] <= 100:
                     tempFn=tempFn+101
 
                 # Add wind score up
-                if 8 < hourly_report.wind()['speed'] <=12:
+                if 8 < hourly_report['wind_speed'] <=12:
                     tempFn=tempFn+1
-                elif 12 < hourly_report.wind()['speed'] <= 15:
+                elif 12 < hourly_report['wind_speed'] <= 15:
                     tempFn=tempFn+4
-                elif 15 < hourly_report.wind()['speed'] <= 20:
+                elif 15 < hourly_report['wind_speed'] <= 20:
                     tempFn=tempFn+40
-                elif 20 < hourly_report.wind()['speed'] :
+                elif 20 < hourly_report['wind_speed'] :
                     tempFn=tempFn+101
 
-                if 'rain'  in hourly_report.detailed_status or 'storm'  in hourly_report.detailed_status or hourly_report.rain != {}:
+                if 'rain'  in hourly_report['weather'][0]['description'] or 'storm'  in hourly_report['weather'][0]['description']: # Need to figure out pop thing here. 
                     tempFn=tempFn+101
 
-                weatherline=[hourly_report.humidity,hourly_report.clouds,hourly_report.wind()['speed'],hourly_report.status, hourly_report.detailed_status, clock_hour, tempFn, hourly_report.reference_time('iso'), hourly_report.temperature()['temp'] - 273.15, hourly_report.rain]
+                weatherline=[ hourly_report['humidity'], hourly_report['clouds'],hourly_report['wind_speed'],hourly_report['weather'][0]['main'], hourly_report['weather'][0]['description'], clock_hour, tempFn, iso_time,  hourly_report['temp'], hourly_report['pop']] # Last one meant to be rain but it has s
                 fitzgerald_weather_number_grid.append(weatherline)
 
                 hourcounter=hourcounter + 1
@@ -2920,11 +2937,11 @@ class WxEncAgent:
             line_of_weather_info.append(str(datetime.datetime.now()))
             line_of_weather_info.append(time.time())
             # Current cloud % from weather forecast
-            line_of_weather_info.append(one_call.current.clouds)
+            line_of_weather_info.append(data['current']['clouds'])
             
-            print ("OWM current clouds: " + str(one_call.current.clouds))
-            self.owm_cloud_cover=one_call.current.clouds
-            self.owm_cloud_cover_next_hour=one_call.forecast_hourly[1].clouds
+            print ("OWM current clouds: " + str(data['current']['clouds']))
+            self.owm_cloud_cover=data['current']['clouds']
+            self.owm_cloud_cover_next_hour=data['hourly'][1]['clouds']
             
             # Reported cloud_cover
             try:
@@ -2935,7 +2952,7 @@ class WxEncAgent:
             
             # Current humidity
             if ocn_status['humidity_%'] == -1:
-                line_of_weather_info.append(one_call.current.humidity)
+                line_of_weather_info.append(data['current']['humidity'])
             else:
                 line_of_weather_info.append(ocn_status['humidity_%'])
                         
@@ -2947,7 +2964,7 @@ class WxEncAgent:
                         
             # Dewpoint
             if ocn_status['dewpoint_C'] == 100:
-                line_of_weather_info.append(one_call.current.dewpoint - 273.15)
+                line_of_weather_info.append(data['current']['dew_point'])
             else:
                 line_of_weather_info.append(ocn_status['dewpoint_C'])
             
@@ -2960,7 +2977,7 @@ class WxEncAgent:
             line_of_weather_info.append(ocn_status['wind_m/s'])                        
             
             # OWM temperature - can be more reliable than weather station
-            line_of_weather_info.append(one_call.current.temp['temp']-273.15)
+            line_of_weather_info.append(data['current']['temp'])
             
         
             
@@ -3104,39 +3121,63 @@ class WxEncAgent:
                 self.metocean_clouds_inanhour=None
                 
                 
-            # PIRATE API
-            try:
-                API_KEY=self.pirateapi_key
+            # # PIRATE API
+            # try:
+            #     API_KEY=self.pirateapi_key
             
-                # Get the current timestamp and the timestamp an hour from now
-                now = datetime.datetime.now().timestamp()
-                one_hour_from_now = (datetime.datetime.now() + datetime.timedelta(hours=1)).timestamp()
+            #     # Get the current timestamp and the timestamp an hour from now
+            #     now = datetime.datetime.now().timestamp()
+            #     one_hour_from_now = (datetime.datetime.now() + datetime.timedelta(hours=1)).timestamp()
                 
-                url = f"https://api.pirateweather.net/forecast/{API_KEY}/{self.latitude},{self.longitude}?units=si"
+            #     url = f"https://api.pirateweather.net/forecast/{API_KEY}/{self.latitude},{self.longitude}?units=si"
                 
-                response = requests.get(url)
-                data = response.json()
+            #     response = requests.get(url)
+            #     data = response.json()
                 
-                # Get current cloud cover
-                current_cloud_cover = data['currently']['cloudCover'] * 100  # percentage
+            #     # Get current cloud cover
+            #     current_cloud_cover = data['currently']['cloudCover'] * 100  # percentage
                 
-                # Get cloud cover forecasted an hour from now
-                hourly_data = data['hourly']['data']
-                cloud_cover_in_an_hour = None
+            #     # Get cloud cover forecasted an hour from now
+            #     hourly_data = data['hourly']['data']
+            #     cloud_cover_in_an_hour = None
                 
-                for hour in hourly_data:
-                    if abs(hour['time'] - one_hour_from_now) < 1800:  # within 30 minutes of the target time
-                        cloud_cover_in_an_hour = hour['cloudCover'] * 100
-                        break
+            #     for hour in hourly_data:
+            #         if abs(hour['time'] - one_hour_from_now) < 1800:  # within 30 minutes of the target time
+            #             cloud_cover_in_an_hour = hour['cloudCover'] * 100
+            #             break
                                 
             
-                self.pirate_clouds_now=current_cloud_cover
-                self.pirate_clouds_inanhour=cloud_cover_in_an_hour
+            #     self.pirate_clouds_now=current_cloud_cover
+            #     self.pirate_clouds_inanhour=cloud_cover_in_an_hour
+            # except:
+            #     self.pirate_clouds_now=None
+            #     self.pirate_clouds_inanhour=None
+                
+            # PIRATE API
+            try:
+                API_KEY = self.pirateapi_key
+            
+                # Fetch data from Pirate Weather API
+                url = f"https://api.pirateweather.net/forecast/{API_KEY}/{self.latitude},{self.longitude}?units=si"
+                response = requests.get(url)
+                data = response.json()
+            
+                # Get current cloud cover
+                #current_cloud_cover = data['currently']['cloudCover'] * 100  # percentage
+            
+                # Get cloud cover forecasted an hour from now
+                hourly_data = data['hourly']['data']
+                current_hour_cloud_cover = hourly_data[0]['cloudCover'] * 100
+                next_hour_cloud_cover = hourly_data[1]['cloudCover'] * 100  # Assuming 1-hour intervals
+            
+            
+                #breakpoint()
+            
+                self.pirate_clouds_now = current_hour_cloud_cover
+                self.pirate_clouds_inanhour = next_hour_cloud_cover
             except:
-                self.pirate_clouds_now=None
-                self.pirate_clouds_inanhour=None
-                
-                
+                self.pirate_clouds_now = None
+                self.pirate_clouds_inanhour = None
                 
                 
                 
