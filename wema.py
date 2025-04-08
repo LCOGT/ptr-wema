@@ -2990,46 +2990,110 @@ class WxEncAgent:
                 'timezone': 'UTC'
             }
             
+            # # Send GET request
+            # try:
+            #     response = requests.get(url, params=params)
+                
+            #     # Check if request was successful
+            #     if response.status_code == 200:
+            #         data = response.json()
+                    
+            #         if 'hourly' in data and 'cloudcover' in data['hourly']:
+            #             time_list = [datetime.datetime.fromisoformat(t).replace(tzinfo=timezone.utc) for t in data['hourly']['time']]
+            #             cloud_list = data['hourly']['cloudcover']
+                        
+            #             # Get the current UTC time rounded to the nearest hour
+            #             now = datetime.datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+                        
+            #             # Find the closest timestamp to the current time
+            #             closest_time = min(time_list, key=lambda x: abs(x - now))
+            #             closest_index = time_list.index(closest_time)
+                        
+            #             self.open_meteo_cloud_cover = cloud_list[closest_index]
+            #             print(f"Open Meteo Current Estimated Cloud Cover: {self.open_meteo_cloud_cover}%")
+            #             line_of_weather_info.append(self.open_meteo_cloud_cover)
+                        
+            #             # Get next hour's cloud cover
+            #             if closest_index + 1 < len(cloud_list):
+            #                 self.open_meteo_cloud_cover_next_hour = cloud_list[closest_index + 1]
+            #                 print(f"Open Meteo Cloud Cover for Next Hour: {self.open_meteo_cloud_cover_next_hour}%")
+            #             else:
+            #                 self.open_meteo_cloud_cover_next_hour = None
+            #                 print("No data for the next hour.")
+                            
+            #         else:
+            #             print("Hourly cloud cover data not available.")
+            
+            #     else:
+            #         print(f"Error: {response.status_code}, {response.text}")
+            #         self.open_meteo_cloud_cover = None
+            #         self.open_meteo_cloud_cover_next_hour = None
+            
+            # except Exception as e:    
+            #     print(f"An error occurred: {str(e)}")
+            #     self.open_meteo_cloud_cover = None
+            #     self.open_meteo_cloud_cover_next_hour = None
+
+
             # Send GET request
             try:
                 response = requests.get(url, params=params)
-                
-                # Check if request was successful
+            
                 if response.status_code == 200:
                     data = response.json()
-                    
+            
                     if 'hourly' in data and 'cloudcover' in data['hourly']:
-                        time_list = [datetime.datetime.fromisoformat(t).replace(tzinfo=timezone.utc) for t in data['hourly']['time']]
+                        time_list = [
+                            datetime.datetime.fromisoformat(t).replace(tzinfo=timezone.utc)
+                            for t in data['hourly']['time']
+                        ]
                         cloud_list = data['hourly']['cloudcover']
-                        
-                        # Get the current UTC time rounded to the nearest hour
+            
+                        # Get the current UTC time rounded down to the nearest hour
                         now = datetime.datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
-                        
-                        # Find the closest timestamp to the current time
-                        closest_time = min(time_list, key=lambda x: abs(x - now))
-                        closest_index = time_list.index(closest_time)
-                        
-                        self.open_meteo_cloud_cover = cloud_list[closest_index]
-                        print(f"Open Meteo Current Estimated Cloud Cover: {self.open_meteo_cloud_cover}%")
+                        print(f"Current UTC Time: {now.isoformat()}")
+            
+                        # Find exact index for the current hour if available
+                        if now in time_list:
+                            index_now = time_list.index(now)
+                        else:
+                            # Fallback: Find first forecast time that is >= now
+                            future_times = [t for t in time_list if t >= now]
+                            if not future_times:
+                                print("No future hourly data available.")
+                                self.open_meteo_cloud_cover = None
+                                self.open_meteo_cloud_cover_next_hour = None
+                                return
+            
+                            closest_time = min(future_times, key=lambda x: x - now)
+                            index_now = time_list.index(closest_time)
+            
+                        # Assign current cloud cover safely
+                        cloud_now = cloud_list[index_now]
+                        self.open_meteo_cloud_cover = cloud_now if cloud_now is not None else None
+                        print(f"Open Meteo Current Estimated Cloud Cover ({time_list[index_now]}): {self.open_meteo_cloud_cover}%")
                         line_of_weather_info.append(self.open_meteo_cloud_cover)
-                        
-                        # Get next hour's cloud cover
-                        if closest_index + 1 < len(cloud_list):
-                            self.open_meteo_cloud_cover_next_hour = cloud_list[closest_index + 1]
-                            print(f"Open Meteo Cloud Cover for Next Hour: {self.open_meteo_cloud_cover_next_hour}%")
+            
+                        # Assign next hour's cloud cover safely
+                        if index_now + 1 < len(cloud_list):
+                            cloud_next = cloud_list[index_now + 1]
+                            self.open_meteo_cloud_cover_next_hour = cloud_next if cloud_next is not None else None
+                            print(f"Open Meteo Cloud Cover for Next Hour ({time_list[index_now + 1]}): {self.open_meteo_cloud_cover_next_hour}%")
                         else:
                             self.open_meteo_cloud_cover_next_hour = None
-                            print("No data for the next hour.")
-                            
+                            print("No cloud cover data available for the next hour.")
+            
                     else:
-                        print("Hourly cloud cover data not available.")
+                        print("Hourly cloud cover data not available in response.")
+                        self.open_meteo_cloud_cover = None
+                        self.open_meteo_cloud_cover_next_hour = None
             
                 else:
                     print(f"Error: {response.status_code}, {response.text}")
                     self.open_meteo_cloud_cover = None
                     self.open_meteo_cloud_cover_next_hour = None
             
-            except Exception as e:    
+            except Exception as e:
                 print(f"An error occurred: {str(e)}")
                 self.open_meteo_cloud_cover = None
                 self.open_meteo_cloud_cover_next_hour = None
