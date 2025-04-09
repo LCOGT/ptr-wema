@@ -3338,7 +3338,7 @@ class WxEncAgent:
             message = MIMEMultipart()
             message['From'] = sender_email
             message['To'] = receiver_email
-            message['Subject'] = 'Cloud Report'
+            message['Subject'] = self.name + ' Cloud Report'
             
             body = 'Hello, the clouds are now (hopefully): ' + str(self.medianforecast_current_cloud_cover) +'\n'
             

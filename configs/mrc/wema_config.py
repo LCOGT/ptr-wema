@@ -146,26 +146,24 @@ wema_config = {
     'morn_flat_end_offset':  +40,        #min from Sunrise
     'end_night_processing_time':  90,   #  A guess#'eve_sky_flat_sunset_offset': -60.0,  # Minutes  neg means before, + after.
     
-    
-    #############################################################
+        #############################################################
     #### BE AWARE THAT THESE VALUES ARE JUST FOR INITILIASATION!#
     ## THEY WILL BE STORED IN A SHELF AND CHANGES SHOULD BE MADE#
     ## THROUGH THE UI IN THE LONG TERM!                         #
     #############################################################
-    
+
     # Whether these limits are on by default
     'rain_limit_on': False,
-    'humidity_limit_on': True,
-    'windspeed_limit_on': True,
-    'lightning_limit_on': True,
-    'temperature_minus_dewpoint_limit_on': True,
-    'sky_temperature_limit_on': True,
-    'cloud_cover_limit_on': True,
-    'lowest_ambient_temperature_on': True,
-    'highest_ambient_temperature_on': True,
-    'has_inside_weather_station': False,
-
-
+    'humidity_limit_on': False,
+    'windspeed_limit_on': False,
+    'lightning_limit_on': False,
+    'temperature_minus_dewpoint_limit_on': False,
+    'sky_temperature_limit_on': False,
+    'local_cloud_cover_limit_on': True,
+    'forecast_cloud_cover_limit_on': True,
+    'lowest_ambient_temperature_on': False,
+    'highest_ambient_temperature_on': False,
+    
     #############################################################
     #### BE AWARE THAT THESE VALUES ARE JUST FOR INITILIASATION!#
     ## THEY WILL BE STORED IN A SHELF AND CHANGES SHOULD BE MADE#
@@ -173,33 +171,89 @@ wema_config = {
     #############################################################
 
     # Local weather DANGER limits - will cause the roof to shut
-    'rain_limit': 1,
-    'humidity_limit': 75,  # % presumably
-    'windspeed_limit': 15,
-    'lightning_limit' : 15,
+    'rain_limit': 0,
+    'humidity_limit': 95,
+    'windspeed_limit': 25,
+    'lightning_limit': 15,
     'temperature_minus_dewpoint_limit': 2,
     'sky_temperature_limit': -1,
-    'cloud_cover_limit': 51,
-    'lowest_ambient_temperature': 1,
-    'highest_ambient_temperature': 43,
-    
+    'local_cloud_cover_limit': 70,
+    'forecast_cloud_cover_limit' : 70,
+    'lowest_ambient_temperature': -5,
+    'highest_ambient_temperature': 60,
     
     #############################################################
     #### BE AWARE THAT THESE VALUES ARE JUST FOR INITILIASATION!#
     ## THEY WILL BE STORED IN A SHELF AND CHANGES SHOULD BE MADE#
     ## THROUGH THE UI IN THE LONG TERM!                         #
     #############################################################
-    
+
     # Local weather warning limits, will send a warning, but leave the roof alone
-    'warning_rain_limit': 3,
+    'warning_rain_limit': 0,
     'warning_humidity_limit': 75,
     'warning_windspeed_limit': 15,
-    'warning_lightning_limit' : 10,
-    'warning_temperature_minus_dewpoint_limit': 3,   #This Should be measured by a radiating metal surface.
+    'warning_lightning_limit': 10,
+    'warning_temperature_minus_dewpoint_limit': 2,
     'warning_sky_temperature_limit': -17,
-    'warning_cloud_cover_limit': 25,
-    'warning_lowest_ambient_temperature': 2,
+    'warning_local_cloud_cover_limit': 25,
+    'warning_forecast_cloud_cover_limit': 25,
+    'warning_lowest_ambient_temperature': 5,
     'warning_highest_ambient_temperature': 35,
+    
+    
+    # #############################################################
+    # #### BE AWARE THAT THESE VALUES ARE JUST FOR INITILIASATION!#
+    # ## THEY WILL BE STORED IN A SHELF AND CHANGES SHOULD BE MADE#
+    # ## THROUGH THE UI IN THE LONG TERM!                         #
+    # #############################################################
+    
+    # # Whether these limits are on by default
+    # 'rain_limit_on': False,
+    # 'humidity_limit_on': True,
+    # 'windspeed_limit_on': True,
+    # 'lightning_limit_on': True,
+    # 'temperature_minus_dewpoint_limit_on': True,
+    # 'sky_temperature_limit_on': True,
+    # 'cloud_cover_limit_on': True,
+    # 'lowest_ambient_temperature_on': True,
+    # 'highest_ambient_temperature_on': True,
+    # 'has_inside_weather_station': False,
+
+
+    # #############################################################
+    # #### BE AWARE THAT THESE VALUES ARE JUST FOR INITILIASATION!#
+    # ## THEY WILL BE STORED IN A SHELF AND CHANGES SHOULD BE MADE#
+    # ## THROUGH THE UI IN THE LONG TERM!                         #
+    # #############################################################
+
+    # # Local weather DANGER limits - will cause the roof to shut
+    # 'rain_limit': 1,
+    # 'humidity_limit': 75,  # % presumably
+    # 'windspeed_limit': 15,
+    # 'lightning_limit' : 15,
+    # 'temperature_minus_dewpoint_limit': 2,
+    # 'sky_temperature_limit': -1,
+    # 'cloud_cover_limit': 51,
+    # 'lowest_ambient_temperature': 1,
+    # 'highest_ambient_temperature': 43,
+    
+    
+    # #############################################################
+    # #### BE AWARE THAT THESE VALUES ARE JUST FOR INITILIASATION!#
+    # ## THEY WILL BE STORED IN A SHELF AND CHANGES SHOULD BE MADE#
+    # ## THROUGH THE UI IN THE LONG TERM!                         #
+    # #############################################################
+    
+    # # Local weather warning limits, will send a warning, but leave the roof alone
+    # 'warning_rain_limit': 3,
+    # 'warning_humidity_limit': 75,
+    # 'warning_windspeed_limit': 15,
+    # 'warning_lightning_limit' : 10,
+    # 'warning_temperature_minus_dewpoint_limit': 3,   #This Should be measured by a radiating metal surface.
+    # 'warning_sky_temperature_limit': -17,
+    # 'warning_cloud_cover_limit': 25,
+    # 'warning_lowest_ambient_temperature': 2,
+    # 'warning_highest_ambient_temperature': 35,
  
     'get_ocn_status': None,
     'get_enc_status': None,
@@ -257,6 +311,7 @@ wema_config = {
             'encl_is_clamshell': True,
             'clamshell_is_split':  True,
             'clamshell_rotates': False,
+            'dome_offset_in_degrees': 0.0,
         },
     },
 
