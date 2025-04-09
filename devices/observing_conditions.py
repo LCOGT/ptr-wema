@@ -473,14 +473,17 @@ class ObservingConditions:
         #This is the normal path for ARO
         #NB NB NB 20240218  Boltwood bw1[15] reporting 3 all the time. WE may need to mask this out.
         #DO NOT RELY ON THE BOLTWOOD FOR SKY TEMP
+        #10.0.0.195 is NWEST (Black Cube), detects wind and moisture
+        #10.0.0.196 is NEAST, detects no wind, but yes to moisture
 
             try:
-                with open('D:\\weatherdata_0m30.txt', 'r') as sa_rec:
+                with open('W:\skyalert\weatherdata_nw.txt', 'r') as sa_rec:
                     sa_nw = sa_rec.readline().split()
-                #print('Boltwood:     ', bw1, '\n')
-                # print('SkyAlert NE:  ', sa_ne, '\n')
-                # print('SkyAlert NW:  ', sa_nw, '\n')
-
+                with open('W:\skyalert\weatherdata_ne.txt', 'r') as sa_rec:
+                    sa_ne = sa_rec.readline().split()
+                print('SkyAlert NW: w wind ', sa_nw, '\n')
+                print('SkyAlert NE: no wind ', sa_ne, '\n')
+                
                 #The datetime for the data above needs to be verified as current,
                 #if not current go directly to commanding a close.
 
@@ -496,7 +499,9 @@ class ObservingConditions:
                 self.humidity = round(float(sa_nw[8]), 1)
                 self.dewpoint = round(float(sa_nw[9]), 1)
                 #Fixed gross error mixing mph and m/s 20231226 WER
-                self.rain_alert = int(sa_nw[11])
+                #breakpoint()
+                
+                self.rain_alert = int(sa_nw[11]) or int(sa_ne[11])
                 self.wet_alert = int(sa_nw[12])
                 self.time_since = int(float(sa_nw[13]))
                 plog("time since:  ", self.time_since)
@@ -505,7 +510,7 @@ class ObservingConditions:
 
                 self.cloud_condition = int(sa_nw[15]) # unk, Clear, Cloudy, Very Cloudy
                 self.wind_condition = int(sa_nw[16]) # unk, Calm, Windy, Very Windy
-                self.rain_condition = int(sa_nw[17]) # unk, Dry, Wet, Raining
+                self.rain_condition = int(sa_nw[17]) # unk, Dry, Wet, Raining  #NB NB NB 20250102 NW unit shows rain at -2C  WER
                 self.daylight_condition = bool(sa_nw[18]) # unk Dark, Light, Very Light
                 self.close_requested = bool(sa_nw[19])
                 #Note the rates and cover are synthesized by a lookup.
@@ -516,13 +521,13 @@ class ObservingConditions:
                 if self.rain_alert or self.wet_alert or self.rain_condition in \
                     ['Wet', 'Raining']:
                     self.wet_flag = True   #This is intended to latch the roof closed for the night
-                    self.rain_rate =1
+                    self.rain_rate = 1
                 else:
-                    self.rain_rate=0
+                    self.rain_rate = 0
 
                 if self.cloud_condition==1:
                     self.cloud_cover = 0
-                elif self.cloud_condtion==2:
+                elif self.cloud_condition==2:
                     self.cloud_cover = 40
                 elif self.cloud_condition==3:
                     self.cloud_cover=100
@@ -594,6 +599,9 @@ class ObservingConditions:
                     # "wx_hold": None,
                     # "hold_duration": 0,
                 }
+
+                # Store status in self.status
+                self.status=status
 
                 # print (status)
                 # breakpoint()
@@ -699,7 +707,8 @@ class ObservingConditions:
 
                 plog('something went wrong with the boltwood stuff')
                 plog('above is an unglamourous traceback but continuing onwards')
-                return status
+                
+                return self.status
 
         else:  # These operations are common to a generic single computer or wema site.
             ## Here we get the status from local devices, including MRC

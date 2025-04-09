@@ -137,7 +137,7 @@ def fit_cloud_prediction_model(df, directory):
     X = X[mask]
     y = y[mask]
 
-    print(f"First pass removed {len(residuals) - len(y)} outliers.")
+    plog(f"First pass removed {len(residuals) - len(y)} outliers.")
 
     ### ✅ Second Pass: Refit Model and Remove Outliers Again
     gb_model.fit(X, y)
@@ -148,7 +148,7 @@ def fit_cloud_prediction_model(df, directory):
     X = X[mask]
     y = y[mask]
 
-    print(f"Second pass removed {len(residuals) - len(y)} outliers.")
+    plog(f"Second pass removed {len(residuals) - len(y)} outliers.")
 
     ### ✅ Final Fit: Fit Model on Cleaned Data
     gb_model.fit(X, y)
@@ -175,11 +175,11 @@ def fit_cloud_prediction_model(df, directory):
     rmse = np.sqrt(mse)
     r2 = r2_score(y, y_pred)
 
-    ### ✅ Print performance metrics
-    print(f"Phase of Year Range: {phase_of_year_range:.3f}")
-    print(f"Mean Squared Error: {mse:.2f}")
-    print(f"Root Mean Squared Error: {rmse:.2f}")
-    print(f"R² Score: {r2:.2f}")
+    ### ✅ plog performance metrics
+    plog(f"Phase of Year Range: {phase_of_year_range:.3f}")
+    plog(f"Mean Squared Error: {mse:.2f}")
+    plog(f"Root Mean Squared Error: {rmse:.2f}")
+    plog(f"R² Score: {r2:.2f}")
 
     ### ✅ Save updated dataframe with predictions
     df_clean.loc[X.index, 'predicted_clouds'] = y_pred
@@ -237,10 +237,10 @@ def terminate_restart_observer(site_path, no_restart=False):
     pid = camShelf["pid_obs"]  # a 9 character string
     camShelf.close()
     try:
-        print("Terminating:  ", pid)
+        plog("Terminating:  ", pid)
         os.kill(pid, signal.SIGTERM)
     except:
-        print("No observer process was found, starting a new one.")
+        plog("No observer process was found, starting a new one.")
     # The above routine does not return but does start a process.
     parentPath = Path.cwd()
     os.system("cmd /c " + str(parentPath) + "\restart_obs.bat")
@@ -262,9 +262,9 @@ def send_status(obsy, column, status_to_send):
 
         if response.ok:
            # pass
-           print("~")
+           plog("~")
     except:
-        print(
+        plog(
             'self.api.authenticated_request("PUT", uri, status):  Failed! ',
             response.status_code,
         )
@@ -387,7 +387,7 @@ class WxEncAgent:
         self.dome_check_timer_period=5
 
         self.wema_pid = os.getpid()
-        print("Fresh WEMA_PID:  ", self.wema_pid)
+        plog("Fresh WEMA_PID:  ", self.wema_pid)
         
         self.update_config()
         self.create_devices(config)
@@ -604,9 +604,9 @@ class WxEncAgent:
         
             wema_settings_shelf = shelve.open(self.wema_settings_shelf_filename)
             
-            #print ("woo")
+            #plog ("woo")
             
-            #print (wema_settings_shelf['local_weather_active'])
+            #plog (wema_settings_shelf['local_weather_active'])
             
             g_dev['enc'].mode =wema_settings_shelf['mode']
             self.observing_mode=wema_settings_shelf['observing_mode']
@@ -858,9 +858,9 @@ class WxEncAgent:
                     self.enc_status_custom=True
                    
                 else:
-                    print(f"Unknown device: {name}")
+                    plog(f"Unknown device: {name}")
                 self.all_devices[dev_type][name] = device
-        print("Finished creating devices.")
+        plog("Finished creating devices.")
 
     def update_config(self):
         """Sends the config to AWS."""
@@ -869,7 +869,7 @@ class WxEncAgent:
         self.config["events"] = g_dev["events"]
         response = self.api.authenticated_request("PUT", uri, self.config)
         if response:
-            print("\n\nConfig uploaded successfully.")
+            plog("\n\nConfig uploaded successfully.")
     def get_sun_and_moon_info(self):
         #breakpoint()
         # Get current time
@@ -883,16 +883,16 @@ class WxEncAgent:
         # Get the altitude
         sun_altitude = sun_altaz.alt
         sun_azimuth = sun_altaz.az
-        print(f"Current Sun altitude: {sun_altitude:.2f}")           
+        plog(f"Current Sun altitude: {sun_altitude:.2f}")           
         moon = get_moon(obstime, location=self.observer_location)
         moon_altaz = moon.transform_to(altaz_frame)
         moon_altitude = moon_altaz.alt
-        #print(f"Moon altitude: {moon_altitude:.2f}")          
+        #plog(f"Moon altitude: {moon_altitude:.2f}")          
         # altitude = moon_altaz.alt
         
         # Skip if below horizon
         if moon_altitude < 0 * u.deg:
-            print("Moon is below the horizon — no flux on ground.")
+            plog("Moon is below the horizon — no flux on ground.")
             moon_illumination=0
             flux_ground=0
         else:
@@ -920,9 +920,9 @@ class WxEncAgent:
             # Flux on ground
             flux_ground = F_top * transmission * np.sin(moon_altitude.to(u.rad))
         
-        print(f"Moon altitude: {moon_altitude:.2f}")
-        print(f"Moon illumination: {moon_illumination:.2%}")
-        print(f"Approx. moon flux on ground: {flux_ground:.2e} W/m²")
+        plog(f"Moon altitude: {moon_altitude:.2f}")
+        plog(f"Moon illumination: {moon_illumination:.2%}")
+        plog(f"Approx. moon flux on ground: {flux_ground:.2e} W/m²")
         
         return sun_altitude, moon_altitude, moon_illumination, flux_ground, sun_azimuth
      
@@ -1193,7 +1193,7 @@ class WxEncAgent:
                 if 'MaxDome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
                     
                     if time.time() > (self.dome_check_timer + self.dome_check_timer_period):
-                        #print (time.time() - self.dome_check_timer)
+                        #plog (time.time() - self.dome_check_timer)
                         self.dome_check_timer=time.time()
                         
                         dome_at_scope=False
@@ -1222,7 +1222,7 @@ class WxEncAgent:
                             
                             uri_status = f"https://status.photonranch.org/status/{sync_obs}/device"
                             try:
-                                #print ("Grabbing obs status")
+                                #plog ("Grabbing obs status")
 
 
                                 main_obs_status=requests.get(uri_status, timeout=20, allow_redirects=False, headers=close_headers, stream=False)
@@ -1230,7 +1230,7 @@ class WxEncAgent:
                                 #main_obs_status = func_timeout(10, requests.get, args=(uri_status,), kwargs={"timeout": 20, "allow_redirects": False, "headers": close_headers, "stream": False})
                                 #except:
                                 
-                                #print ("Got obs status")
+                                #plog ("Got obs status")
                             
                                     
                                 obs_mount_name=list(main_obs_status.json()['status']['mount'].keys())[0]
@@ -1296,7 +1296,7 @@ class WxEncAgent:
                                     pass
                                 else:
                                     
-                                    print ("Requested Azmituh: " + str(obs_target_azimuth))
+                                    plog ("Requested Azmituh: " + str(obs_target_azimuth))
                                     
                                     
                                     
@@ -1315,12 +1315,12 @@ class WxEncAgent:
                                         
                                         target_dome_azimuth = correct_dome_azimuth(telescope_azimuth, telescope_altitude, side_of_pier, dome_radius, telescope_offset)#, dome_slit_offset)
     
-                                        #print ("Corrected Azmituh: " + str(corrected_dome_az))
+                                        #plog ("Corrected Azmituh: " + str(corrected_dome_az))
                                     else:
                                         target_dome_azimuth=obs_target_azimuth
                                     
                                     
-                                    #print(f"Time: {observation_time.iso}")
+                                    #plog(f"Time: {observation_time.iso}")
                                     plog ("Primary Obs Pointing")
                                     #plog(f"Altitude: {obs_altitude:.2f} degrees")
                                     
@@ -1459,7 +1459,7 @@ class WxEncAgent:
                 ocn_status['observing_conditions']['observing_conditions1']['humidity_%']=self.current_owm_humidity
                 quick_status['humidity_%'] = self.current_owm_humidity
                 #breakpoint()
-                print ("OWM Humidity: " + str(self.current_owm_humidity))
+                plog ("OWM Humidity: " + str(self.current_owm_humidity))
             
             
             
@@ -1467,7 +1467,7 @@ class WxEncAgent:
             quick_status['forecast_cloud_cover_%']=self.medianforecast_current_cloud_cover
             try:           
                 quick_status['local_cloud_cover_%']=self.predicted_clouds[0]
-                #print ("goog " + str(self.predicted_clouds[0]))
+                #plog ("goog " + str(self.predicted_clouds[0]))
             except:
                 plog ("Can't use predicted clouds for local cloud cover... usually because this is booting up and hasn't run a model yet. ")
                 quick_status['local_cloud_cover_%']=self.medianforecast_current_cloud_cover
@@ -1667,7 +1667,7 @@ class WxEncAgent:
 
             loud = False
             if loud:
-                print("\n\n > Status Sent:  \n", ocn_status)
+                plog("\n\n > Status Sent:  \n", ocn_status)
             
             self.ocn_status=ocn_status
             
@@ -1765,8 +1765,8 @@ class WxEncAgent:
             
             # Reformulate a short enclosure status - bit of a hack for the moment.
             try: 
-                print (enc_status['enclosure']['enclosure1']['shutter_status'] )
-                print ("good")
+                plog (enc_status['enclosure']['enclosure1']['shutter_status'] )
+                plog ("good")
             except:
                 enc_status_extended={}
 
@@ -1777,7 +1777,7 @@ class WxEncAgent:
                 enc_status_extended['enclosure']['enclosure1'] = enc_status
                 
                 enc_status=enc_status_extended
-                print ("bad")
+                plog ("bad")
             
             # New Tim Entries
             if enc_status['enclosure']['enclosure1']['shutter_status']  is not None:
@@ -1848,7 +1848,7 @@ class WxEncAgent:
     # def update_enclosure_immediately(self, enc_status):
         
     #     lane = "enclosure"
-    #     print ("updating enclosure immediately")
+    #     plog ("updating enclosure immediately")
     #     wema = self.config['wema_name']  
     #     try:                        
     #         send_status(wema, lane, enc_status)
@@ -2012,13 +2012,13 @@ class WxEncAgent:
             try:
                 predicted_contribution =  self.sky_temp_model.predict(new_data)
                 
-                print ("Predicted skytemp contribution: " + str(predicted_contribution))
+                plog ("Predicted skytemp contribution: " + str(predicted_contribution))
                 
                 corrected_sky_temp_C = ocn_status['sky_temp_C'] - predicted_contribution[0]
     
-                print(f"Corrected Sky Temperature: {corrected_sky_temp_C:.2f} °C")
+                plog(f"Corrected Sky Temperature: {corrected_sky_temp_C:.2f} °C")
             except:
-                print ("Failed to correct sky temperature. Maybe no weather log yet")
+                plog ("Failed to correct sky temperature. Maybe no weather log yet")
                 corrected_sky_temp_C=ocn_status['sky_temp_C']
             
             ########## THEN DO CLOUD MODEL
@@ -2058,7 +2058,7 @@ class WxEncAgent:
             
             #self.sky_temp_model
             
-            print (new_data)
+            plog (new_data)
             try:
                 # # Apply the exact polynomial transformation used in training
                 # poly = PolynomialFeatures(degree=2, include_bias=False)
@@ -2085,7 +2085,7 @@ class WxEncAgent:
             except:
                 plog ("failed model? Perhaps can happen if we haven't built up enough points yet.")
                 self.median_cloud_estimate=100
-                plog(traceback.format_exc())
+                #plog(traceback.format_exc())
 
             try:
                 plog ("****************************")
@@ -2263,9 +2263,9 @@ class WxEncAgent:
 
                         
                         try:
-                            #print ("Grabbing obs settings")                            
+                            #plog ("Grabbing obs settings")                            
                             obs_settings=requests.get(uri_status, timeout=20, allow_redirects=False, headers=close_headers, stream=False)
-                            #print ("Grabbed obs settings")
+                            #plog ("Grabbed obs settings")
                         except:
                             plog ("Some error in getting the obs_settings")
                             plog(traceback.format_exc())
@@ -2354,7 +2354,7 @@ class WxEncAgent:
                 self.update()  # `Ctrl-C` will exit the program.
                 time.sleep(0.5)
         except KeyboardInterrupt:
-            print("Finishing loops and exiting...")
+            plog("Finishing loops and exiting...")
             self.stopped = True
             return
 
@@ -2372,7 +2372,7 @@ class WxEncAgent:
         try:
             response = requests.post(url_log, body, timeout=20, allow_redirects=False, headers=close_headers, stream=False)
         except Exception:
-            print("Log did not send, usually not fatal.")
+            plog("Log did not send, usually not fatal.")
 
     def park_enclosure_and_close(self):
 
@@ -2602,8 +2602,8 @@ class WxEncAgent:
                     
                     enc_status = g_dev['enc'].get_status()
                     
-                    print ("Post dome shutter status:")
-                    print (enc_status)
+                    plog ("Post dome shutter status:")
+                    plog (enc_status)
                         
                     if enc_status['shutter_status'] in ['Open', 'open']:
                         self.open_and_enabled_to_observe = True
@@ -2939,7 +2939,7 @@ class WxEncAgent:
             # Current cloud % from weather forecast
             line_of_weather_info.append(data['current']['clouds'])
             
-            print ("OWM current clouds: " + str(data['current']['clouds']))
+            plog ("OWM current clouds: " + str(data['current']['clouds']))
             self.owm_cloud_cover=data['current']['clouds']
             self.owm_cloud_cover_next_hour=data['hourly'][1]['clouds']
             
@@ -3010,27 +3010,27 @@ class WxEncAgent:
             #             closest_index = time_list.index(closest_time)
                         
             #             self.open_meteo_cloud_cover = cloud_list[closest_index]
-            #             print(f"Open Meteo Current Estimated Cloud Cover: {self.open_meteo_cloud_cover}%")
+            #             plog(f"Open Meteo Current Estimated Cloud Cover: {self.open_meteo_cloud_cover}%")
             #             line_of_weather_info.append(self.open_meteo_cloud_cover)
                         
             #             # Get next hour's cloud cover
             #             if closest_index + 1 < len(cloud_list):
             #                 self.open_meteo_cloud_cover_next_hour = cloud_list[closest_index + 1]
-            #                 print(f"Open Meteo Cloud Cover for Next Hour: {self.open_meteo_cloud_cover_next_hour}%")
+            #                 plog(f"Open Meteo Cloud Cover for Next Hour: {self.open_meteo_cloud_cover_next_hour}%")
             #             else:
             #                 self.open_meteo_cloud_cover_next_hour = None
-            #                 print("No data for the next hour.")
+            #                 plog("No data for the next hour.")
                             
             #         else:
-            #             print("Hourly cloud cover data not available.")
+            #             plog("Hourly cloud cover data not available.")
             
             #     else:
-            #         print(f"Error: {response.status_code}, {response.text}")
+            #         plog(f"Error: {response.status_code}, {response.text}")
             #         self.open_meteo_cloud_cover = None
             #         self.open_meteo_cloud_cover_next_hour = None
             
             # except Exception as e:    
-            #     print(f"An error occurred: {str(e)}")
+            #     plog(f"An error occurred: {str(e)}")
             #     self.open_meteo_cloud_cover = None
             #     self.open_meteo_cloud_cover_next_hour = None
 
@@ -3051,7 +3051,7 @@ class WxEncAgent:
             
                         # Get the current UTC time rounded down to the nearest hour
                         now = datetime.datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
-                        print(f"Current UTC Time: {now.isoformat()}")
+                        plog(f"Current UTC Time: {now.isoformat()}")
             
                         # Find exact index for the current hour if available
                         if now in time_list:
@@ -3060,7 +3060,7 @@ class WxEncAgent:
                             # Fallback: Find first forecast time that is >= now
                             future_times = [t for t in time_list if t >= now]
                             if not future_times:
-                                print("No future hourly data available.")
+                                plog("No future hourly data available.")
                                 self.open_meteo_cloud_cover = None
                                 self.open_meteo_cloud_cover_next_hour = None
                                 return
@@ -3071,30 +3071,30 @@ class WxEncAgent:
                         # Assign current cloud cover safely
                         cloud_now = cloud_list[index_now]
                         self.open_meteo_cloud_cover = cloud_now if cloud_now is not None else None
-                        print(f"Open Meteo Current Estimated Cloud Cover ({time_list[index_now]}): {self.open_meteo_cloud_cover}%")
+                        plog(f"Open Meteo Current Estimated Cloud Cover ({time_list[index_now]}): {self.open_meteo_cloud_cover}%")
                         line_of_weather_info.append(self.open_meteo_cloud_cover)
             
                         # Assign next hour's cloud cover safely
                         if index_now + 1 < len(cloud_list):
                             cloud_next = cloud_list[index_now + 1]
                             self.open_meteo_cloud_cover_next_hour = cloud_next if cloud_next is not None else None
-                            print(f"Open Meteo Cloud Cover for Next Hour ({time_list[index_now + 1]}): {self.open_meteo_cloud_cover_next_hour}%")
+                            plog(f"Open Meteo Cloud Cover for Next Hour ({time_list[index_now + 1]}): {self.open_meteo_cloud_cover_next_hour}%")
                         else:
                             self.open_meteo_cloud_cover_next_hour = None
-                            print("No cloud cover data available for the next hour.")
+                            plog("No cloud cover data available for the next hour.")
             
                     else:
-                        print("Hourly cloud cover data not available in response.")
+                        plog("Hourly cloud cover data not available in response.")
                         self.open_meteo_cloud_cover = None
                         self.open_meteo_cloud_cover_next_hour = None
             
                 else:
-                    print(f"Error: {response.status_code}, {response.text}")
+                    plog(f"Error: {response.status_code}, {response.text}")
                     self.open_meteo_cloud_cover = None
                     self.open_meteo_cloud_cover_next_hour = None
             
             except Exception as e:
-                print(f"An error occurred: {str(e)}")
+                plog(f"An error occurred: {str(e)}")
                 self.open_meteo_cloud_cover = None
                 self.open_meteo_cloud_cover_next_hour = None
 
@@ -3142,7 +3142,7 @@ class WxEncAgent:
                     self.tomorrowio_cloud_inanhour=timelines[0]['intervals'][1]['values']['cloudCover']
                                 
                 else:
-                    print(f"Error: {response.status_code}, {response.text}")
+                    plog(f"Error: {response.status_code}, {response.text}")
                     self.tomorrowio_cloud_now=None
                     self.tomorrowio_cloud_inanhour=None
                     
@@ -3270,17 +3270,17 @@ class WxEncAgent:
                 current_cloud = hourly_data[0]['cloudcover']
                 next_hour_cloud = hourly_data[1]['cloudcover']
             
-                # #print (current_time)
+                # #plog (current_time)
             
                 # for hour in hourly_data:
-                #     #print (hour['time'])
+                #     #plog (hour['time'])
                 #     if int(hour['time']) - 50 < int(current_time):
                 #         current_cloud = hour['cloudcover']
                 #     elif int(hour['time']) - 50 < int(next_hour_time):
                 #         next_hour_cloud = hour['cloudcover']
             
-                print(f"WorldWeather Current Cloud Cover: {current_cloud}%")
-                print(f"WorldWeather Next Hour Cloud Cover: {next_hour_cloud}%")
+                plog(f"WorldWeather Current Cloud Cover: {current_cloud}%")
+                plog(f"WorldWeather Next Hour Cloud Cover: {next_hour_cloud}%")
                 
                 self.worldweather_current_cloud = float(current_cloud)
                 self.worldweather_nexthour_cloud = float(next_hour_cloud)
@@ -3364,9 +3364,9 @@ class WxEncAgent:
                 with smtplib.SMTP_SSL(smtp_server, port) as server:
                     server.login(sender_email, password)
                     server.sendmail(sender_email, receiver_email, message.as_string())
-                print("Email sent successfully!")
+                plog("Email sent successfully!")
             except Exception as e:
-                print(f"Error sending email: {e}")
+                plog(f"Error sending email: {e}")
 
 
             
@@ -3378,7 +3378,7 @@ class WxEncAgent:
                     with open(self.wema_path+self.name + '_weatherlog.csv', mode='a', newline='') as file:
                         writer = csv.writer(file)
                         writer.writerow(line_of_weather_info)
-                        print(f"Data written at {datetime.datetime.now().isoformat()}")  # For logging
+                        plog(f"Data written at {datetime.datetime.now().isoformat()}")  # For logging
                 except:
                     plog ("failed to write weatherlog")
                     plog(traceback.format_exc())
