@@ -1871,434 +1871,437 @@ class WxEncAgent:
 
 
         if time.time() > self.safety_check_timer + self.safety_status_check_period:
-            self.safety_check_timer=time.time()
-
-            # Here it runs through the various checks and decides whether to open or close the roof or not.
-            # Check for delayed opening of the enclosure and act accordingly.
-            
-            
-
-            # If the enclosure is simply delayed until opening, then wait until then, then attempt to start up the enclosure
-            obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
-            
-            if (g_dev['events']['Cool Down, Open'] <= ephem_now) or \
-                (g_dev['events']['Close and Park'] <= ephem_now):
-                self.nightly_reset_complete = False
-
-            #This is used to access SRO weather and Enclosure shares.
-
-            if self.ocn_status_custom==False:                            
-                ocn_status = g_dev['ocn'].get_status()
-            else:
-                ocn_status = get_ocn_status_custom()
-            if self.enc_status_custom==False:                
-                enc_status = g_dev['enc'].get_status()
-            else:
-                enc_status = get_enc_status_custom()
-            #breakpoint()
-            # if ocn_status==None:
-            #     self.local_weather_ok = None
-            # else:
-               
-            #     if 'wx_ok' in ocn_status:
-            #         if ocn_status['wx_ok'] == 'Yes':
-            #             self.local_weather_ok = True
-            #         elif ocn_status['wx_ok'] == 'No':
-            #             self.local_weather_ok = False
-            #         else:
-            #             self.local_weather_ok = None
-            #     else:
-            #         self.local_weather_ok = None
-
-            plog("***************************************************************")
-            plog("Current time             : " + str(time.asctime()))
-            plog("Enclosure Mode           : " + str(enc_status['enclosure_mode']))
-            plog("Shutter Status           : " + str(enc_status['shutter_status']))
-            
-            if ocn_status == None:
-                plog("This WEMA does not report observing conditions")
-            else:
-                plog("Observing Conditions      : " +str(ocn_status))
-                
-            if self.local_weather_ok == None:
-                plog("No information on local weather available.")
-            else:
-                plog("Local Weather Ok to Observe  : " + str(self.local_weather_ok))
-                if not self.local_weather_active:
-                    plog ("However, Local Weather control is set off")
-            
-            if g_dev['enc'].mode == 'Manual':
-                plog ("Weather Considerations overriden due to being in Manual or debug mode: ")
-            
-            plog("OWM Weather Report Good to Observe: " + str(self.weather_report_open_at_start))
-            plog("Time until Cool and Open      : " + str(round(( g_dev['events']['Cool Down, Open'] - ephem_now) * 24,2)) + " hours")
-            plog("Time until Close and Park     : "+ str(round(( g_dev['events']['Close and Park'] - ephem_now) * 24,2)) + " hours")
-            plog("Time until Nightly Reset      : " + str(round((g_dev['events']['Nightly Reset'] - ephem_now) * 24, 2)) + " hours")
-            plog("Nightly Reset Complete        : " + str(self.nightly_reset_complete))
-            plog("\n")
-
-            if len(self.weather_text_report) >0:
-                for line in self.weather_text_report:
-                    plog (line)
-        
-            if not self.owm_active:
-                plog("OWM is off. OWM information is advisory only, it is currently inactive.")
-
-            if self.owm_active:
-                plog("OWM is on. OWM predicts it will set to open/close the roof at these times.")
-
-            if not self.local_weather_active:
-                plog("Reacting to local weather is *OFF*. Not reacting to local weather signals.")
-
-            if self.local_weather_active:
-                plog("Reacting to local weather is *ON*. Reacting to local weather signals.")
-
-            if self.keep_open_all_night:
-                plog("Roof is being forced to stay OPEN ALL NIGHT")
-
-            if self.keep_closed_all_night:                
-                plog("Roof is being forced to stay CLOSED ALL NIGHT")
-
-            # Predicy clouds from model
-            #breakpoint()
-            
-            if ocn_status['humidity_%'] == -1:
-                model_humidity=self.current_owm_humidity
-            else:
-                model_humidity=ocn_status['humidity_%']
-            
-            
-            #breakpoint()
-            model_skyambient=ocn_status['sky_temp_C']-self.current_owm_ambient_temperature
-            
-            if ocn_status['dewpoint_C'] >99 or ocn_status['dewpoint_C'] < -5:
-                model_dewpoint=self.current_owm_dewpoint
-            else:
-                model_dewpoint=ocn_status['dewpoint_C']
-            
-            model_dewpointdepression=self.current_owm_ambient_temperature-model_dewpoint
-            
-           
-            model_phaseofday=((time.time() - 1735689600.0) /86400) % 1
-            
-            
-            ########## FIRST CORRECT SKY TEMPERATURE FOR SUN ADN MOON EFFECTS
-            
-            
-            sun_altitude, moon_altitude, moon_illumination, flux_ground, sun_azimuth = self.get_sun_and_moon_info()
-        
-            #breakpoint()
-            # Put in relevant sun and moon potential effects
-            # line_of_weather_info.append(sun_altitude / u.deg)
-            # line_of_weather_info.append(moon_altitude/ u.deg)
-            # line_of_weather_info.append(moon_illumination)
-            # line_of_weather_info.append(flux_ground)
-            # line_of_weather_info.append(sun_azimuth / u.deg)
-            
-            
-            
-            transformed_sun_altitude= np.exp( max(sun_altitude/ u.deg, -18) / 6.0)
-            
-            new_data = pd.DataFrame({
-                #'Humidity': [model_humidity],
-                #'sky_temp_C':  [ocn_status['sky_temp_C']],
-                'transformed_sun_altitude': [transformed_sun_altitude], # below -18, there is no solar flux
-                
-                'sun_azimuth': [sun_azimuth/ u.deg],
-                'moon_flux_on_ground': [flux_ground]
-            })
-            
-
             try:
-                predicted_contribution =  self.sky_temp_model.predict(new_data)
-                
-                plog ("Predicted skytemp contribution: " + str(predicted_contribution))
-                
-                corrected_sky_temp_C = ocn_status['sky_temp_C'] - predicted_contribution[0]
+                self.safety_check_timer=time.time()
     
-                plog(f"Corrected Sky Temperature: {corrected_sky_temp_C:.2f} °C")
-            except:
-                plog ("Failed to correct sky temperature. Maybe no weather log yet")
-                corrected_sky_temp_C=ocn_status['sky_temp_C']
-            
-            ########## THEN DO CLOUD MODEL
-            
-            
-            new_data = pd.DataFrame({
-                #'Humidity': [model_humidity],
-                'corrected_sky_temp_C': corrected_sky_temp_C,
-                'sky-ambient': [model_skyambient],
-                #'dew_point_depression': [model_dewpointdepression],
-                'sky-ambient^2': [model_skyambient **2]
-                #'phase_of_day': [model_phaseofday]
-            })
-            #features = ['corrected_sky_temp_C', 'sky-ambient', 'dew_point_depression', 'sky-ambient^2']
-            # Add the manual polynomial terms
-            #new_data['Humidity^2'] = new_data['Humidity'] ** 2
-            #new_data['sky-ambient^2'] = new_data['sky-ambient'] ** 2
-            # new_data['sky-ambientxphase_of_day'] = new_data['sky-ambient'] * new_data['phase_of_day']
-            # new_data['sky-ambient^2xphase_of_day'] = new_data['sky-ambient^2'] * new_data['phase_of_day']
-            # new_data['sky_temp_Cxphase_of_day'] = new_data['sky_temp_C'] * new_data['phase_of_day']
-            # new_data['sky_temp_Cxphase_of_day^2'] = new_data['sky_temp_Cxphase_of_day'] ** 2
-            
-            # Add Fourier terms for seasonality
-            # new_data['sin_hour'] = np.sin(2 * np.pi * new_data['phase_of_day'])
-            # new_data['cos_hour'] = np.cos(2 * np.pi * new_data['phase_of_day'])
-            # new_data['sin_year'] = np.sin(2 * np.pi * new_data['phase_of_year'])
-            # new_data['cos_year'] = np.cos(2 * np.pi * new_data['phase_of_year'])
-            
-            # Assuming your DataFrame is named df
-            
-            # Assuming your DataFrame is named df
-            # X = df[['sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
-            # y = df['sky_temp_C']
-            
-            # X = df[['sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
-            # y = df['sky_temp_C']
-            
-            #self.sky_temp_model
-            
-            plog (new_data)
-            try:
-                # # Apply the exact polynomial transformation used in training
-                # poly = PolynomialFeatures(degree=2, include_bias=False)
-                # X_new_poly = poly.fit_transform(new_data)
+                # Here it runs through the various checks and decides whether to open or close the roof or not.
+                # Check for delayed opening of the enclosure and act accordingly.
                 
-                # X = df[features].copy()
+                
     
-                # Predict clouds using trained gb_model
-                self.predicted_clouds = self.cloud_model.predict(new_data)
+                # If the enclosure is simply delayed until opening, then wait until then, then attempt to start up the enclosure
+                obs_win_begin, sunZ88Op, sunZ88Cl, ephem_now = self.astro_events.getSunEvents()
                 
-                self.cloud_tracker.append(self.predicted_clouds[0])
-                if len(self.cloud_tracker) > 10:
-                    self.cloud_tracker.pop(0)
-                
-                self.median_cloud_estimate=round(np.median(self.cloud_tracker),2)
-            
-                plog(f"Predicted clouds: {self.predicted_clouds[0]:.2f}")
-                plog ("Past clouds: " + str(self.cloud_tracker))
-                plog ("Median of last ten observations: " + str(round(np.median(self.cloud_tracker),2)) + " std " + str(round(np.std(self.cloud_tracker),2)))
-
-
-                
-
-            except:
-                plog ("failed model? Perhaps can happen if we haven't built up enough points yet.")
-                self.median_cloud_estimate=100
-                #plog(traceback.format_exc())
-
-            try:
-                plog ("****************************")
-                plog("FORECAST DERIVED CLOUD COVER")
-                plog("OWM cloud cover: " +str(self.owm_cloud_cover))
-                plog("Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover))
-                plog("TomorrowIO Now: " +str(self.tomorrowio_cloud_now))
-                plog("Pirate Now: " +str(self.pirate_clouds_now))
-                plog("Metocean Now: " +str(self.metocean_clouds_now))
-                plog("Worldweather Now: " +str(self.worldweather_current_cloud))
-                
-                plog('**')
-                
-                plog("OWM Next Hour: " +str(self.owm_cloud_cover_next_hour))
-                plog("Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour))
-                plog("TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour))
-                
-                plog("Pirate Next Hour: " +str(self.pirate_clouds_inanhour))
-                
-                plog("Metocean Next Hour: " +str(self.metocean_clouds_inanhour))
-                
-                plog("Worldweather Next Hour: " +str(self.worldweather_nexthour_cloud))
-                
-                plog('**')
-                
-                plog("Median cloud cover: "+str(self.medianforecast_current_cloud_cover))
+                if (g_dev['events']['Cool Down, Open'] <= ephem_now) or \
+                    (g_dev['events']['Close and Park'] <= ephem_now):
+                    self.nightly_reset_complete = False
     
-                plog("**************************************************************")
-            except:
-                plog(traceback.format_exc())
-
-            if (g_dev['events']['Nightly Reset'] <= ephem.now() < g_dev['events']['End Nightly Reset']):
-                if self.nightly_reset_complete == False:
-                    self.nightly_reset_complete = True
-                    self.nightly_reset_script(enc_status)
-            
-            # Safety checks here
-            if not g_dev['debug'] and self.open_and_enabled_to_observe:
+                #This is used to access SRO weather and Enclosure shares.
+    
+                if self.ocn_status_custom==False:                            
+                    ocn_status = g_dev['ocn'].get_status()
+                else:
+                    ocn_status = get_ocn_status_custom()
+                if self.enc_status_custom==False:                
+                    enc_status = g_dev['enc'].get_status()
+                else:
+                    enc_status = get_enc_status_custom()
                 #breakpoint()
-                if enc_status is not None:
+                # if ocn_status==None:
+                #     self.local_weather_ok = None
+                # else:
+                   
+                #     if 'wx_ok' in ocn_status:
+                #         if ocn_status['wx_ok'] == 'Yes':
+                #             self.local_weather_ok = True
+                #         elif ocn_status['wx_ok'] == 'No':
+                #             self.local_weather_ok = False
+                #         else:
+                #             self.local_weather_ok = None
+                #     else:
+                #         self.local_weather_ok = None
+    
+                plog("***************************************************************")
+                plog("Current time             : " + str(time.asctime()))
+                plog("Enclosure Mode           : " + str(enc_status['enclosure_mode']))
+                plog("Shutter Status           : " + str(enc_status['shutter_status']))
+                
+                if ocn_status == None:
+                    plog("This WEMA does not report observing conditions")
+                else:
+                    plog("Observing Conditions      : " +str(ocn_status))
+                    
+                if self.local_weather_ok == None:
+                    plog("No information on local weather available.")
+                else:
+                    plog("Local Weather Ok to Observe  : " + str(self.local_weather_ok))
+                    if not self.local_weather_active:
+                        plog ("However, Local Weather control is set off")
+                
+                if g_dev['enc'].mode == 'Manual':
+                    plog ("Weather Considerations overriden due to being in Manual or debug mode: ")
+                
+                plog("OWM Weather Report Good to Observe: " + str(self.weather_report_open_at_start))
+                plog("Time until Cool and Open      : " + str(round(( g_dev['events']['Cool Down, Open'] - ephem_now) * 24,2)) + " hours")
+                plog("Time until Close and Park     : "+ str(round(( g_dev['events']['Close and Park'] - ephem_now) * 24,2)) + " hours")
+                plog("Time until Nightly Reset      : " + str(round((g_dev['events']['Nightly Reset'] - ephem_now) * 24, 2)) + " hours")
+                plog("Nightly Reset Complete        : " + str(self.nightly_reset_complete))
+                plog("\n")
+    
+                if len(self.weather_text_report) >0:
+                    for line in self.weather_text_report:
+                        plog (line)
+            
+                if not self.owm_active:
+                    plog("OWM is off. OWM information is advisory only, it is currently inactive.")
+    
+                if self.owm_active:
+                    plog("OWM is on. OWM predicts it will set to open/close the roof at these times.")
+    
+                if not self.local_weather_active:
+                    plog("Reacting to local weather is *OFF*. Not reacting to local weather signals.")
+    
+                if self.local_weather_active:
+                    plog("Reacting to local weather is *ON*. Reacting to local weather signals.")
+    
+                if self.keep_open_all_night:
+                    plog("Roof is being forced to stay OPEN ALL NIGHT")
+    
+                if self.keep_closed_all_night:                
+                    plog("Roof is being forced to stay CLOSED ALL NIGHT")
+    
+                # Predicy clouds from model
+                #breakpoint()
+                
+                if ocn_status['humidity_%'] == -1:
+                    model_humidity=self.current_owm_humidity
+                else:
+                    model_humidity=ocn_status['humidity_%']
+                
+                
+                #breakpoint()
+                model_skyambient=ocn_status['sky_temp_C']-self.current_owm_ambient_temperature
+                
+                if ocn_status['dewpoint_C'] >99 or ocn_status['dewpoint_C'] < -5:
+                    model_dewpoint=self.current_owm_dewpoint
+                else:
+                    model_dewpoint=ocn_status['dewpoint_C']
+                
+                model_dewpointdepression=self.current_owm_ambient_temperature-model_dewpoint
+                
+               
+                model_phaseofday=((time.time() - 1735689600.0) /86400) % 1
+                
+                
+                ########## FIRST CORRECT SKY TEMPERATURE FOR SUN ADN MOON EFFECTS
+                
+                
+                sun_altitude, moon_altitude, moon_illumination, flux_ground, sun_azimuth = self.get_sun_and_moon_info()
+            
+                #breakpoint()
+                # Put in relevant sun and moon potential effects
+                # line_of_weather_info.append(sun_altitude / u.deg)
+                # line_of_weather_info.append(moon_altitude/ u.deg)
+                # line_of_weather_info.append(moon_illumination)
+                # line_of_weather_info.append(flux_ground)
+                # line_of_weather_info.append(sun_azimuth / u.deg)
+                
+                
+                
+                transformed_sun_altitude= np.exp( max(sun_altitude/ u.deg, -18) / 6.0)
+                
+                new_data = pd.DataFrame({
+                    #'Humidity': [model_humidity],
+                    #'sky_temp_C':  [ocn_status['sky_temp_C']],
+                    'transformed_sun_altitude': [transformed_sun_altitude], # below -18, there is no solar flux
+                    
+                    'sun_azimuth': [sun_azimuth/ u.deg],
+                    'moon_flux_on_ground': [flux_ground]
+                })
+                
+    
+                try:
+                    predicted_contribution =  self.sky_temp_model.predict(new_data)
+                    
+                    plog ("Predicted skytemp contribution: " + str(predicted_contribution))
+                    
+                    corrected_sky_temp_C = ocn_status['sky_temp_C'] - predicted_contribution[0]
+        
+                    plog(f"Corrected Sky Temperature: {corrected_sky_temp_C:.2f} °C")
+                except:
+                    plog ("Failed to correct sky temperature. Maybe no weather log yet")
+                    corrected_sky_temp_C=ocn_status['sky_temp_C']
+                
+                ########## THEN DO CLOUD MODEL
+                
+                
+                new_data = pd.DataFrame({
+                    #'Humidity': [model_humidity],
+                    'corrected_sky_temp_C': corrected_sky_temp_C,
+                    'sky-ambient': [model_skyambient],
+                    #'dew_point_depression': [model_dewpointdepression],
+                    'sky-ambient^2': [model_skyambient **2]
+                    #'phase_of_day': [model_phaseofday]
+                })
+                #features = ['corrected_sky_temp_C', 'sky-ambient', 'dew_point_depression', 'sky-ambient^2']
+                # Add the manual polynomial terms
+                #new_data['Humidity^2'] = new_data['Humidity'] ** 2
+                #new_data['sky-ambient^2'] = new_data['sky-ambient'] ** 2
+                # new_data['sky-ambientxphase_of_day'] = new_data['sky-ambient'] * new_data['phase_of_day']
+                # new_data['sky-ambient^2xphase_of_day'] = new_data['sky-ambient^2'] * new_data['phase_of_day']
+                # new_data['sky_temp_Cxphase_of_day'] = new_data['sky_temp_C'] * new_data['phase_of_day']
+                # new_data['sky_temp_Cxphase_of_day^2'] = new_data['sky_temp_Cxphase_of_day'] ** 2
+                
+                # Add Fourier terms for seasonality
+                # new_data['sin_hour'] = np.sin(2 * np.pi * new_data['phase_of_day'])
+                # new_data['cos_hour'] = np.cos(2 * np.pi * new_data['phase_of_day'])
+                # new_data['sin_year'] = np.sin(2 * np.pi * new_data['phase_of_year'])
+                # new_data['cos_year'] = np.cos(2 * np.pi * new_data['phase_of_year'])
+                
+                # Assuming your DataFrame is named df
+                
+                # Assuming your DataFrame is named df
+                # X = df[['sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
+                # y = df['sky_temp_C']
+                
+                # X = df[['sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
+                # y = df['sky_temp_C']
+                
+                #self.sky_temp_model
+                
+                plog (new_data)
+                try:
+                    # # Apply the exact polynomial transformation used in training
+                    # poly = PolynomialFeatures(degree=2, include_bias=False)
+                    # X_new_poly = poly.fit_transform(new_data)
+                    
+                    # X = df[features].copy()
+        
+                    # Predict clouds using trained gb_model
+                    self.predicted_clouds = self.cloud_model.predict(new_data)
+                    
+                    self.cloud_tracker.append(self.predicted_clouds[0])
+                    if len(self.cloud_tracker) > 10:
+                        self.cloud_tracker.pop(0)
+                    
+                    self.median_cloud_estimate=round(np.median(self.cloud_tracker),2)
+                
+                    plog(f"Predicted clouds: {self.predicted_clouds[0]:.2f}")
+                    plog ("Past clouds: " + str(self.cloud_tracker))
+                    plog ("Median of last ten observations: " + str(round(np.median(self.cloud_tracker),2)) + " std " + str(round(np.std(self.cloud_tracker),2)))
+    
+    
+                    
+    
+                except:
+                    plog ("failed model? Perhaps can happen if we haven't built up enough points yet.")
+                    self.median_cloud_estimate=100
+                    #plog(traceback.format_exc())
+    
+                try:
+                    plog ("****************************")
+                    plog("FORECAST DERIVED CLOUD COVER")
+                    plog("OWM cloud cover: " +str(self.owm_cloud_cover))
+                    plog("Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover))
+                    plog("TomorrowIO Now: " +str(self.tomorrowio_cloud_now))
+                    plog("Pirate Now: " +str(self.pirate_clouds_now))
+                    plog("Metocean Now: " +str(self.metocean_clouds_now))
+                    plog("Worldweather Now: " +str(self.worldweather_current_cloud))
+                    
+                    plog('**')
+                    
+                    plog("OWM Next Hour: " +str(self.owm_cloud_cover_next_hour))
+                    plog("Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour))
+                    plog("TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour))
+                    
+                    plog("Pirate Next Hour: " +str(self.pirate_clouds_inanhour))
+                    
+                    plog("Metocean Next Hour: " +str(self.metocean_clouds_inanhour))
+                    
+                    plog("Worldweather Next Hour: " +str(self.worldweather_nexthour_cloud))
+                    
+                    plog('**')
+                    
+                    plog("Median cloud cover: "+str(self.medianforecast_current_cloud_cover))
+        
+                    plog("**************************************************************")
+                except:
+                    plog(traceback.format_exc())
+    
+                if (g_dev['events']['Nightly Reset'] <= ephem.now() < g_dev['events']['End Nightly Reset']):
+                    if self.nightly_reset_complete == False:
+                        self.nightly_reset_complete = True
+                        self.nightly_reset_script(enc_status)
+                
+                # Safety checks here
+                if not g_dev['debug'] and self.open_and_enabled_to_observe:
+                    #breakpoint()
+                    if enc_status is not None:
+                        if enc_status['shutter_status'] == 'Software Fault':
+                            plog("Software Fault Detected. Will alert the authorities!")
+                            self.open_and_enabled_to_observe = False
+                            self.park_enclosure_and_close()
+                            
+                        if enc_status['shutter_status'] == 'Closing':
+                            plog("Detected Roof Closing.")
+                            self.open_and_enabled_to_observe = False
+                            self.enclosure_next_open_time = time.time(
+                             ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
+    
+                        if enc_status['shutter_status'] == 'Error':
+                            plog("Detected an Error in the Roof Status. Packing up for safety.")
+                            self.open_and_enabled_to_observe = False
+                            self.park_enclosure_and_close()
+                            self.enclosure_next_open_time = time.time(
+                            ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
+                                
+                    else:
+                        plog("Enclosure roof status probably not reporting correctly. WEMA down?")
+    
+                # Error / Fault Clear timer.
+                # If the ASCOM status is in Error of Software Fault,
+                # It generally needs a close command to clear it out.
+                # This periodically checks for that and sends a close
+                # every now and then to try and clear it. 
+                if self.error_fault_clear_timer-time.time() > 120:
+                    self.error_fault_clear_timer=time.time()
                     if enc_status['shutter_status'] == 'Software Fault':
+                        
                         plog("Software Fault Detected. Will alert the authorities!")
                         self.open_and_enabled_to_observe = False
                         self.park_enclosure_and_close()
-                        
-                    if enc_status['shutter_status'] == 'Closing':
-                        plog("Detected Roof Closing.")
-                        self.open_and_enabled_to_observe = False
                         self.enclosure_next_open_time = time.time(
-                         ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
-
+                        ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
+                         
+                    
                     if enc_status['shutter_status'] == 'Error':
+                        
                         plog("Detected an Error in the Roof Status. Packing up for safety.")
                         self.open_and_enabled_to_observe = False
                         self.park_enclosure_and_close()
                         self.enclosure_next_open_time = time.time(
                         ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
-                            
-                else:
-                    plog("Enclosure roof status probably not reporting correctly. WEMA down?")
-
-            # Error / Fault Clear timer.
-            # If the ASCOM status is in Error of Software Fault,
-            # It generally needs a close command to clear it out.
-            # This periodically checks for that and sends a close
-            # every now and then to try and clear it. 
-            if self.error_fault_clear_timer-time.time() > 120:
-                self.error_fault_clear_timer=time.time()
-                if enc_status['shutter_status'] == 'Software Fault':
-                    
-                    plog("Software Fault Detected. Will alert the authorities!")
+                         
+    
+    
+                roof_should_be_shut = False
+    
+                if g_dev['enc'].mode in ['Shutdown']:
+                    roof_should_be_shut = True
                     self.open_and_enabled_to_observe = False
-                    self.park_enclosure_and_close()
-                    self.enclosure_next_open_time = time.time(
-                    ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
-                     
-                
-                if enc_status['shutter_status'] == 'Error':
-                    
-                    plog("Detected an Error in the Roof Status. Packing up for safety.")
+    
+                if not (g_dev['events']['Cool Down, Open'] < ephem_now < g_dev['events']['Close and Park']):
+                    roof_should_be_shut = True
                     self.open_and_enabled_to_observe = False
-                    self.park_enclosure_and_close()
-                    self.enclosure_next_open_time = time.time(
-                    ) + self.config['roof_open_safety_base_time'] * self.opens_this_evening
-                     
-
-
-            roof_should_be_shut = False
-
-            if g_dev['enc'].mode in ['Shutdown']:
-                roof_should_be_shut = True
-                self.open_and_enabled_to_observe = False
-
-            if not (g_dev['events']['Cool Down, Open'] < ephem_now < g_dev['events']['Close and Park']):
-                roof_should_be_shut = True
-                self.open_and_enabled_to_observe = False
+                    
+                if self.keep_closed_all_night:
+                    roof_should_be_shut = True
+                    self.open_and_enabled_to_observe = False
                 
-            if self.keep_closed_all_night:
-                roof_should_be_shut = True
-                self.open_and_enabled_to_observe = False
-            
-            
                 
-            if enc_status['shutter_status'] == 'Open':
-                if roof_should_be_shut == True and not g_dev['enc'].mode == 'Manual':
-                    plog("Safety check notices that the roof was open outside of the normal observing period")
-                    self.park_enclosure_and_close()
-                
-                if not (self.local_weather_ok == None) and g_dev['enc'].mode == 'Automatic':
-                    if (not self.local_weather_ok and self.local_weather_active):
-                        plog("Safety check notices that the local weather is not ok. Shutting the roof.")
+                    
+                if enc_status['shutter_status'] == 'Open':
+                    if roof_should_be_shut == True and not g_dev['enc'].mode == 'Manual':
+                        plog("Safety check notices that the roof was open outside of the normal observing period")
                         self.park_enclosure_and_close()
-                
-                if g_dev['enc'].mode == 'Automatic':
-                    if (not self.weather_report_open_at_start) and self.owm_active:
-                        plog("Safety check notices that the weather report is not ok. Shutting the roof.")
-                        self.park_enclosure_and_close()
-                
-
-            if enc_status['shutter_status'] == 'Closed' and self.keep_open_all_night and g_dev['enc'].mode in ['Automatic']:
-
-                if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config[
-                    'maximum_roof_opens_per_evening']:
-                    self.nightly_reset_complete = False
-                    self.open_enclosure(enc_status, ocn_status)
-
-            if (self.enclosure_next_open_time - time.time()) > 0:
-                plog("opens this eve: " + str(self.opens_this_evening))
-
-                plog("minutes until next open attempt ALLOWED: " +
-                     str((self.enclosure_next_open_time - time.time()) / 60))
-
-            #breakpoint()
-            if (not self.keep_closed_all_night) and ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends']) and (self.keep_open_all_night or self.weather_report_open_at_start==True or not self.owm_active) and \
-                g_dev['enc'].mode == 'Automatic') and (not self.cool_down_latch) and (self.keep_open_all_night or self.local_weather_ok  or (not self.ocn_exists) or (not self.local_weather_active)) and \
-                (not enc_status['shutter_status'] in ['Software Fault', 'Opening', 'Closing', 'Error']):
-
-                self.cool_down_latch = True
-
-                if not self.open_and_enabled_to_observe and (self.weather_report_open_at_start or not self.owm_active): # and (self.weather_report_open_during_evening == False or self.local_weather_always_overrides_OWM):
-
-                    if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config['maximum_roof_opens_per_evening']:
+                    
+                    if not (self.local_weather_ok == None) and g_dev['enc'].mode == 'Automatic':
+                        if (not self.local_weather_ok and self.local_weather_active):
+                            plog("Safety check notices that the local weather is not ok. Shutting the roof.")
+                            self.park_enclosure_and_close()
+                    
+                    if g_dev['enc'].mode == 'Automatic':
+                        if (not self.weather_report_open_at_start) and self.owm_active:
+                            plog("Safety check notices that the weather report is not ok. Shutting the roof.")
+                            self.park_enclosure_and_close()
+                    
+    
+                if enc_status['shutter_status'] == 'Closed' and self.keep_open_all_night and g_dev['enc'].mode in ['Automatic']:
+    
+                    if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config[
+                        'maximum_roof_opens_per_evening']:
                         self.nightly_reset_complete = False
                         self.open_enclosure(enc_status, ocn_status)
-
-                self.cool_down_latch = False
-
-            # If in post-close and park era of the night, check those two things have happened!
-            if (g_dev['events']['Close and Park'] <= ephem_now < g_dev['events']['Nightly Reset']) \
-                    and g_dev['enc'].mode == 'Automatic':
-
-                if not any(status in enc_status['shutter_status'].lower() for status in ('closed', 'closing')):
-                    plog("Found shutter open after Close and Park, shutting up the shutter")
-                    self.park_enclosure_and_close()
-
-        
-            if (g_dev['events']['Observing Ends'] <= ephem_now < g_dev['events']['Nightly Reset']) \
-                    and g_dev['enc'].mode == 'Automatic' and enc_status['shutter_status'] in ['Open', 'open', 'Opening', 'opening']:
-                        
-                # Checking roof shouldn't be shut due to local clock hour
-                current_local_time=datetime.datetime.now(self.local_pytz_timezone)
-                current_local_decimal_hour=current_local_time.hour + (current_local_time.minute/60)
-                if current_local_decimal_hour > self.config['absolute_latest_shutting_hour']:
-                    plog ("Shutting roof as it is after the absolute latest shutting hour")
-                    self.park_enclosure_and_close()            
-
-            # If it is in the morning, check whether obs have finished morning flats
-            # If finished, close the shutter            
-            if ephem_now > g_dev['events']['Naut Dawn']: # Start checking towards Dawn                
-                plog ("Morning Flats Done: " + str(self.morning_flats_finished))
-                if not self.morning_flats_finished:
-                    completed=[]
-                    for obsid in self.obs_ids:
-                        uri_status = f"https://status.photonranch.org/status/{obsid}/obs_settings/"
-
-                        
-                        try:
-                            #plog ("Grabbing obs settings")                            
-                            obs_settings=requests.get(uri_status, timeout=20, allow_redirects=False, headers=close_headers, stream=False)
-                            #plog ("Grabbed obs settings")
-                        except:
-                            plog ("Some error in getting the obs_settings")
-                            plog(traceback.format_exc())
-                            obs_settings='nope'
-
-                        if '[200]' in str(obs_settings): # If reading successful
-                            obs_settings=obs_settings.json()['status']['obs_settings']
-                            if 'morning_flats_done' in obs_settings:
-                            #breakpoint()
-                                flats_done=obs_settings['morning_flats_done']
-                                plog (str(obsid) + " Flats Done: " + str(flats_done))
-                                last_communication=time.time()-obs_settings['timedottime_of_last_upload']
-                                plog (str(obsid) + " Last Communication: " + str(last_communication))
-                                # If last communication with obs was more than 10 minutes ago
-                                # OR it is reporting flats_done, then it is ready to close
-                                if last_communication > 600 or flats_done:
-                                    completed.append(True)
+    
+                if (self.enclosure_next_open_time - time.time()) > 0:
+                    plog("opens this eve: " + str(self.opens_this_evening))
+    
+                    plog("minutes until next open attempt ALLOWED: " +
+                         str((self.enclosure_next_open_time - time.time()) / 60))
+    
+                #breakpoint()
+                if (not self.keep_closed_all_night) and ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends']) and (self.keep_open_all_night or self.weather_report_open_at_start==True or not self.owm_active) and \
+                    g_dev['enc'].mode == 'Automatic') and (not self.cool_down_latch) and (self.keep_open_all_night or self.local_weather_ok  or (not self.ocn_exists) or (not self.local_weather_active)) and \
+                    (not enc_status['shutter_status'] in ['Software Fault', 'Opening', 'Closing', 'Error']):
+    
+                    self.cool_down_latch = True
+    
+                    if not self.open_and_enabled_to_observe and (self.weather_report_open_at_start or not self.owm_active): # and (self.weather_report_open_during_evening == False or self.local_weather_always_overrides_OWM):
+    
+                        if time.time() > self.enclosure_next_open_time and self.opens_this_evening < self.config['maximum_roof_opens_per_evening']:
+                            self.nightly_reset_complete = False
+                            self.open_enclosure(enc_status, ocn_status)
+    
+                    self.cool_down_latch = False
+    
+                # If in post-close and park era of the night, check those two things have happened!
+                if (g_dev['events']['Close and Park'] <= ephem_now < g_dev['events']['Nightly Reset']) \
+                        and g_dev['enc'].mode == 'Automatic':
+    
+                    if not any(status in enc_status['shutter_status'].lower() for status in ('closed', 'closing')):
+                        plog("Found shutter open after Close and Park, shutting up the shutter")
+                        self.park_enclosure_and_close()
+    
+            
+                if (g_dev['events']['Observing Ends'] <= ephem_now < g_dev['events']['Nightly Reset']) \
+                        and g_dev['enc'].mode == 'Automatic' and enc_status['shutter_status'] in ['Open', 'open', 'Opening', 'opening']:
+                            
+                    # Checking roof shouldn't be shut due to local clock hour
+                    current_local_time=datetime.datetime.now(self.local_pytz_timezone)
+                    current_local_decimal_hour=current_local_time.hour + (current_local_time.minute/60)
+                    if current_local_decimal_hour > self.config['absolute_latest_shutting_hour']:
+                        plog ("Shutting roof as it is after the absolute latest shutting hour")
+                        self.park_enclosure_and_close()            
+    
+                # If it is in the morning, check whether obs have finished morning flats
+                # If finished, close the shutter            
+                if ephem_now > g_dev['events']['Naut Dawn']: # Start checking towards Dawn                
+                    plog ("Morning Flats Done: " + str(self.morning_flats_finished))
+                    if not self.morning_flats_finished:
+                        completed=[]
+                        for obsid in self.obs_ids:
+                            uri_status = f"https://status.photonranch.org/status/{obsid}/obs_settings/"
+    
+                            
+                            try:
+                                #plog ("Grabbing obs settings")                            
+                                obs_settings=requests.get(uri_status, timeout=20, allow_redirects=False, headers=close_headers, stream=False)
+                                #plog ("Grabbed obs settings")
+                            except:
+                                plog ("Some error in getting the obs_settings")
+                                plog(traceback.format_exc())
+                                obs_settings='nope'
+    
+                            if '[200]' in str(obs_settings): # If reading successful
+                                obs_settings=obs_settings.json()['status']['obs_settings']
+                                if 'morning_flats_done' in obs_settings:
+                                #breakpoint()
+                                    flats_done=obs_settings['morning_flats_done']
+                                    plog (str(obsid) + " Flats Done: " + str(flats_done))
+                                    last_communication=time.time()-obs_settings['timedottime_of_last_upload']
+                                    plog (str(obsid) + " Last Communication: " + str(last_communication))
+                                    # If last communication with obs was more than 10 minutes ago
+                                    # OR it is reporting flats_done, then it is ready to close
+                                    if last_communication > 600 or flats_done:
+                                        completed.append(True)
+                                    else:
+                                        completed.append(False)
                                 else:
+                                    plog (str(obsid) + " isn't reporting flats done status yet")
                                     completed.append(False)
                             else:
-                                plog (str(obsid) + " isn't reporting flats done status yet")
+                                # If fail to get status, assume it isn't done.
                                 completed.append(False)
+                        # If there is a False in completed then it is still waiting, otherwise close up
+                        if False in completed:
+                            plog ("Still waiting for flats to finish")
                         else:
-                            # If fail to get status, assume it isn't done.
-                            completed.append(False)
-                    # If there is a False in completed then it is still waiting, otherwise close up
-                    if False in completed:
-                        plog ("Still waiting for flats to finish")
-                    else:
-                        plog ("Flats all done, closing up the shutter")
-                        self.park_enclosure_and_close()
-                        self.morning_flats_finished=True
-
+                            plog ("Flats all done, closing up the shutter")
+                            self.park_enclosure_and_close()
+                            self.morning_flats_finished=True
+            except:
+                plog ("Something odd occurred in the safety call")
+                plog(traceback.format_exc())
                 
                       
 
