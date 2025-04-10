@@ -158,7 +158,8 @@ wema_config = {
     'windspeed_limit_on': True,
     'lightning_limit_on': True,
     'temperature_minus_dewpoint_limit_on': True,
-    'sky_temperature_limit_on': True,
+    'sky_minus_ambient_limit_on': True,
+    'sky_temperature_limit_on': False,
     'local_cloud_cover_limit_on': True,
     'forecast_cloud_cover_limit_on': True,
     'lowest_ambient_temperature_on': True,
@@ -178,7 +179,8 @@ wema_config = {
     'gust_decay_rate': 0.98,    #20240426 Totally experimental
     'lightning_limit' : 15, #km
     'temperature_minus_dewpoint_limit': 2,
-    'sky_temperature_limit': -1,  #It must be colder than this
+    'sky_minus_ambient_limit': -1,  #It must be colder than this
+    'sky_temperature_limit': -3,
     'local_cloud_cover_limit': 70,
     'forecast_cloud_cover_limit' : 70,
     'lowest_ambient_temperature': -20,
@@ -196,7 +198,8 @@ wema_config = {
     'warning_windspeed_limit': 6,   #m/s
     'warning_lightning_limit' : 20, #km
     'warning_temperature_minus_dewpoint_limit': 2,
-    'warning_sky_temperature_limit': -17,
+    'warning_sky_minus_ambient_limit': -17,
+    'warning_sky_temperature_limit': -6,
     'warning_local_cloud_cover_limit': 25,
     'warning_forecast_cloud_cover_limit': 25,
     'warning_lowest_ambient_temperature': -10,

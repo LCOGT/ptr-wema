@@ -430,7 +430,8 @@ class WxEncAgent:
         self.windspeed_limit_quiet=False
         self.lightning_limit_quiet=False
         self.temp_minus_dew_quiet=False
-        self.skytemp_limit_quiet=False
+        self.sky_minus_ambient_limit_quiet=False
+        self.sky_temperature_limit_quiet=False
         self.hightemp_limit_quiet=False
         self.lowtemp_limit_quiet=False
 
@@ -508,7 +509,9 @@ class WxEncAgent:
             self.windspeed_limit_setting = self.config['windspeed_limit']
             self.lightning_limit_setting = self.config['lightning_limit']
             self.temp_minus_dew_setting = self.config['temperature_minus_dewpoint_limit']
-            self.sky_temp_limit_setting = self.config['sky_temperature_limit']
+            self.sky_minus_ambient_limit_setting = self.config['sky_minus_ambient_limit']
+            
+            self.sky_temperature_limit_setting = self.config['sky_temperature_limit']
             self.local_cloud_cover_limit_setting = self.config['local_cloud_cover_limit']
             self.forecast_cloud_cover_limit_setting = self.config['forecast_cloud_cover_limit']
             self.lowest_temperature_setting = self.config['lowest_ambient_temperature']
@@ -519,7 +522,8 @@ class WxEncAgent:
             self.warning_windspeed_limit_setting = self.config['warning_windspeed_limit']
             self.warning_lightning_limit_setting = self.config['warning_lightning_limit']
             self.warning_temp_minus_dew_setting = self.config['warning_temperature_minus_dewpoint_limit']
-            self.warning_sky_temp_limit_setting = self.config['warning_sky_temperature_limit']
+            self.warning_sky_minus_ambient_limit_setting = self.config['warning_sky_minus_ambient_limit']
+            self.warning_sky_temperature_limit_setting = self.config['warning_sky_temperature_limit']
             self.warning_local_cloud_cover_limit_setting = self.config['warning_local_cloud_cover_limit']
             self.warning_forecast_cloud_cover_limit_setting = self.config['warning_forecast_cloud_cover_limit']
             self.warning_lowest_temperature_setting = self.config['warning_lowest_ambient_temperature']
@@ -530,6 +534,8 @@ class WxEncAgent:
             self.windspeed_limit_on = self.config['windspeed_limit_on']
             self.lightning_limit_on = self.config['lightning_limit_on']
             self.temp_minus_dew_on = self.config['temperature_minus_dewpoint_limit_on']
+            self.sky_minus_ambient_limit_on = self.config['sky_minus_ambient_limit_on']
+            
             self.sky_temperature_limit_on = self.config['sky_temperature_limit_on']
             self.local_cloud_cover_limit_on = self.config['local_cloud_cover_limit_on']
             self.forecast_cloud_cover_limit_on = self.config['forecast_cloud_cover_limit_on']
@@ -564,9 +570,13 @@ class WxEncAgent:
             wema_settings_shelf['warning_temp_minus_dew_setting'] = self.warning_temp_minus_dew_setting
             wema_settings_shelf['temp_minus_dew_setting'] = self.temp_minus_dew_setting
             
+            wema_settings_shelf['sky_minus_ambient_limit_on'] = self.sky_minus_ambient_limit_on
+            wema_settings_shelf['warning_sky_minus_ambient_limit_setting'] = self.warning_sky_minus_ambient_limit_setting
+            wema_settings_shelf['sky_minus_ambient_limit_setting'] = self.sky_minus_ambient_limit_setting
+            
             wema_settings_shelf['sky_temperature_limit_on'] = self.sky_temperature_limit_on
-            wema_settings_shelf['warning_sky_temp_limit_setting'] = self.warning_sky_temp_limit_setting
-            wema_settings_shelf['sky_temp_limit_setting'] = self.sky_temp_limit_setting
+            wema_settings_shelf['warning_sky_temperature_limit_setting'] = self.warning_sky_temperature_limit_setting
+            wema_settings_shelf['sky_temperature_limit_setting'] = self.sky_temperature_limit_setting
             
             wema_settings_shelf['lowest_ambient_temperature'] = self.lowest_temperature_setting
             wema_settings_shelf['highest_ambient_temperature'] = self.highest_temperature_setting
@@ -639,9 +649,13 @@ class WxEncAgent:
                     self.warning_temp_minus_dew_setting=wema_settings_shelf['warning_temp_minus_dew_setting']
                     self.temp_minus_dew_setting=wema_settings_shelf['temp_minus_dew_setting']
                     
+                    self.sky_minus_ambient_limit_on=wema_settings_shelf['sky_minus_ambient_limit_on']
+                    self.warning_sky_minus_ambient_limit_setting=wema_settings_shelf['warning_sky_minus_ambient_limit_setting']
+                    self.sky_minus_ambient_limit_setting=wema_settings_shelf['sky_minus_ambient_limit_setting']
+                    
                     self.sky_temperature_limit_on=wema_settings_shelf['sky_temperature_limit_on']
-                    self.warning_sky_temp_limit_setting=wema_settings_shelf['warning_sky_temp_limit_setting']
-                    self.sky_temp_limit_setting=wema_settings_shelf['sky_temp_limit_setting']
+                    self.warning_sky_temperature_limit_setting=wema_settings_shelf['warning_sky_temperature_limit_setting']
+                    self.sky_temperature_limit_setting=wema_settings_shelf['sky_temperature_limit_setting']
                     
                     self.lowest_temperature_setting =  wema_settings_shelf['lowest_ambient_temperature']
                     self.highest_temperature_setting =  wema_settings_shelf['highest_ambient_temperature']
@@ -668,7 +682,9 @@ class WxEncAgent:
                     self.windspeed_limit_setting = self.config['windspeed_limit']
                     self.lightning_limit_setting = self.config['lightning_limit']
                     self.temp_minus_dew_setting = self.config['temperature_minus_dewpoint_limit']
-                    self.sky_temp_limit_setting = self.config['sky_temperature_limit']
+                    self.sky_minus_ambient_limit_setting = self.config['sky_minus_ambient_limit']
+                    
+                    self.sky_temperature_limit_setting = self.config['sky_temperature_limit']
                     self.local_cloud_cover_limit_setting = self.config['local_cloud_cover_limit']                    
                     self.forecast_cloud_cover_limit_setting = self.config['forecast_cloud_cover_limit']
                     self.lowest_temperature_setting = self.config['lowest_ambient_temperature']
@@ -679,7 +695,9 @@ class WxEncAgent:
                     self.warning_windspeed_limit_setting = self.config['warning_windspeed_limit']
                     self.warning_lightning_limit_setting = self.config['warning_lightning_limit']
                     self.warning_temp_minus_dew_setting = self.config['warning_temperature_minus_dewpoint_limit']
-                    self.warning_sky_temp_limit_setting = self.config['warning_sky_temperature_limit']
+                    self.warning_sky_minus_ambient_limit_setting = self.config['warning_sky_minus_ambient_limit']
+                    
+                    self.warning_sky_temperature_limit_setting = self.config['warning_sky_temperature_limit']
                     self.warning_local_cloud_cover_limit_setting = self.config['warning_local_cloud_cover_limit']
                     self.warning_forecast_cloud_cover_limit_setting = self.config['warning_forecast_cloud_cover_limit']
                     
@@ -691,41 +709,14 @@ class WxEncAgent:
                     self.windspeed_limit_on = self.config['windspeed_limit_on']
                     self.lightning_limit_on = self.config['lightning_limit_on']
                     self.temp_minus_dew_on = self.config['temperature_minus_dewpoint_limit_on']
+                    self.sky_minus_ambient_limit_on = self.config['sky_minus_ambient_limit_on']
+                    
                     self.sky_temperature_limit_on = self.config['sky_temperature_limit_on']
                     self.local_cloud_cover_limit_on = self.config['local_cloud_cover_limit_on']
                     self.forecast_cloud_cover_limit_on = self.config['forecast_cloud_cover_limit_on']
                     self.lowest_temperature_on = self.config['lowest_ambient_temperature_on']
                     self.highest_temperature_on = self.config['highest_ambient_temperature_on']
-                    
-                    # self.rain_limit_on=True
-                    # self.warning_rain_limit_setting=1
-                    # self.rain_limit_setting=3
-                    
-                    # self.cloud_cover_limit_on=True
-                    # self.warning_cloud_cover_limit_setting=25
-                    # self.cloud_cover_limit_setting=50
-                    
-                    # self.humidity_limit_on=True
-                    # self.warning_humidity_limit_setting=75
-                    # self.humidity_limit_setting=88
-                    
-                    # self.windspeed_limit_on=True
-                    # self.warning_windspeed_limit_setting=10
-                    # self.windspeed_limit_setting=15
-                    
-                    # self.lightning_limit_on=False
-                    # self.warning_lightning_limit_setting=10
-                    # self.lightning_limit_setting=15
-                    
-                    # self.temp_minus_dew_on=False
-                    # self.warning_temp_minus_dew_setting=2
-                    # self.temp_minus_dew_setting=3
-                    
-                    # self.sky_temperature_limit_on=False
-                    # self.warning_sky_temp_limit_setting=-17
-                    # self.sky_temp_limit_setting=-1           
-                    
-                    
+                                        
                     wema_settings_shelf['rain_limit_on'] = self.rain_limit_on
                     wema_settings_shelf['warning_rain_limit_setting'] = self.warning_rain_limit_setting
                     wema_settings_shelf['rain_limit_setting'] = self.rain_limit_setting
@@ -754,9 +745,13 @@ class WxEncAgent:
                     wema_settings_shelf['warning_temp_minus_dew_setting'] = self.warning_temp_minus_dew_setting
                     wema_settings_shelf['temp_minus_dew_setting'] = self.temp_minus_dew_setting
                     
+                    wema_settings_shelf['sky_minus_ambient_limit_on'] = self.sky_minus_ambient_limit_on
+                    wema_settings_shelf['warning_sky_minus_ambient_limit_setting'] = self.warning_sky_minus_ambient_limit_setting
+                    wema_settings_shelf['sky_minus_ambient_limit_setting'] = self.sky_minus_ambient_limit_setting
+                    
                     wema_settings_shelf['sky_temperature_limit_on'] = self.sky_temperature_limit_on
-                    wema_settings_shelf['warning_sky_temp_limit_setting'] = self.warning_sky_temp_limit_setting
-                    wema_settings_shelf['sky_temp_limit_setting'] = self.sky_temp_limit_setting
+                    wema_settings_shelf['warning_sky_temperature_limit_setting'] = self.warning_sky_temperature_limit_setting
+                    wema_settings_shelf['sky_temperature_limit_setting'] = self.sky_temperature_limit_setting
                     
                     wema_settings_shelf['lowest_ambient_temperature'] = self.lowest_temperature_setting
                     wema_settings_shelf['highest_ambient_temperature'] = self.highest_temperature_setting
@@ -1075,9 +1070,14 @@ class WxEncAgent:
                             self.warning_temp_minus_dew_setting=tempval['tempDew']['warning_level']
                             self.temp_minus_dew_setting=tempval['tempDew']['danger_level']
                             
+                            self.sky_minus_ambient_limit_on='on' in tempval['skyTempLimit']['status']
+                            self.warning_sky_minus_ambient_limit_setting=tempval['skyTempLimit']['warning_level']
+                            self.sky_minus_ambient_limit_setting=tempval['skyTempLimit']['danger_level']
+                            
                             self.sky_temperature_limit_on='on' in tempval['skyTempLimit']['status']
-                            self.warning_sky_temp_limit_setting=tempval['skyTempLimit']['warning_level']
-                            self.sky_temp_limit_setting=tempval['skyTempLimit']['danger_level']
+                            self.warning_sky_temperature_limit_setting=tempval['skyTempLimit']['warning_level']
+                            self.sky_temperature_limit_setting=tempval['skyTempLimit']['danger_level']
+                            
                             
                             self.wema_settings_upload_timer=time.time() -2 * self.wema_settings_upload_period
                             self.update_status()
@@ -1126,9 +1126,13 @@ class WxEncAgent:
                     wema_settings_shelf['warning_temp_minus_dew_setting']=self.warning_temp_minus_dew_setting
                     wema_settings_shelf['temp_minus_dew_setting']=self.temp_minus_dew_setting
                     
+                    wema_settings_shelf['sky_minus_ambient_limit_on']=self.sky_minus_ambient_limit_on
+                    wema_settings_shelf['warning_sky_minus_ambient_limit_setting']=self.warning_sky_minus_ambient_limit_setting
+                    wema_settings_shelf['sky_minus_ambient_limit_setting']=self.sky_minus_ambient_limit_setting
+                    
                     wema_settings_shelf['sky_temperature_limit_on']=self.sky_temperature_limit_on
-                    wema_settings_shelf['warning_sky_temp_limit_setting']=self.warning_sky_temp_limit_setting
-                    wema_settings_shelf['sky_temp_limit_setting']=self.sky_temp_limit_setting
+                    wema_settings_shelf['warning_sky_temperature_limit_setting']=self.warning_sky_temperature_limit_setting
+                    wema_settings_shelf['sky_temperature_limit_setting']=self.sky_temperature_limit_setting
               
                     wema_settings_shelf['lowest_ambient_temperature'] = self.lowest_temperature_setting
                     wema_settings_shelf['highest_ambient_temperature'] = self.highest_temperature_setting
@@ -1512,14 +1516,23 @@ class WxEncAgent:
             else:
                 dewpoint_gap=True
             
-            if self.sky_temperature_limit_on:
+            if self.sky_minus_ambient_limit_on:
                 sky_amb_limit = (
                                         quick_status['sky_temp_C']- quick_status['temperature_C']
-                                ) < self.sky_temp_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
+                                ) < self.sky_minus_ambient_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
                 if not sky_amb_limit:
-                    wx_reasons.append('(sky - amb) > ' + str(self.sky_temp_limit_setting) + 'C')
+                    wx_reasons.append('(sky - amb) > ' + str(self.sky_minus_ambient_limit_setting) + 'C')
             else:
                 sky_amb_limit=True
+                
+            if self.sky_temperature_limit_on:
+                sky_temp_limit = (
+                                        quick_status['sky_temp_C']
+                                ) < self.sky_temperature_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
+                if not sky_temp_limit:
+                    wx_reasons.append('(sky temperature) > ' + str(self.sky_temperature_limit_setting) + 'C')
+            else:
+                sky_temp_limit=True
             
             if self.local_cloud_cover_limit_on:
                 try:
@@ -1570,18 +1583,8 @@ class WxEncAgent:
             if not low_temp_bound or not high_temp_bound:
                 temp_bounds=False
                 wx_reasons.append('amb temp out of range')
-    
-            # self.local_weather_ok = (
-            #         (dewpoint_gap and self.temp_minus_dew_on)
-            #         and (temp_bounds and (self.lowest_temperature_on or self.highest_temperature_on))
-            #         and (wind_limit and self.windspeed_limit_on)
-            #         and (sky_amb_limit and self.sky_temperature_limit_on)
-            #         and (humidity_limit and self.humidity_limit_on)
-            #         and not (rain_limit and self.rain_limit_on)
-            #         and not (cloud_cover and self.cloud_cover_limit_on)
-            # )
-            #breakpoint()
-            self.local_weather_ok = dewpoint_gap and temp_bounds and wind_limit and sky_amb_limit and humidity_limit and not rain_limit and not local_cloud_cover and not forecast_cloud_cover 
+
+            self.local_weather_ok = dewpoint_gap and temp_bounds and wind_limit and sky_amb_limit  and sky_temp_limit and humidity_limit and not rain_limit and not local_cloud_cover and not forecast_cloud_cover 
             
             #  NB wx_is_ok does not include ambient light or altitude of the Sun
             # the notion of Obs OK should bring in Sun Elevation and or ambient light.
@@ -1718,10 +1721,15 @@ class WxEncAgent:
                 status['wema_settings']['tempminusdew_limit_warning_level'] = self.warning_temp_minus_dew_setting
                 status['wema_settings']['tempminusdew_limit_danger_level'] = self.temp_minus_dew_setting
                 
-                status['wema_settings']['skytemp_limit_on']  = self.sky_temperature_limit_on
-                status['wema_settings']['skytemp_limit_quiet'] = self.skytemp_limit_quiet
-                status['wema_settings']['skytemp_limit_warning_level'] = self.warning_sky_temp_limit_setting
-                status['wema_settings']['skytemp_limit_danger_level'] = self.sky_temp_limit_setting
+                status['wema_settings']['sky_minus_ambient_limit_on']  = self.sky_minus_ambient_limit_on
+                status['wema_settings']['sky_minus_ambient_limit_quiet'] = self.sky_minus_ambient_limit_quiet
+                status['wema_settings']['sky_minus_ambient_limit_warning_level'] = self.warning_sky_minus_ambient_limit_setting
+                status['wema_settings']['sky_minus_ambient_limit_danger_level'] = self.sky_minus_ambient_limit_setting
+                
+                status['wema_settings']['sky_temperature_limit_on']  = self.sky_temperature_limit_on
+                status['wema_settings']['sky_temperature_limit_quiet'] = self.sky_temperature_limit_quiet
+                status['wema_settings']['sky_temperature_limit_warning_level'] = self.warning_sky_temperature_limit_setting
+                status['wema_settings']['sky_temperature_limit_danger_level'] = self.sky_temperature_limit_setting
                 
                 status['wema_settings']['hightemperature_limit_on']  = self.highest_temperature_on
                 status['wema_settings']['hightemperature_limit_quiet'] = self.hightemp_limit_quiet
