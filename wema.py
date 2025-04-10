@@ -248,26 +248,23 @@ def terminate_restart_observer(site_path, no_restart=False):
     return
 
 
-def send_status(obsy, column, status_to_send):
+def send_status(obsy, status_type, status_to_send):
     """Sends a status update to AWS."""
     
     uri_status = f"https://status.photonranch.org/status/{obsy}/status/"
-    # NB None of the strings can be empty. Otherwise this put faults.
-    payload = {"statusType": str(column), "status": status_to_send}\
-
+    # NB None of the strings can be empty. Otherwise this POST faults.
+    payload = {"statusType": str(status_type), "status": status_to_send}
     data = json.dumps(payload)
+    
     try:
-        
         response = requests.post(uri_status, data=data, timeout=20, allow_redirects=False, headers=close_headers)
-
         if response.ok:
-           # pass
-           plog("~")
-    except:
-        plog(
-            'self.api.authenticated_request("PUT", uri, status):  Failed! ',
-            response.status_code,
-        )
+            plog(f"~ sent latest {status_type} status")  # clearer success log including the type that was sent
+        else:
+            plog(f"Failed! Status code: {response.status_code}, Response: {response.text}")
+    except Exception as e:
+        plog(f"Request exception: {str(e)}")
+
 
 class WxEncAgent:
     """A class for weather enclosure functionality."""
@@ -1473,17 +1470,8 @@ class WxEncAgent:
                 quick_status['local_cloud_cover_%']=self.medianforecast_current_cloud_cover
             
             
-            #breakpoint()
-            #LOOKHEREMATE
             
-            wx_reasons = []
-            #breakpoint()
-            
-            
-            
-            #self.lightning_limit_on = self.config['lightning_limit_on']
-            
-            
+            wx_reasons = []            
             
             if self.rain_limit_on:
                 rain_limit = quick_status['rain_rate'] > self.rain_limit_setting
@@ -2650,30 +2638,13 @@ class WxEncAgent:
         events = g_dev['events']
 
         obs_win_begin, sunset, sunrise, ephem_now = self.astro_events.getSunEvents()
-        
-        #self.update_status()
+      
         # First thing to do at the Cool Down, Open time is to calculate the quality of the evening
         # using the broad weather report.
         try: 
             plog("Appraising quality of evening from Open Weather Map.")
             
-            # config_dict = get_default_config()
-            
-            # config_dict["subscription_type"] = SubscriptionType(name="professional", subdomain="pro", is_paid=True)            
-
-            # owm = OWM(self.owm_api_key, config_dict)
-            # mgr = owm.weather_manager()
-            
-            # #breakpoint()
-            # try:
-            #     one_call = mgr.one_call(lat=self.config["latitude"], lon=self.config["longitude"],exclude=["alerts", "minutely" ,"daily"])
-            # except:
-            #     plog ("Connection glitch probably. Bailing out, will try again soon")
-            #     plog(traceback.format_exc())
-            #     #time.sleep(10)
-                
-            #     #return
-            
+           
             
             # Pro users use the pro subdomain
             url = "https://pro.openweathermap.org/data/3.0/onecall"
@@ -2687,9 +2658,7 @@ class WxEncAgent:
             
             response = requests.get(url, params=params)
             data = response.json()
-            
 
-            #breakpoint()
             self.weather_report_run_timer = time.time()
             
             # Keep this for weather stations that do not have current humidity
@@ -2715,8 +2684,6 @@ class WxEncAgent:
                 iso_time = dt.isoformat()  # '2025-05-08T07:00:00'
                 clock_hour = iso_time.split('T')[1].split(':')[0] 
                 
-                # clock_hour=int(hourly_report.reference_time('iso').split(' ')[1].split(':')[0])
-
                 # Calculate Fitzgerald number for this hour
                 tempFn=0
                 # Add humidity score up
@@ -2798,7 +2765,6 @@ class WxEncAgent:
                     response = requests.request("POST", url, data=payload, allow_redirects=False, headers=close_headers, stream=False)
                 except:
                     plog ("Connection glitch on the forecast request")
-
             
             # Fitzgerald weather number calculation.
             hourly_fitzgerald_number=[]
@@ -2867,6 +2833,8 @@ class WxEncAgent:
                 plog ("Probably that there isn't actually three elements in the list?")
                 plog (len(hours_bad_or_good))
 
+            
+
             # Look for three hour gaps in the weather throughout the night
             self.times_to_open=[]
             self.times_to_close=[]
@@ -2932,7 +2900,18 @@ class WxEncAgent:
                     self.weather_text_report.append("Close and Park")
                 self.weather_text_report.append("-----------------------------")
 
-           
+            status = {}
+            status['owm_report'] = json.dumps(self.weather_text_report)
+            lane = "owm_report"
+
+
+            try:
+                send_status(self.config['wema_name'], lane, status)
+            except:
+                plog('could not send owm_report status')
+                plog(traceback.format_exc())
+
+
             # Output to the log the various interesting things about the weather
             # Which will be used at some stage to calibrate the weather station
             
@@ -3299,8 +3278,11 @@ class WxEncAgent:
                 self.medianforecast_current_cloud_cover= np.median(np.asarray([self.owm_cloud_cover,self.open_meteo_cloud_cover,self.owm_cloud_cover_next_hour,self.open_meteo_cloud_cover_next_hour,self.tomorrowio_cloud_now,self.tomorrowio_cloud_inanhour, self.pirate_clouds_now ,self.pirate_clouds_inanhour ,self.metocean_clouds_now, self.metocean_clouds_inanhour, self.worldweather_current_cloud, self.worldweather_nexthour_cloud]))
             
             except:                
-                plog(traceback.format_exc())
+                plog ("One of the weather things is none")
+                #plog(traceback.format_exc())
                 self.medianforecast_current_cloud_cover=None
+            
+            
             line_of_weather_info.append(self.medianforecast_current_cloud_cover)
 
             # Next hours
@@ -3385,163 +3367,154 @@ class WxEncAgent:
                 except:
                     plog ("failed to write weatherlog")
                     plog(traceback.format_exc())
-            #breakpoint()
-
-            #breakpoint()
-            weather_directory=self.wema_path+self.name+ '/weatherfits'
-            file_date_string = str(datetime.datetime.now()).replace(' ', '_').split('.')[0].replace(':', '-')
-            ######## We also need to update our cloud prediction model.
-            # So lets open the weatherlog
-            # Assign column names manually
-            column_names = ['date','time','OWM_clouds','Local_clouds','Humidity','sky_temp_C','local_temperature_C', 'dewpoint', 'rain_rate','wind_m/s', 'OWM_temperature','openmeteo_clouds', 'avg_forecast_cloudcover', 'OWMClouds_inanhour', 'openmeteoclouds_inanhour','sun_altitude','moon_altitude','moon_illumination','moon_flux_on_ground', 'sun_azimuth', 'tomorrowio_nowclouds','tomorrowio_nexthourclouds','pirate_clouds_now','pirate_clouds_inanhour','metocean_clouds_now','metocean_clouds_inanhour','worldweather_clouds_now','worldweather_clouds_inanhour']
-            
-            
-            
-            # Read CSV without a header and assign column names
-            df = pd.read_csv(self.wema_path+self.name + '_weatherlog.csv', header=None, names=column_names)
-            
-            # Need to remove some rows with nan values
-            df = df.dropna()
-            
-            # Convert to years as main value
-            # Arbitrary reference point is the 1st of janurary 2025
-            # time.time() then is 1735689600.0
-            df['time_in_days']= df['time'] - 1735689600.0
-            df['time_in_days']= df['time_in_days'] / 86400 
-            df['phase_of_day']= df['time_in_days'] % 1
-            
-            df['time_in_years']= df['time'] - 1735689600.0
-            df['time_in_years']= df['time_in_years'] / 31536000
-            df['phase_of_year']= df['time_in_years'] % 1
-            
-            
-            
-            # import pandas as pd
-            # import numpy as np
-            # from sklearn.model_selection import train_test_split
-            
-            
-            # Solar flux is essentially zero at -18 so set minimum sun altitude to -18
-            df['sun_altitude'] = df['sun_altitude'].clip(lower=-18)
-            
-            
-            #To transform the sun altitude so that the relationship with solar flux becomes linear.
-            df['transformed_sun_altitude']= np.exp( df['sun_altitude'] / 6.0)
-            
-            
-            # Assuming your DataFrame is named df
-            X = df[['transformed_sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
-            y = df['sky_temp_C']
-            
-            # Train-test split (for verification purposes)
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-            
-            # Initialize the model
-            self.sky_temp_model = LinearRegression()
-            
-            # Train the model
-            self.sky_temp_model.fit(X_train, y_train)
-            
-            # Predict the contributions of the factors to sky_temp_C
-            df['predicted_factor_contributions'] = self.sky_temp_model.predict(X)
-            
-            # Calculate corrected sky temperature
-            df['corrected_sky_temp_C'] = df['sky_temp_C'] - df['predicted_factor_contributions']
-            
-            # # Show the resulting DataFrame with corrections
-            # import ace_tools as tools; tools.display_dataframe_to_user(name="Corrected Sky Temperature Data", dataframe=df)
-
-            # Predict using the trained model on the whole dataset
-            df['predicted_factor_contributions'] = self.sky_temp_model.predict(X)
-            
-            # Calculate corrected sky temperature
-            df['corrected_sky_temp_C'] = df['sky_temp_C'] - df['predicted_factor_contributions']
-            
-            # Plotting before and after
-            plt.figure(figsize=(14, 6))
-            
-            # Original Sky Temperature Plot
-            plt.subplot(1, 2, 1)
-            sns.scatterplot(x=df.index, y=df['sky_temp_C'], label='Original Sky Temperature', color='blue')
-            plt.title(f'Original Sky Temperature\nR² = {r2_score(y, self.sky_temp_model.predict(X)):.2f}')
-            plt.xlabel('Index')
-            plt.ylabel('Sky Temperature (°C)')
-            
-            # Corrected Sky Temperature Plot
-            plt.subplot(1, 2, 2)
-            sns.scatterplot(x=df.index, y=df['corrected_sky_temp_C'], label='Corrected Sky Temperature', color='green')
-            plt.title('Corrected Sky Temperature (After Removing Factors)')
-            plt.xlabel('Index')
-            plt.ylabel('Sky Temperature (°C)')
-            
-            
-            plt.savefig(weather_directory + '/CorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
-
-            
-            # plt.tight_layout()
-            # plt.show()
-            
-            
-            
-            # Checking if the required columns are present in the DataFrame
-            required_columns = ['avg_forecast_cloudcover', 'corrected_sky_temp_C']
-            
-            if all(col in df.columns for col in required_columns):
-                # Plotting avg_forecast_cloudcover vs corrected_sky_temp_C
-                plt.figure(figsize=(10, 6))
-                sns.scatterplot(data=df, x='avg_forecast_cloudcover', y='corrected_sky_temp_C', color='purple')
-                plt.title('Corrected Sky Temperature vs. Average Forecast Cloud Cover')
-                plt.xlabel('Average Forecast Cloud Cover (%)')
-                plt.ylabel('Corrected Sky Temperature (°C)')
-                plt.savefig(weather_directory + '/CloudsvsCorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
-
-                # plt.grid(True)
-                # plt.show()
-            else:
-                missing_columns = [col for col in required_columns if col not in df.columns]
-                raise ValueError(f"The following columns are missing from the DataFrame: {missing_columns}")
-
-            
-            #breakpoint()
-            
-            
-            
-            
-            df['sky-ambient'] = df['corrected_sky_temp_C'] - df['OWM_temperature']
-            
-            # dew point depression
-            df['dew_point_depression'] =  df['OWM_temperature'] - df['dewpoint']
-
-            
-            
             try:
-                # Trim the extreme values off... realistically MOST of the time it can be clear or cloudy
-                # and we even aren't too particularly interested in the extremes... more the range
-                df = df[~((df['avg_forecast_cloudcover'] > 95) | (df['avg_forecast_cloudcover'] < 5))]
+                weather_directory=self.wema_path+self.name+ '/weatherfits'
+                file_date_string = str(datetime.datetime.now()).replace(' ', '_').split('.')[0].replace(':', '-')
+                ######## We also need to update our cloud prediction model.
+                # So lets open the weatherlog
+                # Assign column names manually
+                column_names = ['date','time','OWM_clouds','Local_clouds','Humidity','sky_temp_C','local_temperature_C', 'dewpoint', 'rain_rate','wind_m/s', 'OWM_temperature','openmeteo_clouds', 'avg_forecast_cloudcover', 'OWMClouds_inanhour', 'openmeteoclouds_inanhour','sun_altitude','moon_altitude','moon_illumination','moon_flux_on_ground', 'sun_azimuth', 'tomorrowio_nowclouds','tomorrowio_nexthourclouds','pirate_clouds_now','pirate_clouds_inanhour','metocean_clouds_now','metocean_clouds_inanhour','worldweather_clouds_now','worldweather_clouds_inanhour']
+                
+                
+                
+                # Read CSV without a header and assign column names
+                df = pd.read_csv(self.wema_path+self.name + '_weatherlog.csv', header=None, names=column_names)
+                
+                # Need to remove some rows with nan values
+                df = df.dropna()
+                
+                # Convert to years as main value
+                # Arbitrary reference point is the 1st of janurary 2025
+                # time.time() then is 1735689600.0
+                df['time_in_days']= df['time'] - 1735689600.0
+                df['time_in_days']= df['time_in_days'] / 86400 
+                df['phase_of_day']= df['time_in_days'] % 1
+                
+                df['time_in_years']= df['time'] - 1735689600.0
+                df['time_in_years']= df['time_in_years'] / 31536000
+                df['phase_of_year']= df['time_in_years'] % 1
+                
+                
+                
+                # import pandas as pd
+                # import numpy as np
+                # from sklearn.model_selection import train_test_split
+                
+                
+                # Solar flux is essentially zero at -18 so set minimum sun altitude to -18
+                df['sun_altitude'] = df['sun_altitude'].clip(lower=-18)
+                
+                
+                #To transform the sun altitude so that the relationship with solar flux becomes linear.
+                df['transformed_sun_altitude']= np.exp( df['sun_altitude'] / 6.0)
+                
+                
+                # Assuming your DataFrame is named df
+                X = df[['transformed_sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
+                y = df['sky_temp_C']
+                
+                # Train-test split (for verification purposes)
+                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+                
+                # Initialize the model
+                self.sky_temp_model = LinearRegression()
+                
+                # Train the model
+                self.sky_temp_model.fit(X_train, y_train)
+                
+                # Predict the contributions of the factors to sky_temp_C
+                df['predicted_factor_contributions'] = self.sky_temp_model.predict(X)
+                
+                # Calculate corrected sky temperature
+                df['corrected_sky_temp_C'] = df['sky_temp_C'] - df['predicted_factor_contributions']
+                
+                # # Show the resulting DataFrame with corrections
+                # import ace_tools as tools; tools.display_dataframe_to_user(name="Corrected Sky Temperature Data", dataframe=df)
+    
+                # Predict using the trained model on the whole dataset
+                df['predicted_factor_contributions'] = self.sky_temp_model.predict(X)
+                
+                # Calculate corrected sky temperature
+                df['corrected_sky_temp_C'] = df['sky_temp_C'] - df['predicted_factor_contributions']
+                
+                # Plotting before and after
+                plt.figure(figsize=(14, 6))
+                
+                # Original Sky Temperature Plot
+                plt.subplot(1, 2, 1)
+                sns.scatterplot(x=df.index, y=df['sky_temp_C'], label='Original Sky Temperature', color='blue')
+                plt.title(f'Original Sky Temperature\nR² = {r2_score(y, self.sky_temp_model.predict(X)):.2f}')
+                plt.xlabel('Index')
+                plt.ylabel('Sky Temperature (°C)')
+                
+                # Corrected Sky Temperature Plot
+                plt.subplot(1, 2, 2)
+                sns.scatterplot(x=df.index, y=df['corrected_sky_temp_C'], label='Corrected Sky Temperature', color='green')
+                plt.title('Corrected Sky Temperature (After Removing Factors)')
+                plt.xlabel('Index')
+                plt.ylabel('Sky Temperature (°C)')
+                
+                
+                plt.savefig(weather_directory + '/CorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+    
+                
+                # plt.tight_layout()
+                # plt.show()
+                
+                
+                
+                # Checking if the required columns are present in the DataFrame
+                required_columns = ['avg_forecast_cloudcover', 'corrected_sky_temp_C']
+                
+                if all(col in df.columns for col in required_columns):
+                    # Plotting avg_forecast_cloudcover vs corrected_sky_temp_C
+                    plt.figure(figsize=(10, 6))
+                    sns.scatterplot(data=df, x='avg_forecast_cloudcover', y='corrected_sky_temp_C', color='purple')
+                    plt.title('Corrected Sky Temperature vs. Average Forecast Cloud Cover')
+                    plt.xlabel('Average Forecast Cloud Cover (%)')
+                    plt.ylabel('Corrected Sky Temperature (°C)')
+                    plt.savefig(weather_directory + '/CloudsvsCorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+    
+                    # plt.grid(True)
+                    # plt.show()
+                else:
+                    missing_columns = [col for col in required_columns if col not in df.columns]
+                    raise ValueError(f"The following columns are missing from the DataFrame: {missing_columns}")
+    
+                
                 #breakpoint()
                 
-                # Run the updated model with polynomial features included
-                self.cloud_model, updated_df = fit_cloud_prediction_model(df, weather_directory)
-            
+                
+                
+                
+                df['sky-ambient'] = df['corrected_sky_temp_C'] - df['OWM_temperature']
+                
+                # dew point depression
+                df['dew_point_depression'] =  df['OWM_temperature'] - df['dewpoint']
+    
+                
+                
+                try:
+                    # Trim the extreme values off... realistically MOST of the time it can be clear or cloudy
+                    # and we even aren't too particularly interested in the extremes... more the range
+                    df = df[~((df['avg_forecast_cloudcover'] > 95) | (df['avg_forecast_cloudcover'] < 5))]
+                    #breakpoint()
+                    
+                    # Run the updated model with polynomial features included
+                    self.cloud_model, updated_df = fit_cloud_prediction_model(df, weather_directory)
+                
+                except:
+                    plog ("failed model?")
+                    plog(traceback.format_exc())
             except:
                 plog ("failed model?")
                 plog(traceback.format_exc())
 
 
 
-            status = {}
-            status['owm_report'] = json.dumps(self.weather_text_report)
-            lane = "owm_report"
-
-
-            try:
-                send_status(self.config['wema_name'], lane, status)
-            except:
-                plog('could not send owm_report status')
-                plog(traceback.format_exc())
                 
         except Exception as e:
-            plog ("OWN failed", e)
+            plog ("OWM failed", e)
             plog ("Usually a connection glitch")
             plog(traceback.format_exc())
             
