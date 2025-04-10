@@ -2794,8 +2794,10 @@ class WxEncAgent:
             plog ("For Evening of " +str(g_dev['dayhyphened']) )
             self.hourly_report_holder.append("For LOCAL Evening of " +str(g_dev['dayhyphened']) )
             
-            plog("Time of Weather Report: " + str(time.asctime()))
-            self.hourly_report_holder.append("Time of Weather Report (UTC): " + str(time.asctime()))
+            
+            utc_string = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")            
+            plog("Time of Weather Report: " + str(utc_string))
+            self.hourly_report_holder.append("Time of Weather Report (UTC): " + str(utc_string))
             
             plog ("*******************************")
             self.hourly_report_holder.append("*******************************")
