@@ -2982,51 +2982,6 @@ class WxEncAgent:
                 'timezone': 'UTC'
             }
             
-            # # Send GET request
-            # try:
-            #     response = requests.get(url, params=params)
-                
-            #     # Check if request was successful
-            #     if response.status_code == 200:
-            #         data = response.json()
-                    
-            #         if 'hourly' in data and 'cloudcover' in data['hourly']:
-            #             time_list = [datetime.datetime.fromisoformat(t).replace(tzinfo=timezone.utc) for t in data['hourly']['time']]
-            #             cloud_list = data['hourly']['cloudcover']
-                        
-            #             # Get the current UTC time rounded to the nearest hour
-            #             now = datetime.datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
-                        
-            #             # Find the closest timestamp to the current time
-            #             closest_time = min(time_list, key=lambda x: abs(x - now))
-            #             closest_index = time_list.index(closest_time)
-                        
-            #             self.open_meteo_cloud_cover = cloud_list[closest_index]
-            #             plog(f"Open Meteo Current Estimated Cloud Cover: {self.open_meteo_cloud_cover}%")
-            #             line_of_weather_info.append(self.open_meteo_cloud_cover)
-                        
-            #             # Get next hour's cloud cover
-            #             if closest_index + 1 < len(cloud_list):
-            #                 self.open_meteo_cloud_cover_next_hour = cloud_list[closest_index + 1]
-            #                 plog(f"Open Meteo Cloud Cover for Next Hour: {self.open_meteo_cloud_cover_next_hour}%")
-            #             else:
-            #                 self.open_meteo_cloud_cover_next_hour = None
-            #                 plog("No data for the next hour.")
-                            
-            #         else:
-            #             plog("Hourly cloud cover data not available.")
-            
-            #     else:
-            #         plog(f"Error: {response.status_code}, {response.text}")
-            #         self.open_meteo_cloud_cover = None
-            #         self.open_meteo_cloud_cover_next_hour = None
-            
-            # except Exception as e:    
-            #     plog(f"An error occurred: {str(e)}")
-            #     self.open_meteo_cloud_cover = None
-            #     self.open_meteo_cloud_cover_next_hour = None
-
-
             # Send GET request
             try:
                 response = requests.get(url, params=params)
@@ -3042,8 +2997,7 @@ class WxEncAgent:
                         cloud_list = data['hourly']['cloudcover']
             
                         # Get the current UTC time rounded down to the nearest hour
-                        now = datetime.datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
-                        plog(f"Current UTC Time: {now.isoformat()}")
+                        now = datetime.datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)                        
             
                         # Find exact index for the current hour if available
                         if now in time_list:
@@ -3091,12 +3045,8 @@ class WxEncAgent:
                 self.open_meteo_cloud_cover_next_hour = None
 
             
-            #breakpoint()
             
-            # Replace with your Tomorrow.io API Key
             API_KEY = self.tomorrowio_APIkey
-            
-            # Replace with your desired latitude and longitude
             latitude = self.latitude
             longitude = self.longitude
             
@@ -3138,7 +3088,6 @@ class WxEncAgent:
                     self.tomorrowio_cloud_now=None
                     self.tomorrowio_cloud_inanhour=None
                     
-                #breakpoint()
                 plog("TomorrowIO Now: " +str(self.tomorrowio_cloud_now))
                 plog("TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour))
             except:
@@ -3177,37 +3126,6 @@ class WxEncAgent:
                 self.metocean_clouds_inanhour=None
                 
                 
-            # # PIRATE API
-            # try:
-            #     API_KEY=self.pirateapi_key
-            
-            #     # Get the current timestamp and the timestamp an hour from now
-            #     now = datetime.datetime.now().timestamp()
-            #     one_hour_from_now = (datetime.datetime.now() + datetime.timedelta(hours=1)).timestamp()
-                
-            #     url = f"https://api.pirateweather.net/forecast/{API_KEY}/{self.latitude},{self.longitude}?units=si"
-                
-            #     response = requests.get(url)
-            #     data = response.json()
-                
-            #     # Get current cloud cover
-            #     current_cloud_cover = data['currently']['cloudCover'] * 100  # percentage
-                
-            #     # Get cloud cover forecasted an hour from now
-            #     hourly_data = data['hourly']['data']
-            #     cloud_cover_in_an_hour = None
-                
-            #     for hour in hourly_data:
-            #         if abs(hour['time'] - one_hour_from_now) < 1800:  # within 30 minutes of the target time
-            #             cloud_cover_in_an_hour = hour['cloudCover'] * 100
-            #             break
-                                
-            
-            #     self.pirate_clouds_now=current_cloud_cover
-            #     self.pirate_clouds_inanhour=cloud_cover_in_an_hour
-            # except:
-            #     self.pirate_clouds_now=None
-            #     self.pirate_clouds_inanhour=None
                 
             # PIRATE API
             try:
@@ -3236,8 +3154,6 @@ class WxEncAgent:
                 self.pirate_clouds_inanhour = None
                 
                 
-                
-                
             # WORLDWEATHER API
             try:
             
@@ -3251,25 +3167,12 @@ class WxEncAgent:
             
                 response = requests.get("https://api.worldweatheronline.com/premium/v1/weather.ashx", params=params)
                 data = response.json()
-            
-                # # Get current time in UTC
-                # current_time = datetime.datetime.utcnow().strftime('%H%M')
-                # next_hour_time = (datetime.datetime.utcnow() + datetime.timedelta(hours=1)).strftime('%H%M')
-            
+                        
                 # Extract hourly data
                 hourly_data = data['data']['weather'][0]['hourly']
                 
                 current_cloud = hourly_data[0]['cloudcover']
                 next_hour_cloud = hourly_data[1]['cloudcover']
-            
-                # #plog (current_time)
-            
-                # for hour in hourly_data:
-                #     #plog (hour['time'])
-                #     if int(hour['time']) - 50 < int(current_time):
-                #         current_cloud = hour['cloudcover']
-                #     elif int(hour['time']) - 50 < int(next_hour_time):
-                #         next_hour_cloud = hour['cloudcover']
             
                 plog(f"WorldWeather Current Cloud Cover: {current_cloud}%")
                 plog(f"WorldWeather Next Hour Cloud Cover: {next_hour_cloud}%")
@@ -3279,17 +3182,12 @@ class WxEncAgent:
             except:
                 self.worldweather_current_cloud = None
                 self.worldweather_nexthour_cloud = None
-                # plog(traceback.format_exc())
-                # breakpoint()
             
                         
             try:
-                #self.medianforecast_current_cloud_cover= (self.owm_cloud_cover+self.open_meteo_cloud_cover+self.owm_cloud_cover_next_hour+self.open_meteo_cloud_cover_next_hour+self.tomorrowio_cloud_now+self.tomorrowio_cloud_inanhour+ self.pirate_clouds_now + self.pirate_clouds_inanhour + self.metocean_clouds_now + self.metocean_clouds_inanhour)/10
                 self.medianforecast_current_cloud_cover= np.median(np.asarray([self.owm_cloud_cover,self.open_meteo_cloud_cover,self.owm_cloud_cover_next_hour,self.open_meteo_cloud_cover_next_hour,self.tomorrowio_cloud_now,self.tomorrowio_cloud_inanhour, self.pirate_clouds_now ,self.pirate_clouds_inanhour ,self.metocean_clouds_now, self.metocean_clouds_inanhour, self.worldweather_current_cloud, self.worldweather_nexthour_cloud]))
-            
             except:                
                 plog ("One of the weather things is none")
-                #plog(traceback.format_exc())
                 self.medianforecast_current_cloud_cover=None
             
             
@@ -3298,8 +3196,6 @@ class WxEncAgent:
             # Next hours
             line_of_weather_info.append(self.open_meteo_cloud_cover_next_hour)
             line_of_weather_info.append(self.owm_cloud_cover_next_hour)
-
-
            
             sun_altitude, moon_altitude, moon_illumination, flux_ground, sun_azimuth = self.get_sun_and_moon_info()
         
@@ -3363,9 +3259,6 @@ class WxEncAgent:
             except Exception as e:
                 plog(f"Error sending email: {e}")
 
-
-            
-            #breakpoint()
                 
             # Open the file in append mode and write the line
             if not self.medianforecast_current_cloud_cover == None:
@@ -3405,21 +3298,12 @@ class WxEncAgent:
                 df['phase_of_year']= df['time_in_years'] % 1
                 
                 
-                
-                # import pandas as pd
-                # import numpy as np
-                # from sklearn.model_selection import train_test_split
-                
-                
                 # Solar flux is essentially zero at -18 so set minimum sun altitude to -18
                 df['sun_altitude'] = df['sun_altitude'].clip(lower=-18)
-                
                 
                 #To transform the sun altitude so that the relationship with solar flux becomes linear.
                 df['transformed_sun_altitude']= np.exp( df['sun_altitude'] / 6.0)
                 
-                
-                # Assuming your DataFrame is named df
                 X = df[['transformed_sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
                 y = df['sky_temp_C']
                 
@@ -3433,15 +3317,6 @@ class WxEncAgent:
                 self.sky_temp_model.fit(X_train, y_train)
                 
                 # Predict the contributions of the factors to sky_temp_C
-                df['predicted_factor_contributions'] = self.sky_temp_model.predict(X)
-                
-                # Calculate corrected sky temperature
-                df['corrected_sky_temp_C'] = df['sky_temp_C'] - df['predicted_factor_contributions']
-                
-                # # Show the resulting DataFrame with corrections
-                # import ace_tools as tools; tools.display_dataframe_to_user(name="Corrected Sky Temperature Data", dataframe=df)
-    
-                # Predict using the trained model on the whole dataset
                 df['predicted_factor_contributions'] = self.sky_temp_model.predict(X)
                 
                 # Calculate corrected sky temperature
@@ -3468,11 +3343,6 @@ class WxEncAgent:
                 plt.savefig(weather_directory + '/CorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
     
                 
-                # plt.tight_layout()
-                # plt.show()
-                
-                
-                
                 # Checking if the required columns are present in the DataFrame
                 required_columns = ['avg_forecast_cloudcover', 'corrected_sky_temp_C']
                 
@@ -3485,30 +3355,19 @@ class WxEncAgent:
                     plt.ylabel('Corrected Sky Temperature (°C)')
                     plt.savefig(weather_directory + '/CloudsvsCorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
     
-                    # plt.grid(True)
-                    # plt.show()
                 else:
                     missing_columns = [col for col in required_columns if col not in df.columns]
                     raise ValueError(f"The following columns are missing from the DataFrame: {missing_columns}")
-    
-                
-                #breakpoint()
-                
-                
-                
                 
                 df['sky-ambient'] = df['corrected_sky_temp_C'] - df['OWM_temperature']
                 
                 # dew point depression
-                df['dew_point_depression'] =  df['OWM_temperature'] - df['dewpoint']
-    
-                
+                df['dew_point_depression'] =  df['OWM_temperature'] - df['dewpoint']                
                 
                 try:
                     # Trim the extreme values off... realistically MOST of the time it can be clear or cloudy
                     # and we even aren't too particularly interested in the extremes... more the range
                     df = df[~((df['avg_forecast_cloudcover'] > 95) | (df['avg_forecast_cloudcover'] < 5))]
-                    #breakpoint()
                     
                     # Run the updated model with polynomial features included
                     self.cloud_model, updated_df = fit_cloud_prediction_model(df, weather_directory)
