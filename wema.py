@@ -3272,6 +3272,8 @@ class WxEncAgent:
                     plog(traceback.format_exc())
             try:
                 weather_directory=self.wema_path+self.name+ '/weatherfits'
+                if not os.path.exists(weather_directory):
+                    os.makedirs(weather_directory)
                 file_date_string = str(datetime.datetime.now()).replace(' ', '_').split('.')[0].replace(':', '-')
                 ######## We also need to update our cloud prediction model.
                 # So lets open the weatherlog
@@ -3284,7 +3286,7 @@ class WxEncAgent:
                 df = pd.read_csv(self.wema_path+self.name + '_weatherlog.csv', header=None, names=column_names)
                 
                 # Need to remove some rows with nan values
-                df = df.dropna()
+                #df = df.dropna()
                 
                 # Convert to years as main value
                 # Arbitrary reference point is the 1st of janurary 2025
@@ -3378,7 +3380,7 @@ class WxEncAgent:
             except:
                 plog ("failed model?")
                 plog(traceback.format_exc())
-
+                #breakpoint()
 
 
                 
