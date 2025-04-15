@@ -196,7 +196,7 @@ wema_config = {
     'lightning_limit_on': False,
     'temperature_minus_dewpoint_limit_on': False,
     'sky_minus_ambient_limit_on': False,    
-    'sky_temperature_limit_on': True,
+    'sky_temperature_limit_on': False,
     'local_cloud_cover_limit_on': True,
     'forecast_cloud_cover_limit_on': True,
     'lowest_ambient_temperature_on': False,

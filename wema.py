@@ -3369,7 +3369,7 @@ class WxEncAgent:
                 try:
                     # Trim the extreme values off... realistically MOST of the time it can be clear or cloudy
                     # and we even aren't too particularly interested in the extremes... more the range
-                    df = df[~((df['avg_forecast_cloudcover'] > 95) | (df['avg_forecast_cloudcover'] < 5))]
+                    df = df[~((df['avg_forecast_cloudcover'] > 80) | (df['avg_forecast_cloudcover'] < 20))]
                     
                     # Run the updated model with polynomial features included
                     self.cloud_model, updated_df = fit_cloud_prediction_model(df, weather_directory)
