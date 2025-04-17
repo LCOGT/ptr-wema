@@ -49,7 +49,7 @@ import astropy.units as u
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-
+import copy
 
 # from sentinelsat import SentinelAPI, read_geojson, geojson_to_wkt
 # from datetime import date
@@ -94,98 +94,236 @@ def fit_cloud_prediction_model(df, directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
     
+    # daytime model
+    if not os.path.exists(directory + '/nighttime'):
+        os.makedirs(directory+ '/nighttime')
+    if not os.path.exists(directory + '/daytime'):
+        os.makedirs(directory+ '/daytime')
+        
+    
+    
+    
     file_date_string = str(datetime.datetime.now()).replace(' ', '_').split('.')[0].replace(':', '-')
     
-    # Drop irrelevant columns
-    df_clean = df.drop(columns=['date', 'time', 'Local_clouds', 'time_in_days', 'time_in_years'], errors='ignore')
+    # # Drop irrelevant columns
+    # df_clean = df.drop(columns=['date', 'time', 'Local_clouds', 'time_in_days', 'time_in_years'], errors='ignore')
 
-    # Check the range of 'phase_of_year'
-    if 'phase_of_year' in df_clean.columns:
-        phase_of_year_range = df_clean['phase_of_year'].max() - df_clean['phase_of_year'].min()
-    else:
-        phase_of_year_range = 0
+    # # Check the range of 'phase_of_year'
+    # if 'phase_of_year' in df_clean.columns:
+    #     phase_of_year_range = df_clean['phase_of_year'].max() - df_clean['phase_of_year'].min()
+    # else:
+    #     phase_of_year_range = 0
 
     # Manually add polynomial terms for specific features
-    df['Humidity^2'] = df['Humidity'] ** 2
+    #df['Humidity^2'] = df['Humidity'] ** 2
     df['sky-ambient^2'] = df['sky-ambient'] ** 2
-    df['sky-ambientxphase_of_day'] = df['sky-ambient'] * df['phase_of_day']
-    df['sky-ambient^2xphase_of_day'] = df['sky-ambient^2'] * df['phase_of_day']
+    # df['sky-ambientxphase_of_day'] = df['sky-ambient'] * df['phase_of_day']
+    # df['sky-ambient^2xphase_of_day'] = df['sky-ambient^2'] * df['phase_of_day']
 
-    # Add Fourier terms for seasonality
-    df['sin_hour'] = np.sin(2 * np.pi * df['phase_of_day'])
-    df['cos_hour'] = np.cos(2 * np.pi * df['phase_of_day'])
-    df['sin_year'] = np.sin(2 * np.pi * df['phase_of_year'])
-    df['cos_year'] = np.cos(2 * np.pi * df['phase_of_year'])
+    # # Add Fourier terms for seasonality
+    # df['sin_hour'] = np.sin(2 * np.pi * df['phase_of_day'])
+    # df['cos_hour'] = np.cos(2 * np.pi * df['phase_of_day'])
+    # df['sin_year'] = np.sin(2 * np.pi * df['phase_of_year'])
+    # df['cos_year'] = np.cos(2 * np.pi * df['phase_of_year'])
 
     # Select features based on the range check
-    if phase_of_year_range > 0.9:
-        features = ['corrected_sky_temp_C', 'sky-ambient',  'sky-ambient^2']#, 'phase_of_day', 'phase_of_year'] 'dew_point_depression',
-    else:
-        features = ['corrected_sky_temp_C', 'sky-ambient',  'sky-ambient^2']#'phase_of_day', 'sky-ambient^2', 'sin_hour', 'cos_hour'] 'dew_point_depression',
+    # if phase_of_year_range > 0.9:
+    #     features = ['sky_temp_C', 'sky-ambient',  'sky-ambient^2']#, 'phase_of_day', 'phase_of_year'] 'dew_point_depression',
+    # else:
+    features = ['sky_temp_C', 'sky-ambient',  'sky-ambient^2']#'phase_of_day', 'sky-ambient^2', 'sin_hour', 'cos_hour'] 'dew_point_depression',
 
-    X = df[features].copy()
-    y = df_clean['avg_forecast_cloudcover']
+    for part_of_day in ['daytime','nighttime']:
+        
+        
+        region_df=copy.deepcopy(df)
+        
+        if part_of_day == 'daytime':
+            region_df = region_df[(region_df['sun_altitude'] > 0) ]
+        else:    
+            region_df = region_df[(region_df['sun_altitude'] < 0) ]  
+        
+        # Only consider those values where all the forecasts tend to agree on it.
+        #breakpoint()
+        
+        region_df['clouds_row_stdev'] = region_df[
+            ['OWM_clouds', 'openmeteo_clouds', 
+             'OWMClouds_inanhour', 'openmeteoclouds_inanhour', 
+             'tomorrowio_nowclouds', 'tomorrowio_nexthourclouds',
+             'pirate_clouds_now', 'pirate_clouds_inanhour', 
+             'metocean_clouds_now', 'metocean_clouds_inanhour', 
+             'worldweather_clouds_now', 'worldweather_clouds_inanhour']
+        ].std(axis=1)
+        
 
-    ### ✅ First Pass: Fit Model and Remove Outliers
-    gb_model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, random_state=42)
-    gb_model.fit(X, y)
-    y_pred = gb_model.predict(X)
-
-    # Outlier rejection - First Pass
-    residuals = y - y_pred
-    mask = np.abs(residuals) <= 30  # Remove large outliers (> 30 units)
-    X = X[mask]
-    y = y[mask]
-
-    plog(f"First pass removed {len(residuals) - len(y)} outliers.")
-
-    ### ✅ Second Pass: Refit Model and Remove Outliers Again
-    gb_model.fit(X, y)
-    y_pred = gb_model.predict(X)
-
-    residuals = y - y_pred
-    mask = np.abs(residuals) <= 30  # Remove outliers a second time
-    X = X[mask]
-    y = y[mask]
-
-    plog(f"Second pass removed {len(residuals) - len(y)} outliers.")
-
-    ### ✅ Final Fit: Fit Model on Cleaned Data
-    gb_model.fit(X, y)
-    y_pred = gb_model.predict(X)
-
-    ### ✅ Plot predicted vs actual values
-    plt.figure(figsize=(8, 6))
-    plt.scatter(y, y_pred, alpha=0.7, color='black', marker='o')
-    plt.plot([y.min(), y.max()], [y.min(), y.max()], '--', color='red')
-    plt.xlabel('Actual average weather report clouds')
-    plt.ylabel('Predicted average weather report clouds')
-    plt.title('Predicted vs Actual Clouds')
-
-    plt.savefig(directory + '/ActualVSPredicted_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
-
-    ### ✅ Heatmap of correlation between factors
-    plt.figure(figsize=(8, 6))
-    sns.heatmap(pd.DataFrame(X).join(pd.Series(y, name='avg_forecast_cloudcover')).corr(), annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
-    plt.title('Correlation Heatmap')
-    plt.savefig(directory + '/Correlation_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
-
-    ### ✅ Evaluate performance
-    mse = mean_squared_error(y, y_pred)
-    rmse = np.sqrt(mse)
-    r2 = r2_score(y, y_pred)
-
-    ### ✅ plog performance metrics
-    plog(f"Phase of Year Range: {phase_of_year_range:.3f}")
-    plog(f"Mean Squared Error: {mse:.2f}")
-    plog(f"Root Mean Squared Error: {rmse:.2f}")
-    plog(f"R² Score: {r2:.2f}")
-
-    ### ✅ Save updated dataframe with predictions
-    df_clean.loc[X.index, 'predicted_clouds'] = y_pred
-    df_clean.to_csv(directory + '/WeatherData_' + str(file_date_string) + '.csv', index=False)
+        # Split the weather stuff into cloud ranges to apply threshholds        
+        
+        # Create masks for each range
+        low_clouds = region_df['avg_forecast_cloudcover'].between(0, 20)
+        mid_clouds = region_df['avg_forecast_cloudcover'].between(20, 80)
+        high_clouds = region_df['avg_forecast_cloudcover'].between(80, 100)
+        
+        #breakpoint()
+        
+        # Compute thresholds
+        low_cloud_thresh  = np.quantile(np.asarray(region_df.loc[low_clouds, 'clouds_row_stdev']), 0.2)
+        mid_cloud_thresh  = np.quantile(np.asarray(region_df.loc[mid_clouds, 'clouds_row_stdev']), 0.2)
+        high_cloud_thresh = np.quantile(np.asarray(region_df.loc[high_clouds, 'clouds_row_stdev']), 0.2)
+        
+        region_df = region_df[
+            (low_clouds  & (region_df['clouds_row_stdev'] <= low_cloud_thresh)) |
+            (mid_clouds  & (region_df['clouds_row_stdev'] <= mid_cloud_thresh)) |
+            (high_clouds & (region_df['clouds_row_stdev'] <= high_cloud_thresh))
+        ]
+        
+        #breakpoint()
+        
+        # # Only consider the options that agree the best
+        # # where the stdev is the lowest (agreement is highest) across the forecasts
+        # #breakpoint()
+        # cloud_stdev_threshold=np.quantile(np.asarray(region_df['clouds_row_stdev']),0.2)
+        # region_df= region_df[(region_df['clouds_row_stdev'] < cloud_stdev_threshold) ] 
+            
+        
     
-    return gb_model, df_clean
+        # plt.figure(figsize=(8, 6))
+        # plt.scatter(region_df['avg_forecast_cloudcover'], region_df['sky_temp_C'])
+        # plt.xlabel('Average Forecast Cloud Cover (%)')
+        # plt.ylabel('Sky Temperature (°C)')
+        # plt.title('Sky Temperature vs Forecast Cloud Cover')
+        # # plt.grid(True)
+        # # plt.show()
+        
+        # plt.savefig(directory + '/' + part_of_day + '/skytempvsclouds_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+    
+    
+        plt.figure(figsize=(6, 4)) 
+        sns.regplot(x='avg_forecast_cloudcover', y='sky_temp_C', data=region_df)
+        plt.title('Sky Temperature vs Forecast Cloud Cover with Regression Line')
+        plt.xlabel('Average Forecast Cloud Cover (%)')
+        plt.ylabel('Sky Temperature (°C)')
+        plt.savefig(directory + '/' + part_of_day + '/skytempvsclouds_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+    
+
+        #breakpoint()
+    
+        # plt.figure(figsize=(8, 6))
+        # plt.scatter(region_df['avg_forecast_cloudcover'], region_df['sky-ambient'])
+        # plt.xlabel('Average Forecast Cloud Cover (%)')
+        # plt.ylabel('Sky Temperature - Ambient Temperature (°C)')
+        # plt.title('Sky - Ambient Temperature vs Forecast Cloud Cover')
+        # # plt.grid(True)
+        # plt.show()
+    
+        plt.figure(figsize=(6, 4)) 
+        sns.regplot(x='avg_forecast_cloudcover', y='sky-ambient', data=region_df)
+        plt.xlabel('Average Forecast Cloud Cover (%)')
+        plt.ylabel('Sky Temperature - Ambient Temperature (°C)')
+        plt.title('Sky - Ambient Temperature vs Forecast Cloud Cover')
+        
+        
+        plt.savefig(directory + '/' + part_of_day + '/skyminusambientvsclouds_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+    
+    
+    
+        # plt.figure(figsize=(8, 6))
+        # plt.scatter(region_df['avg_forecast_cloudcover'], region_df['sky-ambient^2'])
+        # plt.xlabel('Average Forecast Cloud Cover (%)')
+        # plt.ylabel('Sky-Ambient^2 Temperature (°C)')
+        # plt.title('Sky-Ambient^2 Temperature vs Forecast Cloud Cover')
+        # # plt.grid(True)
+        # # plt.show()
+        
+        plt.figure(figsize=(6, 4)) 
+        sns.regplot(x='avg_forecast_cloudcover', y='sky-ambient^2', data=region_df)
+        plt.xlabel('Average Forecast Cloud Cover (%)')
+        plt.ylabel('Sky-Ambient^2 Temperature (°C)')
+        plt.title('Sky-Ambient^2 Temperature vs Forecast Cloud Cover')
+        
+        plt.savefig(directory + '/' + part_of_day + '/skyminusambientsquaredvsclouds_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+    
+    
+        #breakpoint()
+        
+        # # Trim the extreme values off... realistically MOST of the time it can be clear or cloudy
+        # # and we even aren't too particularly interested in the extremes... more the range
+        # # But only if there is enough observations within that range.
+        # if len((region_df['avg_forecast_cloudcover'] > 80) | (region_df['avg_forecast_cloudcover'] < 20) > 50):
+        #        region_df = region_df[~((region_df['avg_forecast_cloudcover'] > 80) | (region_df['avg_forecast_cloudcover'] < 20))]
+    
+
+        X = region_df[features].copy()
+        y = region_df['avg_forecast_cloudcover']
+        
+    
+        ### ✅ First Pass: Fit Model and Remove Outliers
+        gb_model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, random_state=42)
+        gb_model.fit(X, y)
+        y_pred = gb_model.predict(X)
+    
+        # Outlier rejection - First Pass
+        residuals = y - y_pred
+        mask = np.abs(residuals) <= 30  # Remove large outliers (> 30 units)
+        X = X[mask]
+        y = y[mask]
+    
+        plog(f"First pass removed {len(residuals) - len(y)} outliers.")
+    
+        ### ✅ Second Pass: Refit Model and Remove Outliers Again
+        gb_model.fit(X, y)
+        y_pred = gb_model.predict(X)
+    
+        residuals = y - y_pred
+        mask = np.abs(residuals) <= 30  # Remove outliers a second time
+        X = X[mask]
+        y = y[mask]
+    
+        plog(f"Second pass removed {len(residuals) - len(y)} outliers.")
+    
+        ### ✅ Final Fit: Fit Model on Cleaned Data
+        gb_model.fit(X, y)
+        y_pred = gb_model.predict(X)
+    
+        ### ✅ Plot predicted vs actual values
+        plt.figure(figsize=(8, 6))
+        plt.scatter(y, y_pred, alpha=0.7, color='black', marker='o')
+        plt.plot([y.min(), y.max()], [y.min(), y.max()], '--', color='red')
+        plt.xlabel('Actual average weather report clouds')
+        plt.ylabel('Predicted average weather report clouds')
+        plt.title('Predicted vs Actual Clouds')
+    
+        plt.savefig(directory + '/' + part_of_day + '/ActualVSPredicted_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+    
+        ### ✅ Heatmap of correlation between factors
+        plt.figure(figsize=(8, 6))
+        sns.heatmap(pd.DataFrame(X).join(pd.Series(y, name='avg_forecast_cloudcover')).corr(), annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
+        plt.title('Correlation Heatmap')
+        plt.savefig(directory + '/' + part_of_day + '/Correlation_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+    
+        ### ✅ Evaluate performance
+        mse = mean_squared_error(y, y_pred)
+        rmse = np.sqrt(mse)
+        r2 = r2_score(y, y_pred)
+    
+        ### ✅ plog performance metrics
+        #plog(f"Phase of Year Range: {phase_of_year_range:.3f}")
+        plog (part_of_day)
+        plog(f"Mean Squared Error: {mse:.2f}")
+        plog(f"Root Mean Squared Error: {rmse:.2f}")
+        plog(f"R² Score: {r2:.2f}")
+        
+        
+        
+        
+        if part_of_day=='daytime':
+            daytime_model=copy.deepcopy(gb_model)
+        else:
+            nighttime_model=copy.deepcopy(gb_model)
+    
+        ### ✅ Save updated dataframe with predictions
+        region_df.loc[X.index, 'predicted_clouds'] = y_pred
+        region_df.to_csv(directory + '/' + part_of_day + '/WeatherData_' + str(file_date_string) + '.csv', index=False)
+    
+    return daytime_model, nighttime_model
 
 def correct_dome_azimuth(telescope_az, telescope_alt, side_of_pier, dome_radius, telescope_offset):#, dome_slit_offset=0):
     """
@@ -309,10 +447,13 @@ class WxEncAgent:
         self.observer_location = EarthLocation(lat=self.latitude*u.deg, lon=self.longitude*u.deg, height=self.height*u.m)
 
 
+        self.opens_during_nighttime=self.config['opens_during_nighttime']
+        self.opens_during_daytime=self.config['opens_during_daytime']
 
         # Load up the secrets and passwords
         with open('secrets.txt', "r") as file:
             secrets=json.load(file)
+
 
 
         
@@ -328,7 +469,8 @@ class WxEncAgent:
         self.metocean_apikey=secrets["metocean_key"]
         self.worldweather_key=secrets["worldweather_key"]
         
-        self.cloud_model=None
+        self.daytime_cloud_model=None
+        self.nighttime_cloud_model=None
         self.ocn_status=None
         self.enc_status=None
 
@@ -1959,24 +2101,24 @@ class WxEncAgent:
                 # Predicy clouds from model
                 #breakpoint()
                 
-                if ocn_status['humidity_%'] == -1:
-                    model_humidity=self.current_owm_humidity
-                else:
-                    model_humidity=ocn_status['humidity_%']
+                # if ocn_status['humidity_%'] == -1:
+                #     model_humidity=self.current_owm_humidity
+                # else:
+                #     model_humidity=ocn_status['humidity_%']
                 
                 
                 #breakpoint()
                 model_skyambient=ocn_status['sky_temp_C']-self.current_owm_ambient_temperature
                 
-                if ocn_status['dewpoint_C'] >99 or ocn_status['dewpoint_C'] < -5:
-                    model_dewpoint=self.current_owm_dewpoint
-                else:
-                    model_dewpoint=ocn_status['dewpoint_C']
+                # if ocn_status['dewpoint_C'] >99 or ocn_status['dewpoint_C'] < -5:
+                #     model_dewpoint=self.current_owm_dewpoint
+                # else:
+                #     model_dewpoint=ocn_status['dewpoint_C']
                 
-                model_dewpointdepression=self.current_owm_ambient_temperature-model_dewpoint
+                #model_dewpointdepression=self.current_owm_ambient_temperature-model_dewpoint
                 
                
-                model_phaseofday=((time.time() - 1735689600.0) /86400) % 1
+                #model_phaseofday=((time.time() - 1735689600.0) /86400) % 1
                 
                 
                 ########## FIRST CORRECT SKY TEMPERATURE FOR SUN ADN MOON EFFECTS
@@ -1994,66 +2136,51 @@ class WxEncAgent:
                 
                 
                 
-                transformed_sun_altitude= np.exp( max(sun_altitude/ u.deg, -18) / 6.0)
+                # transformed_sun_altitude= np.exp( max(sun_altitude/ u.deg, -18) / 6.0)
                 
-                new_data = pd.DataFrame({
-                    #'Humidity': [model_humidity],
-                    #'sky_temp_C':  [ocn_status['sky_temp_C']],
-                    'transformed_sun_altitude': [transformed_sun_altitude], # below -18, there is no solar flux
+                # new_data = pd.DataFrame({
+                #     #'Humidity': [model_humidity],
+                #     #'sky_temp_C':  [ocn_status['sky_temp_C']],
+                #     'transformed_sun_altitude': [transformed_sun_altitude], # below -18, there is no solar flux
                     
-                    'sun_azimuth': [sun_azimuth/ u.deg],
-                    'moon_flux_on_ground': [flux_ground]
-                })
+                #     'sun_azimuth': [sun_azimuth/ u.deg],
+                #     'moon_flux_on_ground': [flux_ground]
+                # })
                 
     
-                try:
-                    predicted_contribution =  self.sky_temp_model.predict(new_data)
+                # try:
+                #     predicted_contribution =  self.sky_temp_model.predict(new_data)
                     
-                    plog ("Predicted skytemp contribution: " + str(predicted_contribution))
+                #     plog ("Predicted skytemp contribution: " + str(predicted_contribution))
                     
-                    corrected_sky_temp_C = ocn_status['sky_temp_C'] - predicted_contribution[0]
+                #     corrected_sky_temp_C = ocn_status['sky_temp_C'] - predicted_contribution[0]
         
-                    plog(f"Corrected Sky Temperature: {corrected_sky_temp_C:.2f} °C")
-                except:
-                    plog ("Failed to correct sky temperature. Maybe no weather log yet")
-                    corrected_sky_temp_C=ocn_status['sky_temp_C']
+                #     plog(f"Corrected Sky Temperature: {corrected_sky_temp_C:.2f} °C")
+                # except:
+                #     plog ("Failed to correct sky temperature. Maybe no weather log yet")
+                #     corrected_sky_temp_C=ocn_status['sky_temp_C']
                 
                 ########## THEN DO CLOUD MODEL
                 
                 
+                # new_data = pd.DataFrame({
+                #     #'Humidity': [model_humidity],
+                #     'corrected_sky_temp_C': corrected_sky_temp_C,
+                #     'sky-ambient': [model_skyambient],
+                #     #'dew_point_depression': [model_dewpointdepression],
+                #     'sky-ambient^2': [model_skyambient **2]
+                #     #'phase_of_day': [model_phaseofday]
+                # })
+                
+                
                 new_data = pd.DataFrame({
                     #'Humidity': [model_humidity],
-                    'corrected_sky_temp_C': corrected_sky_temp_C,
+                    'corrected_sky_temp_C': ocn_status['sky_temp_C'],
                     'sky-ambient': [model_skyambient],
                     #'dew_point_depression': [model_dewpointdepression],
                     'sky-ambient^2': [model_skyambient **2]
                     #'phase_of_day': [model_phaseofday]
                 })
-                #features = ['corrected_sky_temp_C', 'sky-ambient', 'dew_point_depression', 'sky-ambient^2']
-                # Add the manual polynomial terms
-                #new_data['Humidity^2'] = new_data['Humidity'] ** 2
-                #new_data['sky-ambient^2'] = new_data['sky-ambient'] ** 2
-                # new_data['sky-ambientxphase_of_day'] = new_data['sky-ambient'] * new_data['phase_of_day']
-                # new_data['sky-ambient^2xphase_of_day'] = new_data['sky-ambient^2'] * new_data['phase_of_day']
-                # new_data['sky_temp_Cxphase_of_day'] = new_data['sky_temp_C'] * new_data['phase_of_day']
-                # new_data['sky_temp_Cxphase_of_day^2'] = new_data['sky_temp_Cxphase_of_day'] ** 2
-                
-                # Add Fourier terms for seasonality
-                # new_data['sin_hour'] = np.sin(2 * np.pi * new_data['phase_of_day'])
-                # new_data['cos_hour'] = np.cos(2 * np.pi * new_data['phase_of_day'])
-                # new_data['sin_year'] = np.sin(2 * np.pi * new_data['phase_of_year'])
-                # new_data['cos_year'] = np.cos(2 * np.pi * new_data['phase_of_year'])
-                
-                # Assuming your DataFrame is named df
-                
-                # Assuming your DataFrame is named df
-                # X = df[['sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
-                # y = df['sky_temp_C']
-                
-                # X = df[['sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
-                # y = df['sky_temp_C']
-                
-                #self.sky_temp_model
                 
                 plog (new_data)
                 try:
@@ -2064,8 +2191,22 @@ class WxEncAgent:
                     # X = df[features].copy()
         
                     # Predict clouds using trained gb_model
-                    self.predicted_clouds = self.cloud_model.predict(new_data)
                     
+                    #breakpoint()
+                    
+                    if sun_altitude.deg >= 18:
+                        self.predicted_clouds = self.daytime_cloud_model.predict(new_data)
+                    elif sun_altitude.deg <= -18:
+                        self.predicted_clouds = self.nighttime_cloud_model.predict(new_data)
+                    else:
+                        fraction_through_transition = (sun_altitude.deg + 18) / 36
+                        daytime_cloud_prediction=self.daytime_cloud_model.predict(new_data)
+                        plog ("daytime prediction: "+ str(daytime_cloud_prediction))
+                        nighttime_cloud_prediction=self.nighttime_cloud_model.predict(new_data)
+                        plog ("nighttime prediction: "+ str(nighttime_cloud_prediction))
+                        
+                        self.predicted_clouds= fraction_through_transition *  daytime_cloud_prediction + (1-fraction_through_transition) * nighttime_cloud_prediction
+                        
                     self.cloud_tracker.append(self.predicted_clouds[0])
                     if len(self.cloud_tracker) > 10:
                         self.cloud_tracker.pop(0)
@@ -2082,7 +2223,7 @@ class WxEncAgent:
                 except:
                     plog ("failed model? Perhaps can happen if we haven't built up enough points yet.")
                     self.median_cloud_estimate=100
-                    #plog(traceback.format_exc())
+                    plog(traceback.format_exc())
     
                 try:
                     plog ("****************************")
@@ -2618,14 +2759,22 @@ class WxEncAgent:
                         return
 
                     elif not 'MaxDome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
-                        plog("Failed to open roof. Sending the close command to the roof.")
-                        plog("opens this eve: " + str(self.opens_this_evening))
-                        plog("minutes until next open attempt ALLOWED: " + str(
-                            (self.enclosure_next_open_time - time.time()) / 60))
-                        if not g_dev['enc'].dummy:
-                            g_dev['enc'].close_roof_directly({}, {})
+                        
+                        plog ("Looks like the roof isn't reporting open yet. Giving it an extra minute.....")
+                        time.sleep(60)
+                        enc_status = g_dev['enc'].get_status()
+                        if enc_status['shutter_status'] in ['Open', 'open']:
+                            self.open_and_enabled_to_observe = True
                         else:
-                            g_dev['enc'].dummy_status='Closed'
+                        
+                            plog("Failed to open roof. Sending the close command to the roof.")
+                            plog("opens this eve: " + str(self.opens_this_evening))
+                            plog("minutes until next open attempt ALLOWED: " + str(
+                                (self.enclosure_next_open_time - time.time()) / 60))
+                            if not g_dev['enc'].dummy:
+                                g_dev['enc'].close_roof_directly({}, {})
+                            else:
+                                g_dev['enc'].dummy_status='Closed'
 
                         return
                     else:
@@ -2649,273 +2798,293 @@ class WxEncAgent:
       
         # First thing to do at the Cool Down, Open time is to calculate the quality of the evening
         # using the broad weather report.
-        try: 
-            plog("Appraising quality of evening from Open Weather Map.")
-            
-           
-            
-            # Pro users use the pro subdomain
-            url = "https://pro.openweathermap.org/data/3.0/onecall"
-            params = {
-                "lat": self.latitude,
-                "lon": self.longitude,
-                "appid": self.owm_api_key,
-                "exclude": "minutely,alerts",  # Customize what to exclude
-                "units": "metric"
-            }
-            
-            response = requests.get(url, params=params)
-            data = response.json()
-
-            self.weather_report_run_timer = time.time()
-            
-            # Keep this for weather stations that do not have current humidity
-            self.current_owm_humidity=data['current']['humidity']
-            self.current_owm_ambient_temperature=data['current']['temp']
-            self.current_owm_dewpoint=data['current']['dew_point']
-            
-        
-            # Collect relevant info for fitzgerald weather number calculation
-            hourcounter=0
-            fitzgerald_weather_number_grid=[]
-            hours_until_end_of_observing= math.ceil((events['Close and Park'] - ephem_now) * 24)
-            hours_until_start_of_observing= math.ceil((events['Cool Down, Open'] - ephem_now) * 24)
-            if hours_until_start_of_observing < 0:
-                hours_until_start_of_observing = 0
-            plog("Hours until end of observing: " + str(hours_until_end_of_observing))
-            
-            OWM_status_json={}
-            OWM_status_json["timestamp"] = round(time.time(), 1)
-            for hourly_report in data['hourly']:
+        try:
+            try:
+                plog("Appraising quality of evening from Open Weather Map.")
                 
-                dt = datetime.datetime.utcfromtimestamp(hourly_report['dt'])  # or .fromtimestamp() for local time
-                iso_time = dt.isoformat()  # '2025-05-08T07:00:00'
-                clock_hour = iso_time.split('T')[1].split(':')[0] 
+               
                 
-                # Calculate Fitzgerald number for this hour
-                tempFn=0
-                # Add humidity score up
-                if 80 < hourly_report['humidity'] <= 85:
-                    tempFn=tempFn+4
-                elif 85 < hourly_report['humidity'] <= 90:
-                    tempFn=tempFn+20
-                elif 90 < hourly_report['humidity'] <= 100:
-                    tempFn=tempFn+101
-
-                # Add cloud score up
-                if 20 < hourly_report['clouds'] <= 40:
-                    tempFn=tempFn+10
-                elif 40 < hourly_report['clouds'] <= 60:
-                    tempFn=tempFn+40
-                elif 60 < hourly_report['clouds'] <= 80:
-                    tempFn=tempFn+60
-                elif 80 < hourly_report['clouds'] <= 100:
-                    tempFn=tempFn+101
-
-                # Add wind score up
-                if 8 < hourly_report['wind_speed'] <=12:
-                    tempFn=tempFn+1
-                elif 12 < hourly_report['wind_speed'] <= 15:
-                    tempFn=tempFn+4
-                elif 15 < hourly_report['wind_speed'] <= 20:
-                    tempFn=tempFn+40
-                elif 20 < hourly_report['wind_speed'] :
-                    tempFn=tempFn+101
-
-                if 'rain'  in hourly_report['weather'][0]['description'] or 'storm'  in hourly_report['weather'][0]['description']: # Need to figure out pop thing here. 
-                    tempFn=tempFn+101
-
-                weatherline=[ hourly_report['humidity'], hourly_report['clouds'],hourly_report['wind_speed'],hourly_report['weather'][0]['main'], hourly_report['weather'][0]['description'], clock_hour, tempFn, iso_time,  hourly_report['temp'], hourly_report['pop']] # Last one meant to be rain but it has s
-                fitzgerald_weather_number_grid.append(weatherline)
-
-                hourcounter=hourcounter + 1
-
-
-            forecast_status=[]
-            for weatherline in fitzgerald_weather_number_grid:
-
-                status_line={}
-                status_line['humidity']=weatherline[0]
-                status_line['cloud_cover'] = weatherline[1]
-                status_line['wind_speed'] = weatherline[2]
-                status_line['short_text'] = weatherline[3]
-                status_line['long_text'] = weatherline[4]
-                status_line['utc_clock_hour'] = weatherline[5]
-                status_line['fitz_number'] = weatherline[6]
-                status_line['utc_long_form'] = weatherline[7].replace(' ','T').split('+')[0]+'Z'
-                status_line['temperature'] = weatherline[8]
-                status_line['rain'] = weatherline[9]
-
-                if float(weatherline[6]) < 11:
-                    status_line['weather_quality_number'] = 1
-                elif float (weatherline[6]) < 21:
-                    status_line['weather_quality_number'] = 2
-                elif float (weatherline[6]) < 41:
-                    status_line['weather_quality_number'] = 3
-                elif float (weatherline[6]) < 101:
-                    status_line['weather_quality_number'] = 4
-                else:
-                    status_line['weather_quality_number'] = 5
-
-                forecast_status.append(status_line)
+                # Pro users use the pro subdomain
+                url = "https://pro.openweathermap.org/data/3.0/onecall"
+                params = {
+                    "lat": self.latitude,
+                    "lon": self.longitude,
+                    "appid": self.owm_api_key,
+                    "exclude": "minutely,alerts",  # Customize what to exclude
+                    "units": "metric"
+                }
                 
-
-            if forecast_status is not None:
-                lane = "forecast"
-                obsy = self.config['wema_name']
-                url = f"https://status.photonranch.org/status/{obsy}/status"
-
-                payload = json.dumps({
-                    "statusType": "forecast",
-                    "status": { "forecast": forecast_status }
-                })
-                try:
-                    response = requests.request("POST", url, data=payload, allow_redirects=False, headers=close_headers, stream=False)
-                except:
-                    plog ("Connection glitch on the forecast request")
+                response = requests.get(url, params=params)
+                data = response.json()
+    
+                self.weather_report_run_timer = time.time()
+                
+                # Keep this for weather stations that do not have current humidity
+                self.current_owm_humidity=data['current']['humidity']
+                self.current_owm_ambient_temperature=data['current']['temp']
+                self.current_owm_dewpoint=data['current']['dew_point']
+                
             
-            # Fitzgerald weather number calculation.
-            hourly_fitzgerald_number=[]
-            hourly_fitzgerald_number_by_hour=[]
-            hourcounter = 0
-            self.hourly_report_holder=[]
-            for entry in fitzgerald_weather_number_grid:
-                if hourcounter >= hours_until_start_of_observing and hourcounter <= hours_until_end_of_observing:
+                # Collect relevant info for fitzgerald weather number calculation
+                hourcounter=0
+                fitzgerald_weather_number_grid=[]
+                hours_until_end_of_observing= math.ceil((events['Close and Park'] - ephem_now) * 24)
+                hours_until_start_of_observing= math.ceil((events['Cool Down, Open'] - ephem_now) * 24)
+                if hours_until_start_of_observing < 0:
+                    hours_until_start_of_observing = 0
+                plog("Hours until end of observing: " + str(hours_until_end_of_observing))
+                
+                OWM_status_json={}
+                OWM_status_json["timestamp"] = round(time.time(), 1)
+                for hourly_report in data['hourly']:
                     
-                    textdescription= entry[4]+ '   Cloud:   ' + str(entry[1]) + '%     Hum:    ' + str(entry[0]) +   '%    Wind:  ' +str(entry[2])+' m/s      rain: ' + str(entry[9])  # WER changed to make more readable.
-
-                    hourly_fitzgerald_number.append(entry[6])
-                    hourly_fitzgerald_number_by_hour.append([entry[5],entry[6],textdescription])
-                hourcounter=hourcounter+1
-            
-            plog ("Hourly Fitzgerald number report")
-            self.hourly_report_holder.append("Hourly Fitzgerald number report")
-            
-            plog ("For Evening of " +str(g_dev['dayhyphened']) )
-            self.hourly_report_holder.append("For LOCAL Evening of " +str(g_dev['dayhyphened']) )
-            
-            
-            utc_string = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")            
-            plog("Time of Weather Report: " + str(utc_string))
-            self.hourly_report_holder.append("Time of Weather Report (UTC): " + str(utc_string))
-            
-            plog ("*******************************")
-            self.hourly_report_holder.append("*******************************")
-            plog ("Hour(UTC) |  FNumber |  Text    ")
-            self.hourly_report_holder.append("Hour(UTC) |  FNumber |  Text    ")
-            for line in hourly_fitzgerald_number_by_hour:
-                plog (str(line[0]) + '         | '+ str(line[1]) + '        | ' + str(line[2]))
-                self.hourly_report_holder.append(str(line[0]) + '         | '+ str(line[1]) + '        | ' + str(line[2]))
-            
-            plog ("Night's total fitzgerald number: " + str(sum(hourly_fitzgerald_number)))
-            
-
-            self.night_fitzgerald_number = sum(hourly_fitzgerald_number)
-            if len(hourly_fitzgerald_number) >= 1:
-                average_fitzn_for_rest_of_night = sum(hourly_fitzgerald_number) / len(hourly_fitzgerald_number)
-            else:
-                average_fitzn_for_rest_of_night = 100
-            
-            plog("Night's average fitzgerald number: " + str(average_fitzn_for_rest_of_night))
-            
-            # Simplified decision array
-            hours_bad_or_good=[]
-            for entry in hourly_fitzgerald_number_by_hour:
-                if entry[1] > 41:
-                    hours_bad_or_good.append([entry[0],0])
-                else:
-                    hours_bad_or_good.append([entry[0],1])
-
-           
-            # If the first three hours are good, then open from the start
-            self.weather_report_open_at_start = False
-            try:
-                if (hours_bad_or_good[0][1] + hours_bad_or_good[1][1] +hours_bad_or_good[2][1] ) == 3:
-                    plog("Looks like it is clear enough to open the observatory from the beginning.")
-                    self.weather_report_open_at_start = True
-                elif (hours_bad_or_good[0][1]) == 0 and g_dev['enc'].mode == 'Automatic' and not \
-                'closed' in enc_status['shutter_status'].lower() and self.owm_active:
-                    plog("Looks like the weather gets rough in the first hour, shutting up observatory.")
-                    self.park_enclosure_and_close()
-            except:
-                plog (plog(traceback.format_exc()))
-                plog (hours_bad_or_good)
-                plog ("Probably that there isn't actually three elements in the list?")
-                plog (len(hours_bad_or_good))
-
-            
-
-            # Look for three hour gaps in the weather throughout the night
-            self.times_to_open=[]
-            self.times_to_close=[]
-            for counter in range(len(hours_bad_or_good)):
+                    dt = datetime.datetime.utcfromtimestamp(hourly_report['dt'])  # or .fromtimestamp() for local time
+                    iso_time = dt.isoformat()  # '2025-05-08T07:00:00'
+                    clock_hour = iso_time.split('T')[1].split(':')[0] 
+                    
+                    # Calculate Fitzgerald number for this hour
+                    tempFn=0
+                    # Add humidity score up
+                    if 80 < hourly_report['humidity'] <= 85:
+                        tempFn=tempFn+4
+                    elif 85 < hourly_report['humidity'] <= 90:
+                        tempFn=tempFn+20
+                    elif 90 < hourly_report['humidity'] <= 100:
+                        tempFn=tempFn+101
+    
+                    # Add cloud score up
+                    if 20 < hourly_report['clouds'] <= 40:
+                        tempFn=tempFn+10
+                    elif 40 < hourly_report['clouds'] <= 60:
+                        tempFn=tempFn+40
+                    elif 60 < hourly_report['clouds'] <= 80:
+                        tempFn=tempFn+60
+                    elif 80 < hourly_report['clouds'] <= 100:
+                        tempFn=tempFn+101
+    
+                    # Add wind score up
+                    if 8 < hourly_report['wind_speed'] <=12:
+                        tempFn=tempFn+1
+                    elif 12 < hourly_report['wind_speed'] <= 15:
+                        tempFn=tempFn+4
+                    elif 15 < hourly_report['wind_speed'] <= 20:
+                        tempFn=tempFn+40
+                    elif 20 < hourly_report['wind_speed'] :
+                        tempFn=tempFn+101
+    
+                    if 'rain'  in hourly_report['weather'][0]['description'] or 'storm'  in hourly_report['weather'][0]['description']: # Need to figure out pop thing here. 
+                        tempFn=tempFn+101
+    
+                    weatherline=[ hourly_report['humidity'], hourly_report['clouds'],hourly_report['wind_speed'],hourly_report['weather'][0]['main'], hourly_report['weather'][0]['description'], clock_hour, tempFn, iso_time,  hourly_report['temp'], hourly_report['pop']] # Last one meant to be rain but it has s
+                    fitzgerald_weather_number_grid.append(weatherline)
+    
+                    hourcounter=hourcounter + 1
+    
+    
+                forecast_status=[]
+                for weatherline in fitzgerald_weather_number_grid:
+    
+                    status_line={}
+                    status_line['humidity']=weatherline[0]
+                    status_line['cloud_cover'] = weatherline[1]
+                    status_line['wind_speed'] = weatherline[2]
+                    status_line['short_text'] = weatherline[3]
+                    status_line['long_text'] = weatherline[4]
+                    status_line['utc_clock_hour'] = weatherline[5]
+                    status_line['fitz_number'] = weatherline[6]
+                    status_line['utc_long_form'] = weatherline[7].replace(' ','T').split('+')[0]+'Z'
+                    status_line['temperature'] = weatherline[8]
+                    status_line['rain'] = weatherline[9]
+    
+                    if float(weatherline[6]) < 11:
+                        status_line['weather_quality_number'] = 1
+                    elif float (weatherline[6]) < 21:
+                        status_line['weather_quality_number'] = 2
+                    elif float (weatherline[6]) < 41:
+                        status_line['weather_quality_number'] = 3
+                    elif float (weatherline[6]) < 101:
+                        status_line['weather_quality_number'] = 4
+                    else:
+                        status_line['weather_quality_number'] = 5
+    
+                    forecast_status.append(status_line)
+                    
+    
+                if forecast_status is not None:
+                    lane = "forecast"
+                    obsy = self.config['wema_name']
+                    url = f"https://status.photonranch.org/status/{obsy}/status"
+    
+                    payload = json.dumps({
+                        "statusType": "forecast",
+                        "status": { "forecast": forecast_status }
+                    })
+                    try:
+                        response = requests.request("POST", url, data=payload, allow_redirects=False, headers=close_headers, stream=False)
+                    except:
+                        plog ("Connection glitch on the forecast request")
                 
-                # A three hour gap after a bad hour is a good time to open.
-                
-                if (counter - len(hours_bad_or_good)) == -1:                   
-                    pass
-                elif (counter - len(hours_bad_or_good)) == -2:
-                    sum_of_next_three_hours=int((hours_bad_or_good[counter][1]+hours_bad_or_good[counter+1][1])*1.5)
-                else:
-                    sum_of_next_three_hours = hours_bad_or_good[counter][1] + hours_bad_or_good[counter + 1][1] + \
-                                          hours_bad_or_good[counter + 2][1]
-
-                if sum_of_next_three_hours == 3 and hours_bad_or_good[counter-1][1] == 0:
-                    plog ("good time to open")
-                    self.times_to_open.append([hours_bad_or_good[counter][0]])
-
-                # Simply a bad hour is a good time to close.
-                if len(hours_bad_or_good) == counter + 1:                    
-                    pass
-                elif hours_bad_or_good[counter][1] == 1 and hours_bad_or_good[counter+1][1] == 0:
-                    plog ("good time to close")
-                    self.times_to_close.append([hours_bad_or_good[counter][0]])
-
-
-            self.weather_text_report=[]
-            # Construct the text!
-
-            if len(self.hourly_report_holder) > 0:
-                pasttitle = False
-                firstentry = True
-                for line in self.hourly_report_holder:
-                    self.weather_text_report.append(str(line))
-
-                    if pasttitle == True:
-                        current_utc_hour = float(line.split(' ')[0])
-
-                        if len(self.times_to_open) > 0:
-                            for entry in self.times_to_open:
-
-                                if int(current_utc_hour) == int(entry[0]) and not firstentry:
-                                    self.weather_text_report.append("OWM would plan to open the roof")
-                            
-                        if len(self.times_to_close) > 0:
-                            for entry in self.times_to_close:
-                                
-                                if int(current_utc_hour) == int(entry[0]):
-                                    self.weather_text_report.append("OWM would plan to close the roof")
-                        firstentry = False
+                # Fitzgerald weather number calculation.
+                hourly_fitzgerald_number=[]
+                hourly_fitzgerald_number_by_hour=[]
+                hourcounter = 0
+                self.hourly_report_holder=[]
+                for entry in fitzgerald_weather_number_grid:
+                    if hourcounter >= hours_until_start_of_observing and hourcounter <= hours_until_end_of_observing:
                         
-                    if 'Hour(UTC)' in line:
-                        pasttitle = True
-                        self.weather_text_report.append("-----------------------------")
-                        if g_dev['events']['Cool Down, Open'] > ephem_now:
-                            self.weather_text_report.append("Cool Down Open")
-                        if self.weather_report_open_at_start:
-                            self.weather_text_report.append("OWM would plan to open at this point.")
-                        else:
-                            self.weather_text_report.append("OWM would keep the roof shut at this point.")
-                if g_dev['events']['Close and Park'] > ephem_now:
-                    self.weather_text_report.append("Close and Park")
-                self.weather_text_report.append("-----------------------------")
-
-            status = {}
-            status['owm_report'] = json.dumps(self.weather_text_report)
-            lane = "owm_report"
-
+                        textdescription= entry[4]+ '   Cloud:   ' + str(entry[1]) + '%     Hum:    ' + str(entry[0]) +   '%    Wind:  ' +str(entry[2])+' m/s      rain: ' + str(entry[9])  # WER changed to make more readable.
+    
+                        hourly_fitzgerald_number.append(entry[6])
+                        hourly_fitzgerald_number_by_hour.append([entry[5],entry[6],textdescription])
+                    hourcounter=hourcounter+1
+                
+                plog ("Hourly Fitzgerald number report")
+                self.hourly_report_holder.append("Hourly Fitzgerald number report")
+                
+                plog ("For Evening of " +str(g_dev['dayhyphened']) )
+                self.hourly_report_holder.append("For LOCAL Evening of " +str(g_dev['dayhyphened']) )
+                
+                
+                utc_string = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")            
+                plog("Time of Weather Report: " + str(utc_string))
+                self.hourly_report_holder.append("Time of Weather Report (UTC): " + str(utc_string))
+                
+                plog ("*******************************")
+                self.hourly_report_holder.append("*******************************")
+                plog ("Hour(UTC) |  FNumber |  Text    ")
+                self.hourly_report_holder.append("Hour(UTC) |  FNumber |  Text    ")
+                for line in hourly_fitzgerald_number_by_hour:
+                    plog (str(line[0]) + '         | '+ str(line[1]) + '        | ' + str(line[2]))
+                    self.hourly_report_holder.append(str(line[0]) + '         | '+ str(line[1]) + '        | ' + str(line[2]))
+                
+                plog ("Night's total fitzgerald number: " + str(sum(hourly_fitzgerald_number)))
+                
+    
+                self.night_fitzgerald_number = sum(hourly_fitzgerald_number)
+                if len(hourly_fitzgerald_number) >= 1:
+                    average_fitzn_for_rest_of_night = sum(hourly_fitzgerald_number) / len(hourly_fitzgerald_number)
+                else:
+                    average_fitzn_for_rest_of_night = 100
+                
+                plog("Night's average fitzgerald number: " + str(average_fitzn_for_rest_of_night))
+                
+                # Simplified decision array
+                hours_bad_or_good=[]
+                for entry in hourly_fitzgerald_number_by_hour:
+                    if entry[1] > 41:
+                        hours_bad_or_good.append([entry[0],0])
+                    else:
+                        hours_bad_or_good.append([entry[0],1])
+    
+               
+                # If the first three hours are good, then open from the start
+                self.weather_report_open_at_start = False
+                try:
+                    if (hours_bad_or_good[0][1] + hours_bad_or_good[1][1] +hours_bad_or_good[2][1] ) == 3:
+                        plog("Looks like it is clear enough to open the observatory from the beginning.")
+                        self.weather_report_open_at_start = True
+                    elif (hours_bad_or_good[0][1]) == 0 and g_dev['enc'].mode == 'Automatic' and not \
+                    'closed' in enc_status['shutter_status'].lower() and self.owm_active:
+                        plog("Looks like the weather gets rough in the first hour, shutting up observatory.")
+                        self.park_enclosure_and_close()
+                except:
+                    plog (plog(traceback.format_exc()))
+                    plog (hours_bad_or_good)
+                    plog ("Probably that there isn't actually three elements in the list?")
+                    plog (len(hours_bad_or_good))
+    
+                
+    
+                # Look for three hour gaps in the weather throughout the night
+                self.times_to_open=[]
+                self.times_to_close=[]
+                for counter in range(len(hours_bad_or_good)):
+                    
+                    # A three hour gap after a bad hour is a good time to open.
+                    
+                    if (counter - len(hours_bad_or_good)) == -1:                   
+                        pass
+                    elif (counter - len(hours_bad_or_good)) == -2:
+                        sum_of_next_three_hours=int((hours_bad_or_good[counter][1]+hours_bad_or_good[counter+1][1])*1.5)
+                    else:
+                        sum_of_next_three_hours = hours_bad_or_good[counter][1] + hours_bad_or_good[counter + 1][1] + \
+                                              hours_bad_or_good[counter + 2][1]
+    
+                    if sum_of_next_three_hours == 3 and hours_bad_or_good[counter-1][1] == 0:
+                        plog ("good time to open")
+                        self.times_to_open.append([hours_bad_or_good[counter][0]])
+    
+                    # Simply a bad hour is a good time to close.
+                    if len(hours_bad_or_good) == counter + 1:                    
+                        pass
+                    elif hours_bad_or_good[counter][1] == 1 and hours_bad_or_good[counter+1][1] == 0:
+                        plog ("good time to close")
+                        self.times_to_close.append([hours_bad_or_good[counter][0]])
+    
+    
+                self.weather_text_report=[]
+                # Construct the text!
+    
+                if len(self.hourly_report_holder) > 0:
+                    pasttitle = False
+                    firstentry = True
+                    for line in self.hourly_report_holder:
+                        self.weather_text_report.append(str(line))
+    
+                        if pasttitle == True:
+                            current_utc_hour = float(line.split(' ')[0])
+    
+                            if len(self.times_to_open) > 0:
+                                for entry in self.times_to_open:
+    
+                                    if int(current_utc_hour) == int(entry[0]) and not firstentry:
+                                        self.weather_text_report.append("OWM would plan to open the roof")
+                                
+                            if len(self.times_to_close) > 0:
+                                for entry in self.times_to_close:
+                                    
+                                    if int(current_utc_hour) == int(entry[0]):
+                                        self.weather_text_report.append("OWM would plan to close the roof")
+                            firstentry = False
+                            
+                        if 'Hour(UTC)' in line:
+                            pasttitle = True
+                            self.weather_text_report.append("-----------------------------")
+                            if g_dev['events']['Cool Down, Open'] > ephem_now:
+                                self.weather_text_report.append("Cool Down Open")
+                            if self.weather_report_open_at_start:
+                                self.weather_text_report.append("OWM would plan to open at this point.")
+                            else:
+                                self.weather_text_report.append("OWM would keep the roof shut at this point.")
+                    if g_dev['events']['Close and Park'] > ephem_now:
+                        self.weather_text_report.append("Close and Park")
+                    self.weather_text_report.append("-----------------------------")
+    
+                status = {}
+                status['owm_report'] = json.dumps(self.weather_text_report)
+                lane = "owm_report"
+                
+                
+                plog ("OWM current clouds: " + str(data['current']['clouds']))
+                self.owm_cloud_cover=data['current']['clouds']
+                self.owm_cloud_cover_next_hour=data['hourly'][1]['clouds']
+                self.owm_current_temp=data['current']['temp']
+                self.owm_current_dewpoint=data['current']['dew_point']
+                self.owm_current_humidity=data['current']['humidity']
+                
+            except:
+                plog('Something happened in the OWM weather report area.')
+                plog(traceback.format_exc())
+                self.owm_cloud_cover=None
+                self.owm_cloud_cover_next_hour=None
+                self.owm_current_temp=None
+                self.owm_current_dewpoint=None
+                self.owm_current_humidity=None
 
             try:
+                status = {}
+                status['owm_report'] = json.dumps(self.weather_text_report)
+                lane = "owm_report"
                 send_status(self.config['wema_name'], lane, status)
             except:
                 plog('could not send owm_report status')
@@ -2929,11 +3098,9 @@ class WxEncAgent:
             line_of_weather_info.append(str(datetime.datetime.now()))
             line_of_weather_info.append(time.time())
             # Current cloud % from weather forecast
-            line_of_weather_info.append(data['current']['clouds'])
+            line_of_weather_info.append(self.owm_cloud_cover)
             
-            plog ("OWM current clouds: " + str(data['current']['clouds']))
-            self.owm_cloud_cover=data['current']['clouds']
-            self.owm_cloud_cover_next_hour=data['hourly'][1]['clouds']
+
             
             # Reported cloud_cover
             try:
@@ -2956,7 +3123,7 @@ class WxEncAgent:
                         
             # Dewpoint
             if ocn_status['dewpoint_C'] == 100:
-                line_of_weather_info.append(data['current']['dew_point'])
+                line_of_weather_info.append(self.owm_current_dewpoint)
             else:
                 line_of_weather_info.append(ocn_status['dewpoint_C'])
             
@@ -2969,7 +3136,7 @@ class WxEncAgent:
             line_of_weather_info.append(ocn_status['wind_m/s'])                        
             
             # OWM temperature - can be more reliable than weather station
-            line_of_weather_info.append(data['current']['temp'])
+            line_of_weather_info.append(self.owm_current_temp)
             
         
             
@@ -3185,9 +3352,23 @@ class WxEncAgent:
             
                         
             try:
-                self.medianforecast_current_cloud_cover= np.median(np.asarray([self.owm_cloud_cover,self.open_meteo_cloud_cover,self.owm_cloud_cover_next_hour,self.open_meteo_cloud_cover_next_hour,self.tomorrowio_cloud_now,self.tomorrowio_cloud_inanhour, self.pirate_clouds_now ,self.pirate_clouds_inanhour ,self.metocean_clouds_now, self.metocean_clouds_inanhour, self.worldweather_current_cloud, self.worldweather_nexthour_cloud]))
+                #self.medianforecast_current_cloud_cover= np.median(np.asarray([self.owm_cloud_cover,self.open_meteo_cloud_cover,self.owm_cloud_cover_next_hour,self.open_meteo_cloud_cover_next_hour,self.tomorrowio_cloud_now,self.tomorrowio_cloud_inanhour, self.pirate_clouds_now ,self.pirate_clouds_inanhour ,self.metocean_clouds_now, self.metocean_clouds_inanhour, self.worldweather_current_cloud, self.worldweather_nexthour_cloud]))
+            
+                cloud_values = [
+                    self.owm_cloud_cover, self.open_meteo_cloud_cover, self.owm_cloud_cover_next_hour,
+                    self.open_meteo_cloud_cover_next_hour, self.tomorrowio_cloud_now, self.tomorrowio_cloud_inanhour,
+                    self.pirate_clouds_now, self.pirate_clouds_inanhour, self.metocean_clouds_now,
+                    self.metocean_clouds_inanhour, self.worldweather_current_cloud, self.worldweather_nexthour_cloud
+                ]
+                filtered_values = [v for v in cloud_values if v is not None]
+                
+                if filtered_values:
+                    self.medianforecast_current_cloud_cover = np.median(filtered_values)
+                else:
+                    self.medianforecast_current_cloud_cover = None  
+            
             except:                
-                plog ("One of the weather things is none")
+                plog ("SOME PROBLEM IN THE MEDIAN CLOUD COVER THING")
                 self.medianforecast_current_cloud_cover=None
             
             
@@ -3369,12 +3550,15 @@ class WxEncAgent:
                 df['dew_point_depression'] =  df['OWM_temperature'] - df['dewpoint']                
                 
                 try:
-                    # Trim the extreme values off... realistically MOST of the time it can be clear or cloudy
-                    # and we even aren't too particularly interested in the extremes... more the range
-                    df = df[~((df['avg_forecast_cloudcover'] > 80) | (df['avg_forecast_cloudcover'] < 20))]
+                    
+                    
+                    
+                    
                     
                     # Run the updated model with polynomial features included
-                    self.cloud_model, updated_df = fit_cloud_prediction_model(df, weather_directory)
+                    self.daytime_cloud_model, self.nighttime_cloud_model = fit_cloud_prediction_model(df, weather_directory)
+                
+                    
                 
                 except:
                     plog ("failed model?")

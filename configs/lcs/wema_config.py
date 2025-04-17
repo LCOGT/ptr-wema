@@ -27,6 +27,13 @@ wema_config = {
 
     'obsp_ids': ['lcs1'],  # a list of the obsp's in an enclosure.  
 
+    # These values are to help the weather station self-organise
+    # If it is only a nighttime or a daytime observatory, we can restrict
+    # fits and predictions of the weather to using data for that period of the day
+    # Particularly sky temperature is impacted by daily effects.
+    'opens_during_nighttime' : True,
+    'opens_during_daytime': False,
+
     #'obs_id': None,  # a WEMA is not a telescope aka Observatory
     #'observatory_location': site_name.lower(),  # in LCO case, an airport code such as OGG
 

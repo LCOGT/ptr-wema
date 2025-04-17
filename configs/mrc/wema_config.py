@@ -44,6 +44,13 @@ wema_config = {
     'instance_is_private': False,
     'obsp_ids': ['mrc1', 'mrc2'],  # a list of the obsp's in an enclosure.  
 
+    # These values are to help the weather station self-organise
+    # If it is only a nighttime or a daytime observatory, we can restrict
+    # fits and predictions of the weather to using data for that period of the day
+    # Particularly sky temperature is impacted by daily effects.
+    'opens_during_nighttime' : True,
+    'opens_during_daytime': False,
+
     'debug_mode': False,
     'debug_duration_sec': 80000,
     'admin_owner_commands_only': False,

@@ -30,6 +30,16 @@ wema_config = {
     #'obs_id': None,  # a WEMA is not a telescope aka Observatory
     #'observatory_location': site_name.lower(),  # in LCO case, an airport code such as OGG
 
+
+    # These values are to help the weather station self-organise
+    # If it is only a nighttime or a daytime observatory, we can restrict
+    # fits and predictions of the weather to using data for that period of the day
+    # Particularly sky temperature is impacted by daily effects.
+    'opens_during_nighttime' : True,
+    'opens_during_daytime': False,
+
+
+
     # These are just the bootup default values.
     'OWM_active': False,
     'local_weather_active': True,
@@ -125,7 +135,7 @@ wema_config = {
     'period_of_time_to_wait_for_roof_to_open': 100,  # seconds - needed to check if the roof ACTUALLY opens.
     #'only_scope_that_controls_the_roof': False,  # If multiple scopes control the roof, set this to False
     'check_time': 300,  # MF's original setting.
-    'maximum_roof_opens_per_evening': 4,
+    'maximum_roof_opens_per_evening': 10,
     # How many minutes to use as the default retry time to open roof. This will be progressively multiplied as a back-off function.
     'roof_open_safety_base_time': 15,
     

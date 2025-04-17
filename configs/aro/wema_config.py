@@ -37,8 +37,15 @@ wema_config = {
     'wema_name': 'aro',
     'instance_type': 'wema',
     'instance_is_private': False,
-    'obsp_ids': ['aro1'], #, 'aro2','aro3', 'aro4']  #Possible hint to site about who are its children.
-
+    'obsp_ids': ['aro1', 'aro2'], #, 'aro2','aro3', 'aro4']  #Possible hint to site about who are its children.
+    
+    # These values are to help the weather station self-organise
+    # If it is only a nighttime or a daytime observatory, we can restrict
+    # fits and predictions of the weather to using data for that period of the day
+    # Particularly sky temperature is impacted by daily effects.
+    'opens_during_nighttime' : True,
+    'opens_during_daytime': False,
+    
     'debug_mode': False,
     'debug_duration_sec': 80000,
     'admin_owner_commands_only': False,
