@@ -1598,7 +1598,8 @@ class WxEncAgent:
                         wx_reasons.append('>=' + str(self.local_cloud_cover_limit_setting) + '% Cloudy Local Sensor')
                 except:
                     #status['cloud_cover_%'] = "no report"
-                    local_cloud_cover = True  # We cannot use this signal to force a wX hold or close
+                    plog ("failed to get local cloud cover... usually the model is not ready yet due to lack of weather data points.")
+                    local_cloud_cover = False  # We cannot use this signal to force a wX hold or close
             else:
                 local_cloud_cover = False
             

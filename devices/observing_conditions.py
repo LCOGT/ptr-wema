@@ -284,12 +284,12 @@ class ObservingConditions:
 
                 rate = ["Unk.", 'Dry', 'Wet', 'Raining']
                 cover = ["Unk.", 'Clear',' Cloudy', 'Very Cloudy']
-                self.temperature = round(float(sa_nw[5]), 1)
-                self.sky_temp = round(float(sa_nw[4]), 1)
-                self.windspeed = round(float(sa_nw[7]), 1)  # incoming is km/h
+                self.temperature = round(float(sa_ne[5]), 1)
+                self.sky_temp = round(float(sa_ne[4]), 1)
+                self.windspeed = round(float(sa_ne[7]), 1)  # incoming is km/h
                 if self.windspeed > self.gust_memory:
                     self.gust_memory = self.windspeed
-                self.humidity = round(float(sa_nw[8]), 1)
+                self.humidity = round(float(sa_ne[8]), 1)
                 self.dewpoint = round(float(sa_ne[9]), 1)
                 
                 self.rain_alert = int(sa_nw[11]) or int(sa_ne[11])
