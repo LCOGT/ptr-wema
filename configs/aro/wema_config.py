@@ -189,7 +189,7 @@ wema_config = {
     'sky_minus_ambient_limit': -1,  #It must be colder than this
     'sky_temperature_limit': -3,
     'local_cloud_cover_limit': 70,
-    'forecast_cloud_cover_limit' : 70,
+    'forecast_cloud_cover_limit' : 85,
     'lowest_ambient_temperature': -20,
     'highest_ambient_temperature': 40,
 

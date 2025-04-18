@@ -147,7 +147,7 @@ def fit_cloud_prediction_model(df, directory):
         # Trim the extreme values off... realistically MOST of the time it can be clear or cloudy
         # and we even aren't too particularly interested in the extremes... more the range
         # But only if there is enough observations within that range.
-        filtered_df = region_df[(df['avg_forecast_cloudcover'] >= 5) & (region_df['avg_forecast_cloudcover'] <= 95)]
+        filtered_df = region_df[(region_df['avg_forecast_cloudcover'] >= 5) & (region_df['avg_forecast_cloudcover'] <= 95)]
 
         if len(filtered_df) >= 50:
             region_df = filtered_df  # apply the filter
