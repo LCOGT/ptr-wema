@@ -98,42 +98,17 @@ def fit_cloud_prediction_model(df, directory):
     if not os.path.exists(directory + '/nighttime'):
         os.makedirs(directory+ '/nighttime')
     if not os.path.exists(directory + '/daytime'):
-        os.makedirs(directory+ '/daytime')
-        
-    
-    
+        os.makedirs(directory+ '/daytime')    
     
     file_date_string = str(datetime.datetime.now()).replace(' ', '_').split('.')[0].replace(':', '-')
     
-    # # Drop irrelevant columns
-    # df_clean = df.drop(columns=['date', 'time', 'Local_clouds', 'time_in_days', 'time_in_years'], errors='ignore')
-
-    # # Check the range of 'phase_of_year'
-    # if 'phase_of_year' in df_clean.columns:
-    #     phase_of_year_range = df_clean['phase_of_year'].max() - df_clean['phase_of_year'].min()
-    # else:
-    #     phase_of_year_range = 0
+    
 
     # Manually add polynomial terms for specific features
-    #df['Humidity^2'] = df['Humidity'] ** 2
     df['sky-ambient^2'] = df['sky-ambient'] ** 2
-    # df['sky-ambientxphase_of_day'] = df['sky-ambient'] * df['phase_of_day']
-    # df['sky-ambient^2xphase_of_day'] = df['sky-ambient^2'] * df['phase_of_day']
-
-    # # Add Fourier terms for seasonality
-    # df['sin_hour'] = np.sin(2 * np.pi * df['phase_of_day'])
-    # df['cos_hour'] = np.cos(2 * np.pi * df['phase_of_day'])
-    # df['sin_year'] = np.sin(2 * np.pi * df['phase_of_year'])
-    # df['cos_year'] = np.cos(2 * np.pi * df['phase_of_year'])
-
-    # Select features based on the range check
-    # if phase_of_year_range > 0.9:
-    #     features = ['sky_temp_C', 'sky-ambient',  'sky-ambient^2']#, 'phase_of_day', 'phase_of_year'] 'dew_point_depression',
-    # else:
     features = ['sky_temp_C', 'sky-ambient',  'sky-ambient^2']#'phase_of_day', 'sky-ambient^2', 'sin_hour', 'cos_hour'] 'dew_point_depression',
 
-    for part_of_day in ['daytime','nighttime']:
-        
+    for part_of_day in ['daytime','nighttime']:        
         
         region_df=copy.deepcopy(df)
         
@@ -141,8 +116,6 @@ def fit_cloud_prediction_model(df, directory):
             region_df = region_df[(region_df['sun_altitude'] > 0) ]
         else:    
             region_df = region_df[(region_df['sun_altitude'] < 0) ]  
-            
-        # breakpoint()
         
         # Trim the extreme values off... realistically MOST of the time it can be clear or cloudy
         # and we even aren't too particularly interested in the extremes... more the range
@@ -151,19 +124,8 @@ def fit_cloud_prediction_model(df, directory):
 
         if len(filtered_df) >= 50:
             region_df = filtered_df  # apply the filter
-        # else: leave df unchanged
-        
-       
-        
-       
-        
-       # if len((region_df['avg_forecast_cloudcover'] < 95) | (region_df['avg_forecast_cloudcover'] > 5) > 50):
-       #          region_df = region_df[~((region_df['avg_forecast_cloudcover'] > 95) | (region_df['avg_forecast_cloudcover'] < 5))]
-     
-        
         
         # Only consider those values where all the forecasts tend to agree on it.
-        #breakpoint()
         
         region_df['clouds_row_stdev'] = region_df[
             ['OWM_clouds', 'openmeteo_clouds', 
@@ -174,15 +136,12 @@ def fit_cloud_prediction_model(df, directory):
              'worldweather_clouds_now', 'worldweather_clouds_inanhour']
         ].std(axis=1)
         
-
         # Split the weather stuff into cloud ranges to apply threshholds        
         
         # Create masks for each range
         low_clouds = region_df['avg_forecast_cloudcover'].between(0, 20)
         mid_clouds = region_df['avg_forecast_cloudcover'].between(20, 80)
         high_clouds = region_df['avg_forecast_cloudcover'].between(80, 100)
-        
-        #breakpoint()
         
         # Compute thresholds
         low_cloud_thresh  = np.quantile(np.asarray(region_df.loc[low_clouds, 'clouds_row_stdev']), 0.2)
@@ -195,26 +154,7 @@ def fit_cloud_prediction_model(df, directory):
             (high_clouds & (region_df['clouds_row_stdev'] <= high_cloud_thresh))
         ]
         
-        #breakpoint()
-        
-        # # Only consider the options that agree the best
-        # # where the stdev is the lowest (agreement is highest) across the forecasts
-        # #breakpoint()
-        # cloud_stdev_threshold=np.quantile(np.asarray(region_df['clouds_row_stdev']),0.2)
-        # region_df= region_df[(region_df['clouds_row_stdev'] < cloud_stdev_threshold) ] 
-            
-        
-    
-        # plt.figure(figsize=(8, 6))
-        # plt.scatter(region_df['avg_forecast_cloudcover'], region_df['sky_temp_C'])
-        # plt.xlabel('Average Forecast Cloud Cover (%)')
-        # plt.ylabel('Sky Temperature (°C)')
-        # plt.title('Sky Temperature vs Forecast Cloud Cover')
-        # # plt.grid(True)
-        # # plt.show()
-        
-        # plt.savefig(directory + '/' + part_of_day + '/skytempvsclouds_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
-    
+
     
         plt.figure(figsize=(6, 4)) 
         sns.regplot(x='avg_forecast_cloudcover', y='sky_temp_C', data=region_df)
@@ -222,17 +162,7 @@ def fit_cloud_prediction_model(df, directory):
         plt.xlabel('Average Forecast Cloud Cover (%)')
         plt.ylabel('Sky Temperature (°C)')
         plt.savefig(directory + '/' + part_of_day + '/skytempvsclouds_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
-    
 
-        #breakpoint()
-    
-        # plt.figure(figsize=(8, 6))
-        # plt.scatter(region_df['avg_forecast_cloudcover'], region_df['sky-ambient'])
-        # plt.xlabel('Average Forecast Cloud Cover (%)')
-        # plt.ylabel('Sky Temperature - Ambient Temperature (°C)')
-        # plt.title('Sky - Ambient Temperature vs Forecast Cloud Cover')
-        # # plt.grid(True)
-        # plt.show()
     
         plt.figure(figsize=(6, 4)) 
         sns.regplot(x='avg_forecast_cloudcover', y='sky-ambient', data=region_df)
@@ -243,16 +173,7 @@ def fit_cloud_prediction_model(df, directory):
         
         plt.savefig(directory + '/' + part_of_day + '/skyminusambientvsclouds_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
     
-    
-    
-        # plt.figure(figsize=(8, 6))
-        # plt.scatter(region_df['avg_forecast_cloudcover'], region_df['sky-ambient^2'])
-        # plt.xlabel('Average Forecast Cloud Cover (%)')
-        # plt.ylabel('Sky-Ambient^2 Temperature (°C)')
-        # plt.title('Sky-Ambient^2 Temperature vs Forecast Cloud Cover')
-        # # plt.grid(True)
-        # # plt.show()
-        
+
         plt.figure(figsize=(6, 4)) 
         sns.regplot(x='avg_forecast_cloudcover', y='sky-ambient^2', data=region_df)
         plt.xlabel('Average Forecast Cloud Cover (%)')
@@ -261,13 +182,9 @@ def fit_cloud_prediction_model(df, directory):
         
         plt.savefig(directory + '/' + part_of_day + '/skyminusambientsquaredvsclouds_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
     
-    
-        #breakpoint()
-        
        
         X = region_df[features].copy()
-        y = region_df['avg_forecast_cloudcover']
-        
+        y = region_df['avg_forecast_cloudcover']        
     
         ### ✅ First Pass: Fit Model and Remove Outliers
         gb_model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, random_state=42)
@@ -319,14 +236,10 @@ def fit_cloud_prediction_model(df, directory):
         r2 = r2_score(y, y_pred)
     
         ### ✅ plog performance metrics
-        #plog(f"Phase of Year Range: {phase_of_year_range:.3f}")
         plog (part_of_day)
         plog(f"Mean Squared Error: {mse:.2f}")
         plog(f"Root Mean Squared Error: {rmse:.2f}")
         plog(f"R² Score: {r2:.2f}")
-        
-        
-        
         
         if part_of_day=='daytime':
             daytime_model=copy.deepcopy(gb_model)
@@ -941,7 +854,6 @@ class WxEncAgent:
             enc_status=g_dev['enc'].get_status()
             
             if enc_status is not None:
-                #breakpoint()
                 if enc_status['shutter_status'] in ['Open', 'Sim Open']:
                     if home_on_boot:
                         try:
@@ -1018,8 +930,8 @@ class WxEncAgent:
         response = self.api.authenticated_request("PUT", uri, self.config)
         if response:
             plog("\n\nConfig uploaded successfully.")
+            
     def get_sun_and_moon_info(self):
-        #breakpoint()
         # Get current time
         obstime = Time.now()            
         # Define the AltAz frame
@@ -1034,8 +946,7 @@ class WxEncAgent:
         plog(f"Current Sun altitude: {sun_altitude:.2f}")           
         moon = get_moon(obstime, location=self.observer_location)
         moon_altaz = moon.transform_to(altaz_frame)
-        moon_altitude = moon_altaz.alt
-        #plog(f"Moon altitude: {moon_altitude:.2f}")          
+        moon_altitude = moon_altaz.alt       
         # altitude = moon_altaz.alt
         
         # Skip if below horizon
@@ -1344,7 +1255,6 @@ class WxEncAgent:
         enc_status=g_dev['enc'].get_status()
         
         if enc_status is not None:
-            #breakpoint()
             if enc_status['shutter_status'] in ['Open', 'Sim Open']:
             #if True:
                 if 'MaxDome' in g_dev['enc'].config['enclosure']['enclosure1']['driver']:
@@ -1356,8 +1266,6 @@ class WxEncAgent:
                         dome_at_scope=False
                         
                         while not dome_at_scope:
-                            
-                            #breakpoint()
                             report_timer=time.time() - 31
                             try:
                                 slew_timeout_timer=time.time()
@@ -1441,10 +1349,6 @@ class WxEncAgent:
                                 #### At this stage, we actually want to adjust the requested azimuth
                                 #### To move the dome slightly west or east depending on the 
                                 #### pierside of the telescope
-                                
-                                
-                                
-                                #breakpoint()
                                 
                                 if obs_target_azimuth == -500:
                                     #plog ("Target Azimuth for Scope not an actual skytarget, so not moving dome")
@@ -1543,12 +1447,12 @@ class WxEncAgent:
                 enc_status['enclosure']['enclosure1']= get_enc_status_custom()
                 self.run_nightly_weather_report(enc_status=enc_status['enclosure']['enclosure1'], ocn_status=g_dev['ocn'].get_status())
             else:
+                
                 self.run_nightly_weather_report(enc_status=g_dev['enc'].get_status(), ocn_status=g_dev['ocn'].get_status())
         
         
         # Enclosure and Weather Status
         if time.time() > self.enclosure_status_check_timer + self.enclosure_status_check_period:
-            #breakpoint()
             self.enclosure_status_check_timer = time.time()
             status = {}
             status["timestamp"] = round(time.time(), 1)
@@ -1601,10 +1505,6 @@ class WxEncAgent:
                 pass
 
             
-            #breakpoint()
-
-            
-            
             # Here is where we actually make the decision about the weather
             # Independantly of the actual observing conditions device        
             # THE WAYNE ROSING BRAND WEATHER DECISION DESK!!! Made from the status, not in the device
@@ -1615,10 +1515,7 @@ class WxEncAgent:
                 plog ("local weather station not reporting humidity, using last owm report")
                 ocn_status['observing_conditions']['observing_conditions1']['humidity_%']=self.current_owm_humidity
                 quick_status['humidity_%'] = self.current_owm_humidity
-                #breakpoint()
-                plog ("OWM Humidity: " + str(self.current_owm_humidity))
-            
-            
+                plog ("OWM Humidity: " + str(self.current_owm_humidity))      
             
             # Simply override cloud_cover for the moment
             quick_status['forecast_cloud_cover_%']=self.medianforecast_current_cloud_cover
@@ -1627,9 +1524,7 @@ class WxEncAgent:
                 #plog ("goog " + str(self.predicted_clouds[0]))
             except:
                 plog ("Can't use predicted clouds for local cloud cover... usually because this is booting up and hasn't run a model yet. ")
-                quick_status['local_cloud_cover_%']=self.medianforecast_current_cloud_cover
-            
-            
+                quick_status['local_cloud_cover_%']=self.medianforecast_current_cloud_cover            
             
             wx_reasons = []            
             
@@ -1741,29 +1636,11 @@ class WxEncAgent:
                 wx_reasons.append('amb temp out of range')
 
             self.local_weather_ok = dewpoint_gap and temp_bounds and wind_limit and sky_amb_limit  and sky_temp_limit and humidity_limit and not rain_limit and not local_cloud_cover and not forecast_cloud_cover 
-            
-            #  NB wx_is_ok does not include ambient light or altitude of the Sun
-            # the notion of Obs OK should bring in Sun Elevation and or ambient light.
-            
-            #breakpoint()
-    
-            # if quick_status['rain_rate']> 0.0:
-            #     #plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
-            #     #plog("Rain Rate is 1.0")
-            #     # plog('Rain > ' + str(rain_limit_setting))
-            #     plog("For SkyAlerts: Rain Flag is 1: This is usually a glitch so ignoring.")
-            #     plog("May be unevaporated rain, ice, or a bird dropping.")
-            #     #plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
-    
+                
             if self.local_weather_ok:
-                #wx_str = "Yes"
                 ocn_status['observing_conditions']['observing_conditions1']["local_weather_ok"] = "Yes"
-                # plog('Wx Ok?  ', status["wx_ok"])
             else:
-                #wx_str = "No"  # Ideally we add the dominant reason in priority order.
-                ocn_status['observing_conditions']['observing_conditions1']["local_weather_ok"] = "No"
-                #plog('Wx Ok: ', status["wx_ok"], wx_reasons)
-    
+                ocn_status['observing_conditions']['observing_conditions1']["local_weather_ok"] = "No"    
     
             ocn_status['observing_conditions']['observing_conditions1']["OWM_weather_ok"] = self.weather_report_open_at_start
             
@@ -1778,31 +1655,20 @@ class WxEncAgent:
                 combined_weather_ok = self.local_weather_ok
             else:
                 combined_weather_ok = 'Not considered'
-                
-            
+                            
             ocn_status['observing_conditions']['observing_conditions1']["wx_ok"] = combined_weather_ok
-    
-            #breakpoint()
-    
             plog('Wx Ok: ', combined_weather_ok, wx_reasons)
     
-            #g_dev["wx_ok"] = self.wx_is_ok
-            
-            #breakpoint()
-            
-            
             
             #######
             # ONCE WE HAVE FIGURED ALL THAT OUT, THEN SEND THE STATUS
             ################
             
-            #breakpoint()
             if self.enclosure_next_open_time - time.time() > 0:
                 ocn_status['observing_conditions']['observing_conditions1']['hold_duration'] = round(self.enclosure_next_open_time - time.time(), 1)
             else:
                 ocn_status['observing_conditions']['observing_conditions1']['hold_duration'] = 0
             
-
             ocn_status['observing_conditions']['observing_conditions1']["wx_hold"] = not combined_weather_ok
     
             if ocn_status is not None:
@@ -1817,9 +1683,6 @@ class WxEncAgent:
                 plog("\n\n > Status Sent:  \n", ocn_status)
             
             self.ocn_status=ocn_status
-            
-            
-            
 
         # WEMA Settings
         if time.time() > self.wema_settings_upload_timer + self.wema_settings_upload_period:
@@ -1902,18 +1765,10 @@ class WxEncAgent:
                 send_status(wema, lane, status)
             except:
                 plog('could not send wema_settings status') 
-                
-        
-                            
-            
-                    #breakpoint()
                     
     def send_enclosure_status(self, enc_status, ocn_status):
 
         if enc_status is not None:
-            
-            #breakpoint()
-            
             
             # Reformulate a short enclosure status - bit of a hack for the moment.
             try: 
@@ -1995,21 +1850,11 @@ class WxEncAgent:
                 except:
                     plog('could not send enclosure status')   
                     plog(traceback.format_exc())
-                    #breakpoint()
 
-    # def update_enclosure_immediately(self, enc_status):
-        
-    #     lane = "enclosure"
-    #     plog ("updating enclosure immediately")
-    #     wema = self.config['wema_name']  
-    #     try:                        
-    #         send_status(wema, lane, enc_status)
-    #     except:
-    #         plog('could not send enclosure status')   
-    #         plog(traceback.format_exc())
+
 
     def update(self):     ## NB NB NB This is essentially the Manager/Sequencer for the
-        #breakpoint()                 ## enclosures managed by the WEMA
+                          ## enclosures managed by the WEMA
         try:
             self.update_status()
         except:
@@ -2048,20 +1893,6 @@ class WxEncAgent:
                     enc_status = g_dev['enc'].get_status()
                 else:
                     enc_status = get_enc_status_custom()
-                #breakpoint()
-                # if ocn_status==None:
-                #     self.local_weather_ok = None
-                # else:
-                   
-                #     if 'wx_ok' in ocn_status:
-                #         if ocn_status['wx_ok'] == 'Yes':
-                #             self.local_weather_ok = True
-                #         elif ocn_status['wx_ok'] == 'No':
-                #             self.local_weather_ok = False
-                #         else:
-                #             self.local_weather_ok = None
-                #     else:
-                #         self.local_weather_ok = None
     
                 plog("***************************************************************")
                 plog("Current time             : " + str(time.asctime()))
@@ -2112,27 +1943,8 @@ class WxEncAgent:
                 if self.keep_closed_all_night:                
                     plog("Roof is being forced to stay CLOSED ALL NIGHT")
     
-                # Predicy clouds from model
-                #breakpoint()
-                
-                # if ocn_status['humidity_%'] == -1:
-                #     model_humidity=self.current_owm_humidity
-                # else:
-                #     model_humidity=ocn_status['humidity_%']
-                
-                
-                #breakpoint()
+    
                 model_skyambient=ocn_status['sky_temp_C']-self.current_owm_ambient_temperature
-                
-                # if ocn_status['dewpoint_C'] >99 or ocn_status['dewpoint_C'] < -5:
-                #     model_dewpoint=self.current_owm_dewpoint
-                # else:
-                #     model_dewpoint=ocn_status['dewpoint_C']
-                
-                #model_dewpointdepression=self.current_owm_ambient_temperature-model_dewpoint
-                
-               
-                #model_phaseofday=((time.time() - 1735689600.0) /86400) % 1
                 
                 
                 ########## FIRST CORRECT SKY TEMPERATURE FOR SUN ADN MOON EFFECTS
@@ -2140,73 +1952,15 @@ class WxEncAgent:
                 
                 sun_altitude, moon_altitude, moon_illumination, flux_ground, sun_azimuth = self.get_sun_and_moon_info()
             
-                #breakpoint()
-                # Put in relevant sun and moon potential effects
-                # line_of_weather_info.append(sun_altitude / u.deg)
-                # line_of_weather_info.append(moon_altitude/ u.deg)
-                # line_of_weather_info.append(moon_illumination)
-                # line_of_weather_info.append(flux_ground)
-                # line_of_weather_info.append(sun_azimuth / u.deg)
-                
-                
-                
-                # transformed_sun_altitude= np.exp( max(sun_altitude/ u.deg, -18) / 6.0)
-                
-                # new_data = pd.DataFrame({
-                #     #'Humidity': [model_humidity],
-                #     #'sky_temp_C':  [ocn_status['sky_temp_C']],
-                #     'transformed_sun_altitude': [transformed_sun_altitude], # below -18, there is no solar flux
-                    
-                #     'sun_azimuth': [sun_azimuth/ u.deg],
-                #     'moon_flux_on_ground': [flux_ground]
-                # })
-                
-    
-                # try:
-                #     predicted_contribution =  self.sky_temp_model.predict(new_data)
-                    
-                #     plog ("Predicted skytemp contribution: " + str(predicted_contribution))
-                    
-                #     corrected_sky_temp_C = ocn_status['sky_temp_C'] - predicted_contribution[0]
-        
-                #     plog(f"Corrected Sky Temperature: {corrected_sky_temp_C:.2f} °C")
-                # except:
-                #     plog ("Failed to correct sky temperature. Maybe no weather log yet")
-                #     corrected_sky_temp_C=ocn_status['sky_temp_C']
-                
-                ########## THEN DO CLOUD MODEL
-                
-                
-                # new_data = pd.DataFrame({
-                #     #'Humidity': [model_humidity],
-                #     'corrected_sky_temp_C': corrected_sky_temp_C,
-                #     'sky-ambient': [model_skyambient],
-                #     #'dew_point_depression': [model_dewpointdepression],
-                #     'sky-ambient^2': [model_skyambient **2]
-                #     #'phase_of_day': [model_phaseofday]
-                # })
-                
-                
+                               
                 new_data = pd.DataFrame({
-                    #'Humidity': [model_humidity],
                     'corrected_sky_temp_C': ocn_status['sky_temp_C'],
                     'sky-ambient': [model_skyambient],
-                    #'dew_point_depression': [model_dewpointdepression],
                     'sky-ambient^2': [model_skyambient **2]
-                    #'phase_of_day': [model_phaseofday]
                 })
                 
                 plog (new_data)
-                try:
-                    # # Apply the exact polynomial transformation used in training
-                    # poly = PolynomialFeatures(degree=2, include_bias=False)
-                    # X_new_poly = poly.fit_transform(new_data)
-                    
-                    # X = df[features].copy()
-        
-                    # Predict clouds using trained gb_model
-                    
-                    #breakpoint()
+                try:                    
                     
                     if sun_altitude.deg >= 18:
                         self.predicted_clouds = self.daytime_cloud_model.predict(new_data)
@@ -2230,9 +1984,6 @@ class WxEncAgent:
                     plog(f"Predicted clouds: {self.predicted_clouds[0]:.2f}")
                     plog ("Past clouds: " + str(self.cloud_tracker))
                     plog ("Median of last ten observations: " + str(round(np.median(self.cloud_tracker),2)) + " std " + str(round(np.std(self.cloud_tracker),2)))
-    
-    
-                    
     
                 except:
                     plog ("failed model? Perhaps can happen if we haven't built up enough points yet.")
@@ -2276,7 +2027,6 @@ class WxEncAgent:
                 
                 # Safety checks here
                 if not g_dev['debug'] and self.open_and_enabled_to_observe:
-                    #breakpoint()
                     if enc_status is not None:
                         if enc_status['shutter_status'] == 'Software Fault':
                             plog("Software Fault Detected. Will alert the authorities!")
@@ -2369,8 +2119,7 @@ class WxEncAgent:
     
                     plog("minutes until next open attempt ALLOWED: " +
                          str((self.enclosure_next_open_time - time.time()) / 60))
-    
-                #breakpoint()
+                    
                 if (not self.keep_closed_all_night) and ((g_dev['events']['Cool Down, Open'] <= ephem_now < g_dev['events']['Observing Ends']) and (self.keep_open_all_night or self.weather_report_open_at_start==True or not self.owm_active) and \
                     g_dev['enc'].mode == 'Automatic') and (not self.cool_down_latch) and (self.keep_open_all_night or self.local_weather_ok  or (not self.ocn_exists) or (not self.local_weather_active)) and \
                     (not enc_status['shutter_status'] in ['Software Fault', 'Opening', 'Closing', 'Error']):
@@ -2426,7 +2175,6 @@ class WxEncAgent:
                             if '[200]' in str(obs_settings): # If reading successful
                                 obs_settings=obs_settings.json()['status']['obs_settings']
                                 if 'morning_flats_done' in obs_settings:
-                                #breakpoint()
                                     flats_done=obs_settings['morning_flats_done']
                                     plog (str(obsid) + " Flats Done: " + str(flats_done))
                                     last_communication=time.time()-obs_settings['timedottime_of_last_upload']
@@ -2524,7 +2272,7 @@ class WxEncAgent:
             }
         )
         try:
-            response = requests.post(url_log, body, timeout=20, allow_redirects=False, headers=close_headers, stream=False)
+            requests.post(url_log, body, timeout=20, allow_redirects=False, headers=close_headers, stream=False)
         except Exception:
             plog("Log did not send, usually not fatal.")
 
@@ -2583,7 +2331,6 @@ class WxEncAgent:
                     
             if self.config['enclosure']['enclosure1']['use_park_command_rather_than_slew_to_park']:
                 plog ("Parking Dome")
-                #breakpoint()
                 try:
                     g_dev['enc'].enclosure.Park()
                     enc_status = g_dev['enc'].get_status()
@@ -2748,10 +2495,7 @@ class WxEncAgent:
                             except:
                                 plog(traceback.format_exc())
                                 plog ("DOME COMMAND GLITCHED OUT.")
-                            
-                            
-                        #breakpoint()
-                    
+                                
                     time.sleep(5)
                     
                     enc_status = g_dev['enc'].get_status()
@@ -2809,7 +2553,7 @@ class WxEncAgent:
         events = g_dev['events']
 
         obs_win_begin, sunset, sunrise, ephem_now = self.astro_events.getSunEvents()
-      
+        print (ocn_status)
         # First thing to do at the Cool Down, Open time is to calculate the quality of the evening
         # using the broad weather report.
         try:
@@ -3128,7 +2872,8 @@ class WxEncAgent:
                 line_of_weather_info.append(data['current']['humidity'])
             else:
                 line_of_weather_info.append(ocn_status['humidity_%'])
-                        
+            
+            
             # Measured sky_temp
             line_of_weather_info.append(ocn_status['sky_temp_C'])
         
@@ -3325,9 +3070,6 @@ class WxEncAgent:
                 current_hour_cloud_cover = hourly_data[0]['cloudCover'] * 100
                 next_hour_cloud_cover = hourly_data[1]['cloudCover'] * 100  # Assuming 1-hour intervals
             
-            
-                #breakpoint()
-            
                 self.pirate_clouds_now = current_hour_cloud_cover
                 self.pirate_clouds_inanhour = next_hour_cloud_cover
             except:
@@ -3456,10 +3198,21 @@ class WxEncAgent:
                 except Exception as e:
                     plog(f"Error sending email: {e}")
 
-                
+            
+            print (line_of_weather_info)
+            
+            column_names = ['date','time','OWM_clouds','Local_clouds','Humidity','sky_temp_C','local_temperature_C', 'dewpoint', 'rain_rate','wind_m/s', 'OWM_temperature','openmeteo_clouds', 'avg_forecast_cloudcover', 'OWMClouds_inanhour', 'openmeteoclouds_inanhour','sun_altitude','moon_altitude','moon_illumination','moon_flux_on_ground', 'sun_azimuth', 'tomorrowio_nowclouds','tomorrowio_nexthourclouds','pirate_clouds_now','pirate_clouds_inanhour','metocean_clouds_now','metocean_clouds_inanhour','worldweather_clouds_now','worldweather_clouds_inanhour']
+            
+
             # Open the file in append mode and write the line
             if not self.medianforecast_current_cloud_cover == None:
                 try:
+                    
+                    if not os.path.exists(self.wema_path+self.name + '_weatherlog.csv'):
+                        
+                        with open(self.wema_path+self.name + '_weatherlog.csv', mode='a', newline='') as file:
+                            writer = csv.writer(file)
+                            writer.writerow(column_names)
                     with open(self.wema_path+self.name + '_weatherlog.csv', mode='a', newline='') as file:
                         writer = csv.writer(file)
                         writer.writerow(line_of_weather_info)
@@ -3467,6 +3220,8 @@ class WxEncAgent:
                 except:
                     plog ("failed to write weatherlog")
                     plog(traceback.format_exc())
+                    
+            
             try:
                 weather_directory=self.wema_path+self.name+ '/weatherfits'
                 if not os.path.exists(weather_directory):
@@ -3475,12 +3230,11 @@ class WxEncAgent:
                 ######## We also need to update our cloud prediction model.
                 # So lets open the weatherlog
                 # Assign column names manually
-                column_names = ['date','time','OWM_clouds','Local_clouds','Humidity','sky_temp_C','local_temperature_C', 'dewpoint', 'rain_rate','wind_m/s', 'OWM_temperature','openmeteo_clouds', 'avg_forecast_cloudcover', 'OWMClouds_inanhour', 'openmeteoclouds_inanhour','sun_altitude','moon_altitude','moon_illumination','moon_flux_on_ground', 'sun_azimuth', 'tomorrowio_nowclouds','tomorrowio_nexthourclouds','pirate_clouds_now','pirate_clouds_inanhour','metocean_clouds_now','metocean_clouds_inanhour','worldweather_clouds_now','worldweather_clouds_inanhour']
                 
                 
                 
                 # Read CSV without a header and assign column names
-                df = pd.read_csv(self.wema_path+self.name + '_weatherlog.csv', header=None, names=column_names)
+                df = pd.read_csv(self.wema_path+self.name + '_weatherlog.csv', header=0)#, names=column_names)
                 
                 # Need to remove some rows with nan values
                 #df = df.dropna()
@@ -3563,26 +3317,16 @@ class WxEncAgent:
                 # dew point depression
                 df['dew_point_depression'] =  df['OWM_temperature'] - df['dewpoint']                
                 
-                try:
-                    
-                    
-                    
-                    
-                    
+                try:                    
                     # Run the updated model with polynomial features included
-                    self.daytime_cloud_model, self.nighttime_cloud_model = fit_cloud_prediction_model(df, weather_directory)
-                
+                    self.daytime_cloud_model, self.nighttime_cloud_model = fit_cloud_prediction_model(df, weather_directory)     
                     
-                
                 except:
                     plog ("failed model?")
                     plog(traceback.format_exc())
             except:
                 plog ("failed model?")
                 plog(traceback.format_exc())
-                #breakpoint()
-
-
                 
         except Exception as e:
             plog ("OWM failed", e)
