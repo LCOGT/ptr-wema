@@ -1523,7 +1523,7 @@ class WxEncAgent:
                 quick_status['local_cloud_cover_%']=self.predicted_clouds[0]
                 #plog ("goog " + str(self.predicted_clouds[0]))
             except:
-                plog ("Can't use predicted clouds for local cloud cover... usually because this is booting up and hasn't run a model yet. ")
+                plog ("Can't use predicted clouds for local cloud cover... usually because this is booting up and hasn't run a model yet. Temporarily approximating it using the forecast values.")
                 quick_status['local_cloud_cover_%']=self.medianforecast_current_cloud_cover            
             
             wx_reasons = []            
