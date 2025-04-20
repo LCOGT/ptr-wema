@@ -139,21 +139,23 @@ def fit_cloud_prediction_model(df, directory):
         # Split the weather stuff into cloud ranges to apply threshholds        
         
         # Create masks for each range
-        low_clouds = region_df['avg_forecast_cloudcover'].between(0, 20)
-        mid_clouds = region_df['avg_forecast_cloudcover'].between(20, 80)
-        high_clouds = region_df['avg_forecast_cloudcover'].between(80, 100)
-        
-        # Compute thresholds
-        low_cloud_thresh  = np.quantile(np.asarray(region_df.loc[low_clouds, 'clouds_row_stdev']), 0.2)
-        mid_cloud_thresh  = np.quantile(np.asarray(region_df.loc[mid_clouds, 'clouds_row_stdev']), 0.2)
-        high_cloud_thresh = np.quantile(np.asarray(region_df.loc[high_clouds, 'clouds_row_stdev']), 0.2)
-        
-        region_df = region_df[
-            (low_clouds  & (region_df['clouds_row_stdev'] <= low_cloud_thresh)) |
-            (mid_clouds  & (region_df['clouds_row_stdev'] <= mid_cloud_thresh)) |
-            (high_clouds & (region_df['clouds_row_stdev'] <= high_cloud_thresh))
-        ].copy()
-        
+        try:
+            low_clouds = region_df['avg_forecast_cloudcover'].between(0, 20)
+            mid_clouds = region_df['avg_forecast_cloudcover'].between(20, 80)
+            high_clouds = region_df['avg_forecast_cloudcover'].between(80, 100)
+                    
+            # Compute thresholds
+            low_cloud_thresh  = np.quantile(np.asarray(region_df.loc[low_clouds, 'clouds_row_stdev']), 0.2)
+            mid_cloud_thresh  = np.quantile(np.asarray(region_df.loc[mid_clouds, 'clouds_row_stdev']), 0.2)
+            high_cloud_thresh = np.quantile(np.asarray(region_df.loc[high_clouds, 'clouds_row_stdev']), 0.2)
+            
+            region_df = region_df[
+                (low_clouds  & (region_df['clouds_row_stdev'] <= low_cloud_thresh)) |
+                (mid_clouds  & (region_df['clouds_row_stdev'] <= mid_cloud_thresh)) |
+                (high_clouds & (region_df['clouds_row_stdev'] <= high_cloud_thresh))
+            ].copy()
+        except:
+            plog ("failed at splitting dataset by cloud levels... usually we don't have good coverage yet.")
 
     
         plt.figure(figsize=(6, 4)) 
