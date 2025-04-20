@@ -113,17 +113,17 @@ def fit_cloud_prediction_model(df, directory):
         region_df=copy.deepcopy(df)
         
         if part_of_day == 'daytime':
-            region_df = region_df[(region_df['sun_altitude'] > 0) ]
+            region_df = region_df[(region_df['sun_altitude'] > 0) ].copy()
         else:    
-            region_df = region_df[(region_df['sun_altitude'] < 0) ]  
+            region_df = region_df[(region_df['sun_altitude'] < 0) ].copy()  
         
         # Trim the extreme values off... realistically MOST of the time it can be clear or cloudy
         # and we even aren't too particularly interested in the extremes... more the range
         # But only if there is enough observations within that range.
-        filtered_df = region_df[(region_df['avg_forecast_cloudcover'] >= 5) & (region_df['avg_forecast_cloudcover'] <= 95)]
+        filtered_df = region_df[(region_df['avg_forecast_cloudcover'] >= 5) & (region_df['avg_forecast_cloudcover'] <= 95)].copy()
 
         if len(filtered_df) >= 50:
-            region_df = filtered_df  # apply the filter
+            region_df = filtered_df.copy()  # apply the filter
         
         # Only consider those values where all the forecasts tend to agree on it.
         
@@ -134,7 +134,7 @@ def fit_cloud_prediction_model(df, directory):
              'pirate_clouds_now', 'pirate_clouds_inanhour', 
              'metocean_clouds_now', 'metocean_clouds_inanhour', 
              'worldweather_clouds_now', 'worldweather_clouds_inanhour']
-        ].std(axis=1)
+        ].std(axis=1).copy()
         
         # Split the weather stuff into cloud ranges to apply threshholds        
         
@@ -152,7 +152,7 @@ def fit_cloud_prediction_model(df, directory):
             (low_clouds  & (region_df['clouds_row_stdev'] <= low_cloud_thresh)) |
             (mid_clouds  & (region_df['clouds_row_stdev'] <= mid_cloud_thresh)) |
             (high_clouds & (region_df['clouds_row_stdev'] <= high_cloud_thresh))
-        ]
+        ].copy()
         
 
     
@@ -184,7 +184,7 @@ def fit_cloud_prediction_model(df, directory):
     
        
         X = region_df[features].copy()
-        y = region_df['avg_forecast_cloudcover']        
+        y = region_df['avg_forecast_cloudcover'].copy()        
     
         ### ✅ First Pass: Fit Model and Remove Outliers
         gb_model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, random_state=42)
@@ -194,8 +194,8 @@ def fit_cloud_prediction_model(df, directory):
         # Outlier rejection - First Pass
         residuals = y - y_pred
         mask = np.abs(residuals) <= 30  # Remove large outliers (> 30 units)
-        X = X[mask]
-        y = y[mask]
+        X = X[mask].copy()
+        y = y[mask].copy()
     
         plog(f"First pass removed {len(residuals) - len(y)} outliers.")
     
@@ -205,8 +205,8 @@ def fit_cloud_prediction_model(df, directory):
     
         residuals = y - y_pred
         mask = np.abs(residuals) <= 30  # Remove outliers a second time
-        X = X[mask]
-        y = y[mask]
+        X = X[mask].copy()
+        y = y[mask].copy()
     
         plog(f"Second pass removed {len(residuals) - len(y)} outliers.")
     

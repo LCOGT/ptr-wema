@@ -251,7 +251,6 @@ class ObservingConditions:
                 "wind_m/s": self.windspeed,
                 "rain_rate": self.rain_rate,
                 "solar_flux_w/m^2": None,
-                "cloud_cover_%": round(self.cloud_cover,0),
                 "calc_HSI_lux": illum,
                 "calc_sky_mpsas": round(uni_measure, 2),  
                 "lightning_strike_radius km": 'n/a',
@@ -386,7 +385,6 @@ class ObservingConditions:
                     "wind_m/s": self.windspeed,
                     "rain_rate": self.rain_rate,
                     "solar_flux_w/m^2": None,
-                    "cloud_cover_%": self.cloud_cover,
                     "calc_HSI_lux": illum,
                     "calc_sky_mpsas": round(uni_measure, 2),
                     "lightning_strike_radius km": 'n/a',
@@ -464,7 +462,6 @@ class ObservingConditions:
                     "wind_m/s": abs(round(self.sky_monitor.WindSpeed, 2)),
                     "rain_rate": self.sky_monitor.RainRate,
                     "solar_flux_w/m^2": None,
-                    "cloud_cover_%": str(self.sky_monitor.CloudCover),
                     "calc_HSI_lux": illum,
                     "calc_sky_mpsas": round(
                         uni_measure, 2
@@ -486,7 +483,6 @@ class ObservingConditions:
                     "wind_m/s": abs(round(self.sky_monitor.WindSpeed, 2)),
                     "rain_rate": self.sky_monitor.RainRate,
                     "solar_flux_w/m^2": None,
-                    "cloud_cover_%": "unknown",  # str(self.sky_monitor.CloudCover), # Sometimes faults.
                     "calc_HSI_lux": illum,
                     "calc_sky_mpsas": round(
                         uni_measure, 2
