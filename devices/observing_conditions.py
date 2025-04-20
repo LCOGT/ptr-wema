@@ -32,7 +32,7 @@ from wema_utility import plog
 import requests
 import json
 
-
+import datetime
 
 
 
@@ -233,8 +233,13 @@ class ObservingConditions:
             self.dewpoint=weather_data['dewp']
             self.sky_minus_ambient=weather_data['clouds']-weather_data['temp']
             self.windspeed=weather_data['wind']
-
-            #self.time_since = 20
+            
+            # Parse it into a datetime object
+            dt_obj = datetime.datetime.strptime(weather_data['dataGMTTime'], "%Y/%m/%d %H:%M:%S")
+            
+            # Convert to timestamp
+            timestamp = dt_obj.timestamp()
+            
 
             status = {
                 "temperature_C": self.temperature,
@@ -242,7 +247,7 @@ class ObservingConditions:
                 "humidity_%": self.humidity,
                 "dewpoint_C": self.dewpoint,
                 "sky_temp_C": weather_data['clouds'],
-                "last_sky_update_s": self.time_since,
+                "last_sky_update_s": timestamp,
                 "wind_m/s": self.windspeed,
                 "rain_rate": self.rain_rate,
                 "solar_flux_w/m^2": None,
@@ -294,8 +299,10 @@ class ObservingConditions:
                 
                 self.rain_alert = int(sa_nw[11]) or int(sa_ne[11])
                 self.wet_alert = int(sa_nw[12])
-                self.time_since = int(float(sa_nw[13]))
-                plog("time since:  ", self.time_since)
+                time_since = int(float(sa_nw[13]))
+                plog("time since:  ", time_since)
+                
+                timestamp=time.time()-time_since
                 self.time_of_update = round(float(sa_nw[14]), 5)
 
 
@@ -375,7 +382,7 @@ class ObservingConditions:
                     "humidity_%": self.humidity,
                     "dewpoint_C": self.dewpoint,
                     "sky_temp_C": self.sky_temp,
-                    "last_sky_update_s": self.time_since,
+                    "last_sky_update_s": timestamp,
                     "wind_m/s": self.windspeed,
                     "rain_rate": self.rain_rate,
                     "solar_flux_w/m^2": None,
