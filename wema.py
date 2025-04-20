@@ -114,8 +114,10 @@ def fit_cloud_prediction_model(df, directory):
         
         if part_of_day == 'daytime':
             region_df = region_df[(region_df['sun_altitude'] > 0) ].copy()
+            number_of_daytime_weather_observations=len(region_df)
         else:    
             region_df = region_df[(region_df['sun_altitude'] < 0) ].copy()  
+            number_of_nighttime_weather_observations=len(region_df)
         
         # Trim the extreme values off... realistically MOST of the time it can be clear or cloudy
         # and we even aren't too particularly interested in the extremes... more the range
@@ -252,7 +254,7 @@ def fit_cloud_prediction_model(df, directory):
         region_df.loc[X.index, 'predicted_clouds'] = y_pred
         region_df.to_csv(directory + '/' + part_of_day + '/WeatherData_' + str(file_date_string) + '.csv', index=False)
     
-    return daytime_model, nighttime_model
+    return daytime_model, nighttime_model, number_of_daytime_weather_observations,number_of_nighttime_weather_observations
 
 def correct_dome_azimuth(telescope_az, telescope_alt, side_of_pier, dome_radius, telescope_offset):#, dome_slit_offset=0):
     """
@@ -1521,13 +1523,18 @@ class WxEncAgent:
             
             # Simply override cloud_cover for the moment
             quick_status['forecast_cloud_cover_%']=self.medianforecast_current_cloud_cover
-            try:           
-                quick_status['local_cloud_cover_%']=self.predicted_clouds[0]
-                #plog ("goog " + str(self.predicted_clouds[0]))
-            except:
-                plog ("Can't use predicted clouds for local cloud cover... usually because this is booting up and hasn't run a model yet. Temporarily approximating it using the forecast values.")
-                quick_status['local_cloud_cover_%']=self.medianforecast_current_cloud_cover            
             
+            if self.number_of_nighttime_weather_observations < 250:
+                plog ("We haven't built up enough data points yet to be confident in predicting local clouds yet. Not using Local Cloud Cover yet.")
+                quick_status['local_cloud_cover_%']=None 
+            else:
+                try:           
+                    quick_status['local_cloud_cover_%']=self.predicted_clouds[0]
+                    #plog ("goog " + str(self.predicted_clouds[0]))
+                except:
+                    plog ("Can't use predicted clouds for local cloud cover... usually because this is booting up and hasn't run a model yet. Temporarily approximating it using the forecast values.")
+                    quick_status['local_cloud_cover_%']=self.medianforecast_current_cloud_cover            
+                
             wx_reasons = []            
             
             if self.rain_limit_on:
@@ -1587,11 +1594,14 @@ class WxEncAgent:
             else:
                 sky_temp_limit=True
             
-            if self.local_cloud_cover_limit_on:
+            if self.local_cloud_cover_limit_on:                
                 try:
                     local_cloud_cover_value = float(quick_status['local_cloud_cover_%'])
                     #status['cloud_cover_%'] = round(cloud_cover_value, 0)
-                    if local_cloud_cover_value <= self.local_cloud_cover_limit_setting:
+                    if local_cloud_cover_value == None:
+                        local_cloud_cover = False
+                    
+                    elif local_cloud_cover_value <= self.local_cloud_cover_limit_setting:
                         local_cloud_cover = False
                         #wx_reasons.append('>=' + str(self.cloud_cover_limit_setting) + '% Cloudy')
                 
@@ -3322,7 +3332,7 @@ class WxEncAgent:
                 
                 try:                    
                     # Run the updated model with polynomial features included
-                    self.daytime_cloud_model, self.nighttime_cloud_model = fit_cloud_prediction_model(df, weather_directory)     
+                    self.daytime_cloud_model, self.nighttime_cloud_model, self.number_of_daytime_weather_observations, self.number_of_nighttime_weather_observations = fit_cloud_prediction_model(df, weather_directory)     
                     
                 except:
                     plog ("failed model?")
