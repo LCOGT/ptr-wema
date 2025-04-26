@@ -102,7 +102,8 @@ def fit_cloud_prediction_model(df, directory):
     
     file_date_string = str(datetime.datetime.now()).replace(' ', '_').split('.')[0].replace(':', '-')
     
-    
+    daytime_model=None
+    nighttime_model=None
 
     # Manually add polynomial terms for specific features
     df['sky-ambient^2'] = df['sky-ambient'] ** 2
@@ -190,69 +191,78 @@ def fit_cloud_prediction_model(df, directory):
         X = region_df[features].copy()
         y = region_df['avg_forecast_cloudcover'].copy()        
     
-        ### ✅ First Pass: Fit Model and Remove Outliers
-        gb_model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, random_state=42)
-        gb_model.fit(X, y)
-        y_pred = gb_model.predict(X)
+        try:
     
-        # Outlier rejection - First Pass
-        residuals = y - y_pred
-        mask = np.abs(residuals) <= 30  # Remove large outliers (> 30 units)
-        X = X[mask].copy()
-        y = y[mask].copy()
-    
-        plog(f"First pass removed {len(residuals) - len(y)} outliers.")
-    
-        ### ✅ Second Pass: Refit Model and Remove Outliers Again
-        gb_model.fit(X, y)
-        y_pred = gb_model.predict(X)
-    
-        residuals = y - y_pred
-        mask = np.abs(residuals) <= 30  # Remove outliers a second time
-        X = X[mask].copy()
-        y = y[mask].copy()
-    
-        plog(f"Second pass removed {len(residuals) - len(y)} outliers.")
-    
-        ### ✅ Final Fit: Fit Model on Cleaned Data
-        gb_model.fit(X, y)
-        y_pred = gb_model.predict(X)
-    
-        ### ✅ Plot predicted vs actual values
-        plt.figure(figsize=(8, 6))
-        plt.scatter(y, y_pred, alpha=0.7, color='black', marker='o')
-        plt.plot([y.min(), y.max()], [y.min(), y.max()], '--', color='red')
-        plt.xlabel('Actual average weather report clouds')
-        plt.ylabel('Predicted average weather report clouds')
-        plt.title('Predicted vs Actual Clouds')
-    
-        plt.savefig(directory + '/' + part_of_day + '/ActualVSPredicted_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
-    
-        ### ✅ Heatmap of correlation between factors
-        plt.figure(figsize=(8, 6))
-        sns.heatmap(pd.DataFrame(X).join(pd.Series(y, name='avg_forecast_cloudcover')).corr(), annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
-        plt.title('Correlation Heatmap')
-        plt.savefig(directory + '/' + part_of_day + '/Correlation_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
-    
-        ### ✅ Evaluate performance
-        mse = mean_squared_error(y, y_pred)
-        rmse = np.sqrt(mse)
-        r2 = r2_score(y, y_pred)
-    
-        ### ✅ plog performance metrics
-        plog (part_of_day)
-        plog(f"Mean Squared Error: {mse:.2f}")
-        plog(f"Root Mean Squared Error: {rmse:.2f}")
-        plog(f"R² Score: {r2:.2f}")
+            ### ✅ First Pass: Fit Model and Remove Outliers
+            gb_model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, random_state=42)
+            gb_model.fit(X, y)
+            y_pred = gb_model.predict(X)
         
-        if part_of_day=='daytime':
-            daytime_model=copy.deepcopy(gb_model)
-        else:
-            nighttime_model=copy.deepcopy(gb_model)
+            # Outlier rejection - First Pass
+            residuals = y - y_pred
+            mask = np.abs(residuals) <= 30  # Remove large outliers (> 30 units)
+            X = X[mask].copy()
+            y = y[mask].copy()
+        
+            plog(f"First pass removed {len(residuals) - len(y)} outliers.")
+        
+            ### ✅ Second Pass: Refit Model and Remove Outliers Again
+            gb_model.fit(X, y)
+            y_pred = gb_model.predict(X)
+        
+            residuals = y - y_pred
+            mask = np.abs(residuals) <= 30  # Remove outliers a second time
+            X = X[mask].copy()
+            y = y[mask].copy()
+        
+            plog(f"Second pass removed {len(residuals) - len(y)} outliers.")
+        
+            ### ✅ Final Fit: Fit Model on Cleaned Data
+            gb_model.fit(X, y)
+            y_pred = gb_model.predict(X)
+        
+            ### ✅ Plot predicted vs actual values
+            plt.figure(figsize=(8, 6))
+            plt.scatter(y, y_pred, alpha=0.7, color='black', marker='o')
+            plt.plot([y.min(), y.max()], [y.min(), y.max()], '--', color='red')
+            plt.xlabel('Actual average weather report clouds')
+            plt.ylabel('Predicted average weather report clouds')
+            plt.title('Predicted vs Actual Clouds')
+        
+            plt.savefig(directory + '/' + part_of_day + '/ActualVSPredicted_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+        
+            ### ✅ Heatmap of correlation between factors
+            plt.figure(figsize=(8, 6))
+            sns.heatmap(pd.DataFrame(X).join(pd.Series(y, name='avg_forecast_cloudcover')).corr(), annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
+            plt.title('Correlation Heatmap')
+            plt.savefig(directory + '/' + part_of_day + '/Correlation_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+        
+            ### ✅ Evaluate performance
+            mse = mean_squared_error(y, y_pred)
+            rmse = np.sqrt(mse)
+            r2 = r2_score(y, y_pred)
+        
+            ### ✅ plog performance metrics
+            plog (part_of_day)
+            plog(f"Mean Squared Error: {mse:.2f}")
+            plog(f"Root Mean Squared Error: {rmse:.2f}")
+            plog(f"R² Score: {r2:.2f}")
+            
+            if part_of_day=='daytime':
+                daytime_model=copy.deepcopy(gb_model)
+            else:
+                nighttime_model=copy.deepcopy(gb_model)
+        
+            ### ✅ Save updated dataframe with predictions
+            region_df.loc[X.index, 'predicted_clouds'] = y_pred
+            region_df.to_csv(directory + '/' + part_of_day + '/WeatherData_' + str(file_date_string) + '.csv', index=False)
     
-        ### ✅ Save updated dataframe with predictions
-        region_df.loc[X.index, 'predicted_clouds'] = y_pred
-        region_df.to_csv(directory + '/' + part_of_day + '/WeatherData_' + str(file_date_string) + '.csv', index=False)
+        except:
+            plog("failed to do model?")
+            
+            plog(traceback.format_exc())
+            
+    
     
     return daytime_model, nighttime_model, number_of_daytime_weather_observations,number_of_nighttime_weather_observations
 
