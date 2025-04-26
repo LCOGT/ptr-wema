@@ -50,7 +50,9 @@ wema_config = {
     # Particularly sky temperature is impacted by daily effects.
     'opens_during_nighttime' : True,
     'opens_during_daytime': False,
-
+    # Which emails to send?
+    'send_hourly_cloud_forecast_emails' : False,
+    
     'debug_mode': False,
     'debug_duration_sec': 80000,
     'admin_owner_commands_only': False,

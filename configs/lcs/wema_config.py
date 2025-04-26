@@ -33,7 +33,8 @@ wema_config = {
     # Particularly sky temperature is impacted by daily effects.
     'opens_during_nighttime' : True,
     'opens_during_daytime': False,
-
+    # Which emails to send?
+    'send_hourly_cloud_forecast_emails' : False,
     #'obs_id': None,  # a WEMA is not a telescope aka Observatory
     #'observatory_location': site_name.lower(),  # in LCO case, an airport code such as OGG
 

@@ -3165,51 +3165,53 @@ class WxEncAgent:
             line_of_weather_info.append(self.worldweather_current_cloud)
             line_of_weather_info.append(self.worldweather_nexthour_cloud)
             
-            # Your cPanel email credentials
-            smtp_server = self.smtp_server
-            port = self.smtp_port  # For SSL
-            sender_email = self.sender_email
-            password = self.email_password
             
-                       
-            # Receiver
-            receiver_emails = self.weather_to_emails.replace(' ','').split(',')
-            
-            for receiver_email in receiver_emails:
-            
-                # Create the email
-                message = MIMEMultipart()
-                message['From'] = sender_email
-                message['To'] = receiver_email
-                message['Subject'] = self.name + ' Cloud Report'
+            if self.config['send_hourly_cloud_forecast_emails']:
+                # Your cPanel email credentials
+                smtp_server = self.smtp_server
+                port = self.smtp_port  # For SSL
+                sender_email = self.sender_email
+                password = self.email_password
                 
-                body = 'Hello, the clouds are now (hopefully): ' + str(self.medianforecast_current_cloud_cover) +'\n'
+                           
+                # Receiver
+                receiver_emails = self.weather_to_emails.replace(' ','').split(',')
                 
-                body = body +"OWM cloud cover: " +str(self.owm_cloud_cover) +'\n'
-                body = body +"Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover)+'\n'    
-                body = body +"Metocean Now: " +str(self.metocean_clouds_now)+'\n'
-                body = body +"Pirate Now: " +str(self.pirate_clouds_now)+'\n'
-                body = body +"WorldWeather Now: " +str(self.worldweather_current_cloud)+'\n'
-                body = body +"TomorrowIO Now: " +str(self.tomorrowio_cloud_now)+'\n\n'
-                body = body +"OWM Next Hour: " +str(self.owm_cloud_cover_next_hour)+'\n'
-                body = body +"Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour)+'\n'
-                body = body +"TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour)+'\n'
+                for receiver_email in receiver_emails:
                 
-                body = body +"WorldWeather Next Hour: " +str(self.worldweather_nexthour_cloud)+'\n'
-                body = body +"Metocean Next Hour: " +str(self.metocean_clouds_inanhour)+'\n'
-                body = body +"Pirate Next Hour: " +str(self.pirate_clouds_inanhour)+'\n'
-                
-    
-                message.attach(MIMEText(body, 'plain'))
-                
-                # Send the email
-                try:
-                    with smtplib.SMTP_SSL(smtp_server, port) as server:
-                        server.login(sender_email, password)
-                        server.sendmail(sender_email, receiver_email, message.as_string())
-                    plog("Email sent successfully!")
-                except Exception as e:
-                    plog(f"Error sending email: {e}")
+                    # Create the email
+                    message = MIMEMultipart()
+                    message['From'] = sender_email
+                    message['To'] = receiver_email
+                    message['Subject'] = self.name + ' Cloud Report'
+                    
+                    body = 'Hello, the clouds are now (hopefully): ' + str(self.medianforecast_current_cloud_cover) +'\n'
+                    
+                    body = body +"OWM cloud cover: " +str(self.owm_cloud_cover) +'\n'
+                    body = body +"Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover)+'\n'    
+                    body = body +"Metocean Now: " +str(self.metocean_clouds_now)+'\n'
+                    body = body +"Pirate Now: " +str(self.pirate_clouds_now)+'\n'
+                    body = body +"WorldWeather Now: " +str(self.worldweather_current_cloud)+'\n'
+                    body = body +"TomorrowIO Now: " +str(self.tomorrowio_cloud_now)+'\n\n'
+                    body = body +"OWM Next Hour: " +str(self.owm_cloud_cover_next_hour)+'\n'
+                    body = body +"Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour)+'\n'
+                    body = body +"TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour)+'\n'
+                    
+                    body = body +"WorldWeather Next Hour: " +str(self.worldweather_nexthour_cloud)+'\n'
+                    body = body +"Metocean Next Hour: " +str(self.metocean_clouds_inanhour)+'\n'
+                    body = body +"Pirate Next Hour: " +str(self.pirate_clouds_inanhour)+'\n'
+                    
+        
+                    message.attach(MIMEText(body, 'plain'))
+                    
+                    # Send the email
+                    try:
+                        with smtplib.SMTP_SSL(smtp_server, port) as server:
+                            server.login(sender_email, password)
+                            server.sendmail(sender_email, receiver_email, message.as_string())
+                        plog("Email sent successfully!")
+                    except Exception as e:
+                        plog(f"Error sending email: {e}")
 
             
             print (line_of_weather_info)

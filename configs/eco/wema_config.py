@@ -38,7 +38,9 @@ wema_config = {
     'opens_during_nighttime' : True,
     'opens_during_daytime': False,
 
-
+    # Which emails to send?
+    'send_hourly_cloud_forecast_emails' : False,
+    
 
     # These are just the bootup default values.
     'OWM_active': False,
