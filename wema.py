@@ -2016,28 +2016,28 @@ class WxEncAgent:
                 try:
                     plog ("****************************")
                     plog("FORECAST DERIVED CLOUD COVER")
-                    plog("OWM cloud cover: " +str(self.owm_cloud_cover))
-                    plog("Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover))
-                    plog("TomorrowIO Now: " +str(self.tomorrowio_cloud_now))
-                    plog("Pirate Now: " +str(self.pirate_clouds_now))
-                    plog("Metocean Now: " +str(self.metocean_clouds_now))
-                    plog("Worldweather Now: " +str(self.worldweather_current_cloud))
+                    plog("OWM cloud cover: " +str(round(self.owm_cloud_cover,1)) +'%')
+                    plog("Open Meteo cloud cover: " +str(round(self.open_meteo_cloud_cover,1))+'%')
+                    plog("TomorrowIO Now: " +str(round(self.tomorrowio_cloud_now,1))+'%')
+                    plog("Pirate Now: " +str(round(self.pirate_clouds_now,1))+'%')
+                    plog("Metocean Now: " +str(round(self.metocean_clouds_now,1))+'%')
+                    plog("Worldweather Now: " +str(round(self.worldweather_current_cloud,1))+'%')
                     
                     plog('**')
                     
-                    plog("OWM Next Hour: " +str(self.owm_cloud_cover_next_hour))
-                    plog("Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour))
-                    plog("TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour))
+                    plog("OWM Next Hour: " +str(round(self.owm_cloud_cover_next_hour,1))+'%')
+                    plog("Open Meteo Next Hour: " +str(round(self.open_meteo_cloud_cover_next_hour,1))+'%')
+                    plog("TomorrowIO Next Hour: " +str(round(self.tomorrowio_cloud_inanhour,1))+'%')
                     
-                    plog("Pirate Next Hour: " +str(self.pirate_clouds_inanhour))
+                    plog("Pirate Next Hour: " +str(round(self.pirate_clouds_inanhour,1))+'%')
                     
-                    plog("Metocean Next Hour: " +str(self.metocean_clouds_inanhour))
+                    plog("Metocean Next Hour: " +str(round(self.metocean_clouds_inanhour,1))+'%')
                     
-                    plog("Worldweather Next Hour: " +str(self.worldweather_nexthour_cloud))
+                    plog("Worldweather Next Hour: " +str(round(self.worldweather_nexthour_cloud,1))+'%')
                     
                     plog('**')
                     
-                    plog("Median cloud cover: "+str(self.medianforecast_current_cloud_cover))
+                    plog("Median cloud cover from all estimates: "+str(round(self.medianforecast_current_cloud_cover,1))+'%')
         
                     plog("**************************************************************")
                 except:
