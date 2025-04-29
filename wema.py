@@ -396,7 +396,7 @@ class WxEncAgent:
             secrets=json.load(file)
 
 
-
+        self.number_of_nighttime_weather_observations = 0 # Just initialising
         
         self.smtp_server=secrets["smtp_server"]
         self.smtp_port=secrets["smtp_port"]

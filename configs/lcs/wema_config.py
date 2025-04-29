@@ -196,14 +196,15 @@ wema_config = {
     # Whether these limits are on by default
     'rain_limit_on': True,
     'humidity_limit_on': False,
-    'windspeed_limit_on': True,
-    'lightning_limit_on': True,
+    'windspeed_limit_on': False,
+    'lightning_limit_on': False,
     'temperature_minus_dewpoint_limit_on': False,
-    'sky_minus_ambient_limit_on': False,
+    'sky_minus_ambient_limit_on': True,    
     'sky_temperature_limit_on': True,
-    'cloud_cover_limit_on': True,
-    'lowest_ambient_temperature_on': True,
-    'highest_ambient_temperature_on': True,
+    'local_cloud_cover_limit_on': True,
+    'forecast_cloud_cover_limit_on': True,
+    'lowest_ambient_temperature_on': False,
+    'highest_ambient_temperature_on': False,
     
     #############################################################
     #### BE AWARE THAT THESE VALUES ARE JUST FOR INITILIASATION!#
@@ -216,12 +217,13 @@ wema_config = {
     'humidity_limit': 95,
     'windspeed_limit': 25,
     'lightning_limit': 15,
-    'temperature_minus_dewpoint_limit': -2,
-    'sky_minus_ambient_limit': -12,
+    'temperature_minus_dewpoint_limit': 2,
+    'sky_minus_ambient_limit': -14,
     'sky_temperature_limit': -3,
-    'cloud_cover_limit': 80,
-    'lowest_ambient_temperature': -4,
-    'highest_ambient_temperature': 45,
+    'local_cloud_cover_limit': 70,
+    'forecast_cloud_cover_limit' : 70,
+    'lowest_ambient_temperature': -5,
+    'highest_ambient_temperature': 60,
     
     #############################################################
     #### BE AWARE THAT THESE VALUES ARE JUST FOR INITILIASATION!#
@@ -237,7 +239,8 @@ wema_config = {
     'warning_temperature_minus_dewpoint_limit': 2,
     'warning_sky_minus_ambient_limit': -17,
     'warning_sky_temperature_limit': -6,
-    'warning_cloud_cover_limit': 25,
+    'warning_local_cloud_cover_limit': 25,
+    'warning_forecast_cloud_cover_limit': 25,
     'warning_lowest_ambient_temperature': 5,
     'warning_highest_ambient_temperature': 35,
 
