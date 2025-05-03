@@ -37,8 +37,18 @@ wema_config = {
     'wema_name': 'aro',
     'instance_type': 'wema',
     'instance_is_private': False,
-    'obsp_ids': ['aro1'], #, 'aro2','aro3', 'aro4']  #Possible hint to site about who are its children.
-
+    'obsp_ids': ['aro1', 'aro2'], #, 'aro2','aro3', 'aro4']  #Possible hint to site about who are its children.
+    
+    # These values are to help the weather station self-organise
+    # If it is only a nighttime or a daytime observatory, we can restrict
+    # fits and predictions of the weather to using data for that period of the day
+    # Particularly sky temperature is impacted by daily effects.
+    'opens_during_nighttime' : True,
+    'opens_during_daytime': False,
+    
+    # Which emails to send?
+    'send_hourly_cloud_forecast_emails' : False,
+    
     'debug_mode': False,
     'debug_duration_sec': 80000,
     'admin_owner_commands_only': False,
@@ -158,8 +168,10 @@ wema_config = {
     'windspeed_limit_on': True,
     'lightning_limit_on': True,
     'temperature_minus_dewpoint_limit_on': True,
-    'sky_temperature_limit_on': True,
-    'cloud_cover_limit_on': True,
+    'sky_minus_ambient_limit_on': True,
+    'sky_temperature_limit_on': False,
+    'local_cloud_cover_limit_on': True,
+    'forecast_cloud_cover_limit_on': True,
     'lowest_ambient_temperature_on': True,
     'highest_ambient_temperature_on': True,
     'has_inside_weather_station': False,
@@ -172,13 +184,15 @@ wema_config = {
 
     # Local weather limits   #NB we should move these into OCN config section
     'rain_limit': 1.0,         # NO we shouldn't because it will be different per site
-    'humidity_limit': 75,   # With multiple elements etc. I think.
+    'humidity_limit': 92,   # With multiple elements etc. I think.
     'windspeed_limit': 24,  #  8 m/s per Neyle 20231226 Units? Some of this could be OWM stuff e.g.
     'gust_decay_rate': 0.98,    #20240426 Totally experimental
     'lightning_limit' : 15, #km
     'temperature_minus_dewpoint_limit': 2,
-    'sky_temperature_limit': -1,  #It must be colder than this
-    'cloud_cover_limit': 51,
+    'sky_minus_ambient_limit': -1,  #It must be colder than this
+    'sky_temperature_limit': -3,
+    'local_cloud_cover_limit': 70,
+    'forecast_cloud_cover_limit' : 85,
     'lowest_ambient_temperature': -20,
     'highest_ambient_temperature': 40,
 
@@ -194,8 +208,10 @@ wema_config = {
     'warning_windspeed_limit': 6,   #m/s
     'warning_lightning_limit' : 20, #km
     'warning_temperature_minus_dewpoint_limit': 2,
-    'warning_sky_temperature_limit': -17,
-    'warning_cloud_cover_limit': 25,
+    'warning_sky_minus_ambient_limit': -17,
+    'warning_sky_temperature_limit': -6,
+    'warning_local_cloud_cover_limit': 25,
+    'warning_forecast_cloud_cover_limit': 25,
     'warning_lowest_ambient_temperature': -10,
     'warning_highest_ambient_temperature': 35,
 

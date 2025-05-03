@@ -32,86 +32,8 @@ from wema_utility import plog
 import requests
 import json
 
+import datetime
 
-# def calculate_cloud_fraction(T_sky_C, T_clear_C=-20, T_cloud_C=3):
-#     """
-#     Calculate fractional cloud cover based on sky temperature in Celsius.
-
-#     Parameters:
-#     T_sky_C (float): Measured sky temperature in Celsius.
-#     T_clear_C (float): Clear sky temperature in Celsius (default: -43C).
-#     T_cloud_C (float): Overcast sky temperature in Celsius (default: 7C).
-
-#     Returns:
-#     float: Fractional cloud cover (0 to 1)
-#     """
-#     if T_sky_C < T_clear_C:
-#         return 0.0  # Fully clear sky
-#     elif T_sky_C > T_cloud_C:
-#         return 1.0  # Fully overcast sky
-
-#     return (T_sky_C - T_clear_C) / (T_cloud_C - T_clear_C)
-
-# def calculate_cloud_fraction(T_sky_C, T_clear_C=-20, T_cloud_C=3, n=1):
-#     """
-#     Calculate fractional cloud cover based on a nonlinear function of sky temperature.
-
-#     Parameters:
-#     T_sky_C (float): Measured sky temperature in Celsius.
-#     T_clear_C (float): Clear sky temperature in Celsius (default: -20C).
-#     T_cloud_C (float): Overcast sky temperature in Celsius (default: 3C).
-#     n (float): Nonlinearity exponent (default: 2, adjust based on empirical data).
-    
-#     MTF - SO FAR, n=1 seems more realistic. Higher numbers underestimate cloud cover
-
-#     Returns:
-#     float: Fractional cloud cover (0 to 1)
-#     """
-#     if T_sky_C <= T_clear_C:
-#         return 0.0  # Fully clear sky
-#     elif T_sky_C >= T_cloud_C:
-#         return 1.0  # Fully overcast sky
-
-#     # Compute nonlinear cloud fraction
-#     return ((T_sky_C - T_clear_C) / (T_cloud_C - T_clear_C)) ** n
-
-
-
-def calculate_cloud_fraction(T_sky_C, T_ambient_C, RH, 
-                             T_cloud_C=3, n=1, avg_RH=50):
-    """
-    Improved cloud fraction estimation incorporating ambient temperature and humidity.
-    Uses an average humidity value when RH is set to -1.
-
-    Parameters:
-    T_sky_C (float): Measured sky temperature in Celsius.
-    T_ambient_C (float): Ambient air temperature in Celsius.
-    RH (float): Relative Humidity in percentage (0-100). Use -1 to apply average RH.
-    T_cloud_C (float): Overcast sky temperature in Celsius (default: 3C).
-    n (float): Nonlinearity exponent (default: 1, adjust based on empirical data).
-    avg_RH (float): Default average humidity percentage (default: 50%).
-
-    Returns:
-    float: Fractional cloud cover (0 to 1)
-    """
-    # If RH is -1, use the average value
-    if RH == -1:
-        RH = avg_RH
-
-    # Estimate clear sky temperature dynamically based on ambient temperature
-    # Empirical estimate: Clear sky is typically 20-30°C lower than ambient on dry nights
-    # Correction factor based on humidity
-    clear_sky_offset = -20 + (RH / 10)  # More humid air reduces cooling effect
-    T_clear_C_dynamic = T_ambient_C + clear_sky_offset
-    
-    # Boundaries check
-    if T_sky_C <= T_clear_C_dynamic:
-        return 0.0  # Fully clear sky
-    elif T_sky_C >= T_cloud_C:
-        return 1.0  # Fully overcast sky
-
-    # Compute nonlinear cloud fraction
-    return ((T_sky_C - T_clear_C_dynamic) / (T_cloud_C - T_clear_C_dynamic)) ** n
 
 
 def linearize_unihedron(uni_value):  # Need to be coefficients in config.
@@ -159,35 +81,7 @@ class ObservingConditions:
         self.unihedron_connected = True  # NB NB NB His needs improving, drive from config
         self.hostname = socket.gethostname()
 
-        # =============================================================================
-        #         Note site_in_automatic found in the Enclosure object.
-        # =============================================================================
 
-        # if self.hostname in self.config["wema_hostname"]:
-
-        #     self.is_wema = True
-        #     self.is_process = False
-        # else:
-        #     self.is_wema = False
-        #     self.is_process = True
-
-        # self.site_is_custom = False
-
-        # if self.config["site_is_custom"]:
-        #     self.site_is_custom = True   #  Note OCN has no associated commands.
-        #     #Here we monkey patch
-        #     from site_config import get_ocn_status
-        #     self.get_status = get_ocn_status
-        #     #Get current ocn status just as a test.
-        #     try:
-        #         self.status = self.get_status(g_dev)
-        #     except:
-        #         plog("Test: self.get_status(g_dev) did not respond.")
-
-        #  This is meant to be thea generic Observing_condition code
-        #  instance that can be accessed by a simple site or by the WEMA,
-        #  assuming the transducers are connected to the WEMA.
-        # self.obsid_is_generic = True
 
         if driver is not None:
 
@@ -196,9 +90,7 @@ class ObservingConditions:
             self.aagsolo=False
             if driver == 'aagsolo':
                 self.aagsolo=True
-
-            #breakpoint()
-
+                
             if not self.aagsolo and not self.config['observing_conditions']['observing_conditions1']["name"] == 'SkyAlert Custom for ARO':
                 win32com.client.pythoncom.CoInitialize()
                 self.sky_monitor = win32com.client.Dispatch(driver)
@@ -251,35 +143,7 @@ class ObservingConditions:
                 else:
                     self.unihedron_connected = False
 
-        # self.rain_limit_setting = self.config['rain_limit']
-        # self.humidity_limit_setting = self.config['humidity_limit']
-        # self.windspeed_limit_setting = self.config['windspeed_limit']
-        # self.lightning_limit_setting = self.config['lightning_limit']
-        # self.temp_minus_dew_setting = self.config['temperature_minus_dewpoint_limit']
-        # self.sky_temp_limit_setting = self.config['sky_temperature_limit']
-        # self.cloud_cover_limit_setting = self.config['cloud_cover_limit']
-        # self.lowest_temperature_setting = self.config['lowest_ambient_temperature']
-        # self.highest_temperature_setting = self.config['highest_ambient_temperature']
 
-        # self.warning_rain_limit_setting = self.config['warning_rain_limit']
-        # self.warning_humidity_limit_setting = self.config['warning_humidity_limit']
-        # self.warning_windspeed_limit_setting = self.config['warning_windspeed_limit']
-        # self.warning_lightning_limit_setting = self.config['warning_lightning_limit']
-        # self.warning_temp_minus_dew_setting = self.config['warning_temperature_minus_dewpoint_limit']
-        # self.warning_sky_temp_limit_setting = self.config['warning_sky_temperature_limit']
-        # self.warning_cloud_cover_limit_setting = self.config['warning_cloud_cover_limit']
-        # self.warning_lowest_temperature_setting = self.config['warning_lowest_ambient_temperature']
-        # self.warning_highest_temperature_setting = self.config['warning_highest_ambient_temperature']
-
-        # self.rain_limit_on = self.config['rain_limit_on']
-        # self.humidity_limit_on = self.config['humidity_limit_on']
-        # self.windspeed_limit_on = self.config['windspeed_limit_on']
-        # self.lightning_limit_on = self.config['lightning_limit_on']
-        # self.temp_minus_dew_on = self.config['temperature_minus_dewpoint_limit_on']
-        # self.sky_temperature_limit_on = self.config['sky_temperature_limit_on']
-        # self.cloud_cover_limit_on = self.config['cloud_cover_limit_on']
-        # self.lowest_temperature_on = self.config['lowest_ambient_temperature_on']
-        # self.highest_temperature_on = self.config['highest_ambient_temperature_on']
 
         # self.wx_hold = False
         self.last_wx = None
@@ -298,49 +162,7 @@ class ObservingConditions:
         """
         # Just need to initialise this.
         status = None
-        # This is purely generic code for a generic site.
-        # It may be overwritten with a monkey patch found in the appropriate config.py.
-
-        #breakpoint()
-
-
-        # if not self.is_wema: #and self.site_is_custom:  # EG., this was written first for SRO.                                        #  system is a proxoy for having a WEMA
-        #     # This is NOT the normal ARO path
-        #     if self.config["site_IPC_mechanism"] == "shares":
-        #         try:
-        #             weather = open(g_dev["wema_share_path"] + "weather.txt", "r")
-        #             status = json.loads(weather.readline())
-        #             weather.close()
-        #             self.status = status
-        #             self.prior_status = status
-        #             g_dev["ocn"].status = status
-        #             return status
-        #         except:
-        #             try:
-        #                 time.sleep(3)
-        #                 weather = open(g_dev["wema_share_path"] + "weather.txt", "r")
-        #                 status = json.loads(weather.readline())
-        #                 weather.close()
-        #                 self.status = status
-        #                 self.prior_status = status
-        #                 g_dev["ocn"].status = status
-        #                 return status
-        #             except:
-        #                 try:
-        #                     time.sleep(3)
-        #                     weather = open(
-        #                         g_dev["wema_share_path"] + "weather.txt", "r"
-        #                     )
-        #                     status = json.loads(weather.readline())
-        #                     weather.close()
-        #                     self.status = status
-        #                     self.prior_status = status
-        #                     g_dev["ocn"].status = status
-        #                     return status
-        #                 except:
-        #                     plog("Using prior OCN status after 4 failures.")
-        #                     g_dev["ocn"].status = self.prior_status
-        #                     return self.prior_status
+        
 
         if self.aagsolo:
 
@@ -372,25 +194,10 @@ class ObservingConditions:
                         # Keep string values as they are
                         weather_data[key] = value.strip()
 
-                # # Convert to JSON format
-                # json_data = json.dumps(weather_data, indent=4)
-
-                # # Print or save JSON output
-                # print(json_data)
 
             else:
-                print("Failed to fetch data. HTTP Status:", response.status_code)
-
-
-
-            # Convert AAG values into PTR values
-            # T_sky_C = weather_data['clouds']
-            # T_ambient_C=weather_data['temp']
-            # self.humidity=weather_data['hum']
-            
-            cloud_percentage = calculate_cloud_fraction(weather_data['clouds'], weather_data['temp'],weather_data['hum'])
-            #print(f"Estimated fractional cloud cover: {cloud_fraction:.2f}")
-
+                print("Failed to fetch data. HTTP Status:", response.status_code)            
+           
             # rain_rate is either on or off
             # so one or zero
             if weather_data['rain'] < self.config["observing_conditions"]["observing_conditions1"]['aagsolo_rain_threshold']:
@@ -401,7 +208,6 @@ class ObservingConditions:
             # Other things ocn creates
             status = {}
             illum, mag = self.astro_events.illuminationNow()
-            # illum = float(redis_monitor["illum lux"])
             if illum > 500:
                 illum = int(illum)
             else:
@@ -427,14 +233,13 @@ class ObservingConditions:
             self.dewpoint=weather_data['dewp']
             self.sky_minus_ambient=weather_data['clouds']-weather_data['temp']
             self.windspeed=weather_data['wind']
-
-            self.cloud_cover=cloud_percentage
-
-
-            #self.ok_to_open = True
-
-
-            self.time_since = 20
+            
+            # Parse it into a datetime object
+            dt_obj = datetime.datetime.strptime(weather_data['dataGMTTime'], "%Y/%m/%d %H:%M:%S")
+            
+            # Convert to timestamp
+            timestamp = dt_obj.timestamp()
+            
 
             status = {
                 "temperature_C": self.temperature,
@@ -442,19 +247,15 @@ class ObservingConditions:
                 "humidity_%": self.humidity,
                 "dewpoint_C": self.dewpoint,
                 "sky_temp_C": weather_data['clouds'],
-                "last_sky_update_s": self.time_since,
+                "last_sky_update_s": timestamp,
                 "wind_m/s": self.windspeed,
                 "rain_rate": self.rain_rate,
                 "solar_flux_w/m^2": None,
-                "cloud_cover_%": round(self.cloud_cover,0),
                 "calc_HSI_lux": illum,
-                "calc_sky_mpsas": round(uni_measure, 2),  # Provenance of 20.01 is dubious 20200504 WER
-                #"open_ok": self.ok_to_open,
+                "calc_sky_mpsas": round(uni_measure, 2),  
                 "lightning_strike_radius km": 'n/a',
                 "general_obscuration %": 'n/a',
                 "photometric extinction k'": 'n/a',
-                # "wx_hold": None,
-                # "hold_duration": 0,
             }
 
 
@@ -462,50 +263,51 @@ class ObservingConditions:
             print (weather_data)
             print (" **** PTR STATUS **********")
             print (status)
-            #breakpoint()
-
 
             return status
-            #breakpoint()
 
 
         elif self.config['observing_conditions']['observing_conditions1']["name"] == 'SkyAlert Custom for ARO':
         #This is the normal path for ARO
         #NB NB NB 20240218  Boltwood bw1[15] reporting 3 all the time. WE may need to mask this out.
         #DO NOT RELY ON THE BOLTWOOD FOR SKY TEMP
+        #10.0.0.195 is NWEST (Black Cube), detects wind and moisture
+        #10.0.0.196 is NEAST, detects no wind, but yes to moisture
 
             try:
-                with open('D:\\weatherdata_0m30.txt', 'r') as sa_rec:
+                with open('W:\skyalert\weatherdata_nw.txt', 'r') as sa_rec:
                     sa_nw = sa_rec.readline().split()
-                #print('Boltwood:     ', bw1, '\n')
-                # print('SkyAlert NE:  ', sa_ne, '\n')
-                # print('SkyAlert NW:  ', sa_nw, '\n')
-
+                with open('W:\skyalert\weatherdata_ne.txt', 'r') as sa_rec:
+                    sa_ne = sa_rec.readline().split()
+                print('SkyAlert NW: w wind ', sa_nw, '\n')
+                print('SkyAlert NE: no wind ', sa_ne, '\n')
+                
                 #The datetime for the data above needs to be verified as current,
                 #if not current go directly to commanding a close.
 
 
                 rate = ["Unk.", 'Dry', 'Wet', 'Raining']
                 cover = ["Unk.", 'Clear',' Cloudy', 'Very Cloudy']
-                self.temperature = round(float(sa_nw[5]), 1)
-                self.sky_temp = round(float(sa_nw[4]), 1)
-                self.sky_minus_ambient = round(self.sky_temp - self.temperature ,1)
-                self.windspeed = round(float(sa_nw[7]), 1)  # incoming is km/h
+                self.temperature = round(float(sa_ne[5]), 1)
+                self.sky_temp = round(float(sa_ne[4]), 1)
+                self.windspeed = round(float(sa_ne[7]), 1)  # incoming is km/h
                 if self.windspeed > self.gust_memory:
                     self.gust_memory = self.windspeed
-                self.humidity = round(float(sa_nw[8]), 1)
-                self.dewpoint = round(float(sa_nw[9]), 1)
-                #Fixed gross error mixing mph and m/s 20231226 WER
-                self.rain_alert = int(sa_nw[11])
+                self.humidity = round(float(sa_ne[8]), 1)
+                self.dewpoint = round(float(sa_ne[9]), 1)
+                
+                self.rain_alert = int(sa_nw[11]) or int(sa_ne[11])
                 self.wet_alert = int(sa_nw[12])
-                self.time_since = int(float(sa_nw[13]))
-                plog("time since:  ", self.time_since)
+                time_since = int(float(sa_nw[13]))
+                plog("time since:  ", time_since)
+                
+                timestamp=time.time()-time_since
                 self.time_of_update = round(float(sa_nw[14]), 5)
 
 
                 self.cloud_condition = int(sa_nw[15]) # unk, Clear, Cloudy, Very Cloudy
                 self.wind_condition = int(sa_nw[16]) # unk, Calm, Windy, Very Windy
-                self.rain_condition = int(sa_nw[17]) # unk, Dry, Wet, Raining
+                self.rain_condition = int(sa_nw[17]) # unk, Dry, Wet, Raining  #NB NB NB 20250102 NW unit shows rain at -2C  WER
                 self.daylight_condition = bool(sa_nw[18]) # unk Dark, Light, Very Light
                 self.close_requested = bool(sa_nw[19])
                 #Note the rates and cover are synthesized by a lookup.
@@ -516,13 +318,13 @@ class ObservingConditions:
                 if self.rain_alert or self.wet_alert or self.rain_condition in \
                     ['Wet', 'Raining']:
                     self.wet_flag = True   #This is intended to latch the roof closed for the night
-                    self.rain_rate =1
+                    self.rain_rate = 1
                 else:
-                    self.rain_rate=0
+                    self.rain_rate = 0
 
                 if self.cloud_condition==1:
                     self.cloud_cover = 0
-                elif self.cloud_condtion==2:
+                elif self.cloud_condition==2:
                     self.cloud_cover = 40
                 elif self.cloud_condition==3:
                     self.cloud_cover=100
@@ -563,7 +365,6 @@ class ObservingConditions:
                 except:
                     self.pressure = self.config["reference_pressure"]
 
-                # NB NB NB This is a very odd problem which showed up at MRC.
 
                 try:
                     self.new_pressure = round(float(self.pressure[0]), 2)  # was [0]), 2)
@@ -579,119 +380,20 @@ class ObservingConditions:
                     "pressure_mbar": self.new_pressure,
                     "humidity_%": self.humidity,
                     "dewpoint_C": self.dewpoint,
-                    "sky_temp_C": self.sky_minus_ambient,
-                    "last_sky_update_s": self.time_since,
+                    "sky_temp_C": self.sky_temp,
+                    "last_sky_update_s": timestamp,
                     "wind_m/s": self.windspeed,
                     "rain_rate": self.rain_rate,
                     "solar_flux_w/m^2": None,
-                    "cloud_cover_%": self.cloud_cover,
                     "calc_HSI_lux": illum,
-                    "calc_sky_mpsas": round(uni_measure, 2),  # Provenance of 20.01 is dubious 20200504 WER
-                    #"open_ok": self.ok_to_open,
+                    "calc_sky_mpsas": round(uni_measure, 2),
                     "lightning_strike_radius km": 'n/a',
                     "general_obscuration %": 'n/a',
                     "photometric extinction k'": 'n/a',
-                    # "wx_hold": None,
-                    # "hold_duration": 0,
                 }
 
-                # print (status)
-                # breakpoint()
-                   #Adding in necessary "ok to open" stuff for the status evaluation
-
-                # rain_limit_setting = self.config['rain_limit']
-                # humidity_limit_setting = self.config['humidity_limit']
-                # windspeed_limit_setting = self.config['windspeed_limit']
-                # temp_minus_dew_setting = self.config['temperature_minus_dewpoint_limit']
-                # sky_temp_limit_setting = self.config['sky_temperature_limit']
-                # cloud_cover_limit_setting = self.config['cloud_cover_limit']
-                # lowest_temperature_setting = self.config['lowest_ambient_temperature']
-                # highest_temperature_setting = self.config['highest_ambient_temperature']
-
-                # wx_reasons = []
-                # dewpoint_gap = False
-                # rain_gap = False
-                # temp_gap= False
-                # humidity_gap = False
-                # sky_gap = False
-                # wind_gap = False
-                # cloud_gap = False
-                # self.gust_memory *= self.config['gust_decay_rate']
-                # plog('(decaying) Gust:  ', round(self.gust_memory, 2))
-
-
-
-                # if self.rain_rate in ['Wet', 'Raining']:  #Should we add Unl to this list?
-                #     plog("Rain condition is:  ", self.rain_rate)
-                #     wx_reasons.append('Rain > Dry')
-                #     rain_gap = True
-                # if self.humidity > humidity_limit_setting:
-                #     wx_reasons.append('Humidity >= ' + str(humidity_limit_setting) + '%')
-                #     humidity_gap = True
-                # if max(self.windspeed, self.gust_memory) > windspeed_limit_setting:
-                #     wx_reasons.append('Wind or Gust > ' + str(windspeed_limit_setting) + ' km/h')
-                #     wind_gap = True
-                # if (self.temperature - self.dewpoint) < temp_minus_dew_setting:
-                #     wx_reasons.append('Ambient - Dewpoint < ' + str(temp_minus_dew_setting)
-                #                      + 'C')
-                #     dewpoint_gap = True
-                # if self.sky_minus_ambient > sky_temp_limit_setting :
-                #     wx_reasons.append('(sky - amb) > ' + str(sky_temp_limit_setting) + 'C')
-
-                # try:
-                #     #breakpoint()
-                #     cloud_cover_value = float(self.sky_monitor.CloudCover)
-                #     status['cloud_cover_%'] = round(cloud_cover_value, 0)
-                #     if cloud_cover_value <= cloud_cover_limit_setting:
-                #         cloud_cover = False
-                #     else:
-                #         cloud_cover = True
-                #         wx_reasons.append('>=' + str(cloud_cover_limit_setting) + '% Cloudy')
-                # except:
-                #     status['cloud_cover_%'] = "no report"
-                #     cloud_cover = True  # We cannot use this signal to force a wX hold or close
-                # self.current_ambient = round(self.temperature, 2)
-                # temp_bounds = lowest_temperature_setting < self.sky_monitor.Temperature < highest_temperature_setting
-
-                # if not temp_bounds:
-
-                #     wx_reasons.append('amb temp out of range')
-
-                # self.wx_is_ok = not (
-                #     dewpoint_gap
-                #     or temp_gap
-                #     or wind_gap
-                #     or sky_gap
-                #     or humidity_gap
-                #     or rain_gap
-                #     or cloud_gap
-                # )
-                # #  NB wx_is_ok does not include ambient light or altitude of the Sun
-                # # the notion of Obs OK should bring in Sun Elevation and or ambient light.
-
-                # #     if self.sky_monitor.RainRate > 0.0:
-                # #         if self.sky_monitor.RainRate == 1:
-                # #             # plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
-                # #             # plog("Rain Rate is 1.0")
-                # #             # # plog('Rain > ' + str(rain_limit_setting))
-                # #             # plog("This is usually a glitch so ignoring. Higher rain rates will trigger roof.")
-                # #             # plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
-                # #             plog("Rain Flag is 1: This is usually a glitch so ignoring.")
-                # #             plog("May be unevaporated rain, ice, or a bird dropping.")
-                # #         else:
-                # #             plog ("Rain rate is currently above 1. Saying that it is not ok.")
-                # #             self.wx_is_ok=False
-
-                # if self.wx_is_ok:
-                #     wx_str = "Yes"
-                #     status["wx_ok"] = "Yes"
-                #     # plog('Wx Ok?  ', status["wx_ok"])
-                # else:
-                #     wx_str = "No"  # Ideally we add the dominant reason in priority order.
-                #     status["wx_ok"] = "No"
-                #     plog('Wx Ok: ', status["wx_ok"], wx_reasons)
-
-                # g_dev["wx_ok"] = self.wx_is_ok
+                # Store status in self.status
+                self.status=status
 
                 return status
             except:
@@ -699,7 +401,8 @@ class ObservingConditions:
 
                 plog('something went wrong with the boltwood stuff')
                 plog('above is an unglamourous traceback but continuing onwards')
-                return status
+                
+                return self.status
 
         else:  # These operations are common to a generic single computer or wema site.
             ## Here we get the status from local devices, including MRC
@@ -759,17 +462,13 @@ class ObservingConditions:
                     "wind_m/s": abs(round(self.sky_monitor.WindSpeed, 2)),
                     "rain_rate": self.sky_monitor.RainRate,
                     "solar_flux_w/m^2": None,
-                    "cloud_cover_%": str(self.sky_monitor.CloudCover),
                     "calc_HSI_lux": illum,
                     "calc_sky_mpsas": round(
                         uni_measure, 2
-                    ),  # Provenance of 20.01 is dubious 20200504 WER
-                    #"open_ok": self.ok_to_open,
+                    ), 
                     "lightning_strike_radius km": 'n/a',
                     "general_obscuration %": 'n/a',
                     "photometric extinction k'": 'n/a',
-                    # "wx_hold": None,
-                    # "hold_duration": 0,
                 }
             except:
                 status = {
@@ -784,111 +483,16 @@ class ObservingConditions:
                     "wind_m/s": abs(round(self.sky_monitor.WindSpeed, 2)),
                     "rain_rate": self.sky_monitor.RainRate,
                     "solar_flux_w/m^2": None,
-                    "cloud_cover_%": "unknown",  # str(self.sky_monitor.CloudCover), # Sometimes faults.
                     "calc_HSI_lux": illum,
                     "calc_sky_mpsas": round(
                         uni_measure, 2
-                    ),  # Provenance of 20.01 is dubious 20200504 WER
-                    #"open_ok": self.ok_to_open,
+                    ), 
                     "lightning_strike_radius km": 'n/a',
                     "general_obscuration %": 'n/a',
                     "photometric extinction k'": 'n/a',
-                    # "wx_hold": None,
-                    # "hold_duration": 0,
                 }
 
-            # wx_reasons = []
-            # #breakpoint()
-            # rain_limit = self.sky_monitor.RainRate > self.rain_limit_setting
-            # if rain_limit:
-            #     plog("Reported rain rate in mm/hr:  ", self.sky_monitor.RainRate)
-            #     wx_reasons.append('Rain > ' + str(self.rain_limit_setting))
-            # humidity_limit = self.sky_monitor.Humidity < self.humidity_limit_setting
-            # if not humidity_limit:
-            #     wx_reasons.append('Humidity >= ' + str(self.humidity_limit_setting) + '%')
-
-            # wind_limit = (
-            #         self.sky_monitor.WindSpeed*0.2778 < self.windspeed_limit_setting
-            # )  # sky_monitor reports km/h, Clarity may report in MPH
-            # if not wind_limit:
-            #     wx_reasons.append('Wind > ' + str(self.windspeed_limit_setting) + ' km/h')
-            # dewpoint_gap = (
-            #     not (self.sky_monitor.Temperature - self.sky_monitor.DewPoint) < self.temp_minus_dew_setting
-            # )
-            # if not dewpoint_gap:
-            #     wx_reasons.append('Ambient - Dewpoint < ' + str(self.temp_minus_dew_setting) + 'C')
-            # sky_amb_limit = (
-            #                         self.sky_monitor.SkyTemperature - self.sky_monitor.Temperature
-            #                 ) < self.sky_temp_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
-            # if not sky_amb_limit:
-            #     wx_reasons.append('(sky - amb) > ' + str(self.sky_temp_limit_setting) + 'C')
-            # try:
-            #     cloud_cover_value = float(self.sky_monitor.CloudCover)
-            #     status['cloud_cover_%'] = round(cloud_cover_value, 0)
-            #     if cloud_cover_value <= self.cloud_cover_limit_setting:
-            #         cloud_cover = False
-            #     else:
-            #         cloud_cover = True
-            #         wx_reasons.append('>=' + str(self.cloud_cover_limit_setting) + '% Cloudy')
-            # except:
-            #     status['cloud_cover_%'] = "no report"
-            #     cloud_cover = True  # We cannot use this signal to force a wX hold or close
-            # self.current_ambient = round(self.temperature, 2)
-            # temp_bounds = self.lowest_temperature_setting < self.sky_monitor.Temperature < self.highest_temperature_setting
-
-            # if not temp_bounds:
-            #     wx_reasons.append('amb temp out of range')
-
-            # self.wx_is_ok = (
-            #         (dewpoint_gap and self.temp_minus_dew_on)
-            #         and (temp_bounds and (self.lowest_temperature_on or self.highest_temperature_on))
-            #         and (wind_limit and self.windspeed_limit_on)
-            #         and (sky_amb_limit and self.sky_temperature_limit_on)
-            #         and (humidity_limit and self.humidity_limit_on)
-            #         and not (rain_limit and self.rain_limit_on)
-            #         and not (cloud_cover and self.cloud_cover_limit_on)
-            # )
-            # #  NB wx_is_ok does not include ambient light or altitude of the Sun
-            # # the notion of Obs OK should bring in Sun Elevation and or ambient light.
-
-            # if self.sky_monitor.RainRate > 0.0:
-            #     #plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
-            #     #plog("Rain Rate is 1.0")
-            #     # plog('Rain > ' + str(rain_limit_setting))
-            #     plog("Rain Flag is 1: This is usually a glitch so ignoring.")
-            #     plog("May be unevaporated rain, ice, or a bird dropping.")
-            #     #plog("%$%^%#^$%#*!$^#%$*@#^$%*@#^$%*#%$^&@#$*@&")
-
-            # if self.wx_is_ok:
-            #     wx_str = "Yes"
-            #     status["wx_ok"] = "Yes"
-            #     # plog('Wx Ok?  ', status["wx_ok"])
-            # else:
-            #     wx_str = "No"  # Ideally we add the dominant reason in priority order.
-            #     status["wx_ok"] = "No"
-            #     plog('Wx Ok: ', status["wx_ok"], wx_reasons)
-
-            # g_dev["wx_ok"] = self.wx_is_ok
-            # g_dev['ocn'].wx_hold = False
-
-            # if self.config["site_IPC_mechanism"] == "shares":
-            #     weather_txt = self.config["wema_write_share_path"] + "weather.txt"
-            #     try:
-            #         with open(weather_txt, "w", encoding="utf-8") as f:
-            #             f.write(json.dumps(status))
-            #     except IOError:
-            #         tries = 1
-            #         while tries < 5:
-            #             # Wait 3 seconds and try writing to file again, up to 3 more times.
-            #             plog(
-            #                 f"Attempt {tries} to write weather status failed. Trying again."
-            #             )
-            #             time.sleep(3)
-            #             with open(weather_txt, "w", encoding="utf-8") as f:
-            #                 f.write(json.dumps(status))
-            #                 if not weather_txt.closed:
-            #                     break
-            #             tries += 1
+            
 
             # Only write when around dark, put in CSV format, used to calibrate Unihedron.
             #
@@ -919,141 +523,13 @@ class ObservingConditions:
                 except:
                     self.sample_time = time.time() - 61
 
-            # Now let's compute Wx hold condition. Class is set up to assume Wx has been good.
-            # The very first time though at Noon, self.open_is_ok will always be False but the
-            # Weather, which does not include ambient light, can be good. We will assume that
-            # changes in ambient light are dealt with more by the Events module.
-
-            # We want the wx_hold signal to go up and down as a guage on the quality of the
-            # afternoon. If there are a lot of cycles, that indicates unsettled conditons even
-            # if any particular instant is perfect. So we set self.wx_hold to false during class
-            # __init__().
-            # When we get to this point of the code first time we expect self.wx_is_ok to be true
-
-            # obs_win_begin, sunset, sunrise, ephemNow = self.astro_events.getSunEvents()
-            # wx_delay_time = 900
-            # try:
-            #    multiplier = min(len(wx_reasons),3)
-            # except:
-            #    multiplier = 1
-            # wx_delay_time *= multiplier/2   #Stretch out the Wx hold if there are multiple reasons
-
-            # if (
-            #    self.wx_is_ok and self.wx_system_enable
-            # ) and not self.wx_hold:  # Normal condition, possibly nothing to do.
-            #    self.wx_hold_last_updated = time.time()
-            # elif not self.wx_is_ok and not self.wx_hold:  # Wx bad and no hold yet.
-            # Bingo we need to start a cycle
-            # self.wx_hold = True
-            # self.wx_hold_until_time = (
-            #     t := time.time() + wx_delay_time
-            # )  # 15 minutes   Make configurable
-            # self.wx_hold_tally += 1  #  This counts all day and night long.
-            # self.wx_hold_last_updated = t
-            # if (
-            #     obs_win_begin <= ephemNow <= sunrise
-            # ):  # Gate the real holds to be in the Observing window.
-            #     self.wx_hold_count += 1
-            #     # We choose to let the enclosure manager handle the close.
-            #     plog(
-            #         "Wx hold asserted, flap#:",
-            #         self.wx_hold_count,
-            #         self.wx_hold_tally,
-            #     )
-            # else:
-            #     plog(
-            #         "Wx Hold -- out of Observing window.",
-            #         self.wx_hold_count,
-            #         self.wx_hold_tally,
-            #     )
-            # elif not self.wx_is_ok and self.wx_hold:  # WX is bad and we are on hold.
-            #     self.wx_hold_last_updated = time.time()
-            #     # Stay here as long as we need to.
-            #     self.wx_hold_until_time = (t := time.time() + wx_delay_time)
-            #     if self.wx_system_enable:
-            #         pass
-            # elif self.wx_is_ok and self.wx_hold:  # Wx now good and still on hold.
-            #     if self.wx_hold_count < 3:
-            #         if time.time() >= self.wx_hold_until_time and not self.wx_clamp:
-            #             # Time to release the hold.
-            #             self.wx_hold = False
-            #             self.wx_hold_until_time = (
-            #                 time.time() + wx_delay_time
-            #             )  # Keep pushing the recovery out
-            #             self.wx_hold_last_updated = time.time()
-            #             plog(
-            #                 "Wx hold released, flap#, tally#:",
-            #                 self.wx_hold_count,
-            #                 self.wx_hold_tally,
-            #             )
-            #             # We choose to let the enclosure manager diecide it needs to re-open.
-            #     else:
-            #         # Never release the THIRD hold without some special high level intervention.
-            #         if not self.clamp_latch:
-            #             plog("Sorry, Tobor is clamping enclosure shut for the night.")
-            #         self.clamp_latch = True
-            #         self.wx_clamp = True
-
-            # self.wx_hold_last_updated = time.time()
-            # if self.wx_hold:
-            #    self.wx_to_go = round((self.wx_hold_until_time - time.time()), 0)
             status["hold_duration"] = 0.0
-            # MTF COMMENTED THIS OUT BECAUSE IT WAS SENDING A STATUS EVERY 20 SECONDS
-            # try:
-            #    g_dev['obs'].send_to_user(wx_reasons)
-            # except:
-            #    pass
-            # else:
-            #    status["hold_duration"] = 0.0
+
             self.status = status
             g_dev["ocn"].status = status
 
             return status
 
-    # def get_noocndevice_status(self):
-
-    #     illum, mag = g_dev["evnt"].illuminationNow()
-
-    #     if g_dev['seq'].weather_report_is_acceptable_to_observe:
-    #         openok='Yes'
-    #     else:
-    #         openok='No'
-
-    #     status = {
-    #         #"temperature_C": 0.0,
-    #         #"pressure_mbar": 0.0,
-    #         #"humidity_%": 0.0,
-    #         #"dewpoint_C": 0.0,
-    #         #"sky_temp_C": 0.0,
-    #         #"last_sky_update_s": 0.0,
-    #         #"wind_m/s": 0.0,
-    #         #"rain_rate": 0.0,
-    #         #"solar_flux_w/m^2": None,
-    #         #"cloud_cover_%": 0.0,
-    #         #"calc_HSI_lux": illum,
-    #         #"calc_sky_mpsas": 0.0,  # Provenance of 20.01 is dubious 20200504 WER
-    #         "open_ok": openok, #self.ok_to_open,
-    #         "wx_hold": 'no',
-    #         "hold_duration": float(0.0),
-    #     }
-
-    #     #quick=[]
-    #     #if self.obsid_is_specific:
-    #     #    self.status = self.get_status(g_dev)  # Get current state.
-    #     #else:
-    #     #    self.status = self.get_status()
-
-    #     # NB NB NB it is safer to make this a dict rather than a positionally dependant list.
-    #     #quick.append(time.time())
-    #     #quick.append(float(0))
-    #     #quick.append(float(0))
-    #     #quick.append(float(0))
-    #     #quick.append(float(0))
-    #     #quick.append(float(0))
-    #     #quick.append(float(0))  # 20200329 a SWAG!
-    #     #quick.append(float(illum))  # Add Solar, Lunar elev and phase
-    #     #quick.append(float(self.meas_sky_lux))  # intended for Unihedron
-    #     return status
 
 def get_quick_status(self, quick):
 
@@ -1099,20 +575,7 @@ def get_average_status(self, pre, post):
     average.append(round((pre[8] + post[8]) / 2, 1))
     return average
 
-    # def parse_command(self, command):
-    #     # The only possible Wx command is test Wx hold.  NB NB NB No longer true.
-    #     req = command["required_params"]
-    #     opt = command["optional_params"]
-    #     action = command["action"]
-    #     if action is not None:
-    #         pass
-    #         # self.move_relative_command(req, opt)   ???
-    #     else:
-    #         plog(f"Command <{action}> not recognized in Ocn")
 
-    # ###################################
-    #   Observing Conditions Commands  #
-    # ###################################
 
 
 if __name__ == "__main__":

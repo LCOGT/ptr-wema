@@ -25,10 +25,22 @@ wema_config = {
     'instance_type': 'wema',
     'instance_is_private': False,
 
-    'obsp_ids': ['eco1', 'eco2'],  # a list of the obsp's in an enclosure.  
+    'obsp_ids': ['eco1', 'eco2', 'eco3'],  # a list of the obsp's in an enclosure.  
 
     #'obs_id': None,  # a WEMA is not a telescope aka Observatory
     #'observatory_location': site_name.lower(),  # in LCO case, an airport code such as OGG
+
+
+    # These values are to help the weather station self-organise
+    # If it is only a nighttime or a daytime observatory, we can restrict
+    # fits and predictions of the weather to using data for that period of the day
+    # Particularly sky temperature is impacted by daily effects.
+    'opens_during_nighttime' : True,
+    'opens_during_daytime': False,
+
+    # Which emails to send?
+    'send_hourly_cloud_forecast_emails' : False,
+    
 
     # These are just the bootup default values.
     'OWM_active': False,
@@ -125,7 +137,7 @@ wema_config = {
     'period_of_time_to_wait_for_roof_to_open': 100,  # seconds - needed to check if the roof ACTUALLY opens.
     #'only_scope_that_controls_the_roof': False,  # If multiple scopes control the roof, set this to False
     'check_time': 300,  # MF's original setting.
-    'maximum_roof_opens_per_evening': 4,
+    'maximum_roof_opens_per_evening': 10,
     # How many minutes to use as the default retry time to open roof. This will be progressively multiplied as a back-off function.
     'roof_open_safety_base_time': 15,
     
@@ -195,8 +207,10 @@ wema_config = {
     'windspeed_limit_on': False,
     'lightning_limit_on': False,
     'temperature_minus_dewpoint_limit_on': False,
-    'sky_temperature_limit_on': False,
-    'cloud_cover_limit_on': True,
+    'sky_minus_ambient_limit_on': True,    
+    'sky_temperature_limit_on': True,
+    'local_cloud_cover_limit_on': True,
+    'forecast_cloud_cover_limit_on': True,
     'lowest_ambient_temperature_on': False,
     'highest_ambient_temperature_on': False,
     
@@ -212,8 +226,10 @@ wema_config = {
     'windspeed_limit': 25,
     'lightning_limit': 15,
     'temperature_minus_dewpoint_limit': 2,
-    'sky_temperature_limit': -12,
-    'cloud_cover_limit': 70,
+    'sky_minus_ambient_limit': -14,
+    'sky_temperature_limit': -3,
+    'local_cloud_cover_limit': 70,
+    'forecast_cloud_cover_limit' : 70,
     'lowest_ambient_temperature': -5,
     'highest_ambient_temperature': 60,
     
@@ -229,8 +245,10 @@ wema_config = {
     'warning_windspeed_limit': 15,
     'warning_lightning_limit': 10,
     'warning_temperature_minus_dewpoint_limit': 2,
-    'warning_sky_temperature_limit': -17,
-    'warning_cloud_cover_limit': 25,
+    'warning_sky_minus_ambient_limit': -17,
+    'warning_sky_temperature_limit': -6,
+    'warning_local_cloud_cover_limit': 25,
+    'warning_forecast_cloud_cover_limit': 25,
     'warning_lowest_ambient_temperature': 5,
     'warning_highest_ambient_temperature': 35,
 

@@ -27,6 +27,14 @@ wema_config = {
 
     'obsp_ids': ['lcs1'],  # a list of the obsp's in an enclosure.  
 
+    # These values are to help the weather station self-organise
+    # If it is only a nighttime or a daytime observatory, we can restrict
+    # fits and predictions of the weather to using data for that period of the day
+    # Particularly sky temperature is impacted by daily effects.
+    'opens_during_nighttime' : True,
+    'opens_during_daytime': False,
+    # Which emails to send?
+    'send_hourly_cloud_forecast_emails' : False,
     #'obs_id': None,  # a WEMA is not a telescope aka Observatory
     #'observatory_location': site_name.lower(),  # in LCO case, an airport code such as OGG
 
@@ -188,13 +196,15 @@ wema_config = {
     # Whether these limits are on by default
     'rain_limit_on': True,
     'humidity_limit_on': False,
-    'windspeed_limit_on': True,
-    'lightning_limit_on': True,
+    'windspeed_limit_on': False,
+    'lightning_limit_on': False,
     'temperature_minus_dewpoint_limit_on': False,
+    'sky_minus_ambient_limit_on': False,    
     'sky_temperature_limit_on': False,
-    'cloud_cover_limit_on': True,
-    'lowest_ambient_temperature_on': True,
-    'highest_ambient_temperature_on': True,
+    'local_cloud_cover_limit_on': True,
+    'forecast_cloud_cover_limit_on': True,
+    'lowest_ambient_temperature_on': False,
+    'highest_ambient_temperature_on': False,
     
     #############################################################
     #### BE AWARE THAT THESE VALUES ARE JUST FOR INITILIASATION!#
@@ -207,11 +217,13 @@ wema_config = {
     'humidity_limit': 95,
     'windspeed_limit': 25,
     'lightning_limit': 15,
-    'temperature_minus_dewpoint_limit': -2,
-    'sky_temperature_limit': -12,
-    'cloud_cover_limit': 70,
-    'lowest_ambient_temperature': -4,
-    'highest_ambient_temperature': 45,
+    'temperature_minus_dewpoint_limit': 2,
+    'sky_minus_ambient_limit': -14,
+    'sky_temperature_limit': -3,
+    'local_cloud_cover_limit': 70,
+    'forecast_cloud_cover_limit' : 70,
+    'lowest_ambient_temperature': -5,
+    'highest_ambient_temperature': 60,
     
     #############################################################
     #### BE AWARE THAT THESE VALUES ARE JUST FOR INITILIASATION!#
@@ -225,8 +237,10 @@ wema_config = {
     'warning_windspeed_limit': 15,
     'warning_lightning_limit': 10,
     'warning_temperature_minus_dewpoint_limit': 2,
-    'warning_sky_temperature_limit': -17,
-    'warning_cloud_cover_limit': 25,
+    'warning_sky_minus_ambient_limit': -17,
+    'warning_sky_temperature_limit': -6,
+    'warning_local_cloud_cover_limit': 25,
+    'warning_forecast_cloud_cover_limit': 25,
     'warning_lowest_ambient_temperature': 5,
     'warning_highest_ambient_temperature': 35,
 
