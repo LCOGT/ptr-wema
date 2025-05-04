@@ -42,7 +42,7 @@ from wema_config import get_enc_status_custom
 from wema_config import get_ocn_status_custom
 import csv
 #from requests.auth import HTTPBasicAuth
-from astropy.coordinates import EarthLocation, AltAz, SkyCoord, get_sun, get_moon#, solar_system_ephemeris
+from astropy.coordinates import EarthLocation, AltAz, SkyCoord, get_sun,  get_body#get_moon,, solar_system_ephemeris
 from astropy.time import Time
 import astropy.units as u
 
@@ -62,7 +62,7 @@ import numpy as np
 #import http.client
 #http.client.HTTPConnection.debuglevel = 1
 #logging.getLogger("urllib3").setLevel(logging.DEBUG)
-from sklearn.linear_model import LinearRegression
+#from sklearn.linear_model import LinearRegression
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -71,7 +71,7 @@ import pandas as pd
 # import numpy as np
 # from scipy.signal import correlate
 import seaborn as sns
-from sklearn.model_selection import train_test_split#,cross_val_predict, KFold
+#from sklearn.model_selection import train_test_split#,cross_val_predict, KFold
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 #from sklearn.preprocessing import PolynomialFeatures
@@ -1109,7 +1109,8 @@ class WxEncAgent:
         sun_altitude = sun_altaz.alt
         sun_azimuth = sun_altaz.az
         plog(f"Current Sun altitude: {sun_altitude:.2f}")           
-        moon = get_moon(obstime, location=self.observer_location)
+        #moon = get_moon(obstime, location=self.observer_location)
+        moon = get_body("moon", obstime, location=self.observer_location)
         moon_altaz = moon.transform_to(altaz_frame)
         moon_altitude = moon_altaz.alt       
         # altitude = moon_altaz.alt
@@ -1481,7 +1482,7 @@ class WxEncAgent:
                                 altaz_frame = AltAz(obstime=observation_time, location=self.observer_location)
                                 altaz_coords = sky_coord.transform_to(altaz_frame)
                                 
-                                obs_current_altitude = altaz_coords.alt.deg
+                                #obs_current_altitude = altaz_coords.alt.deg
                                 obs_current_azimuth = altaz_coords.az.deg
                                 
                                 
@@ -3472,7 +3473,7 @@ class WxEncAgent:
                 weather_directory=self.wema_path+self.name+ '/weatherfits'
                 if not os.path.exists(weather_directory):
                     os.makedirs(weather_directory)
-                file_date_string = str(datetime.datetime.now()).replace(' ', '_').split('.')[0].replace(':', '-')
+                #file_date_string = str(datetime.datetime.now()).replace(' ', '_').split('.')[0].replace(':', '-')
                 ######## We also need to update our cloud prediction model.
                 # So lets open the weatherlog
                 # Assign column names manually
