@@ -160,17 +160,97 @@ def fit_cloud_prediction_model(df, directory):
         except:
             plog ("failed at splitting dataset by cloud levels... usually we don't have good coverage yet.")
 
-    
-        plt.figure(figsize=(6, 4)) 
-        sns.regplot(x='avg_forecast_cloudcover', y='sky_temp_C', data=region_df)
+
+
+
+        # 1) grab x and y
+        x = region_df['avg_forecast_cloudcover'].to_numpy()
+        y = region_df['sky_temp_C'].to_numpy()        
+        
+        # initial mask: everyone in
+        mask = np.ones_like(y, dtype=bool)
+        
+        n_sigma   = 2.0     # how many σ out to reject
+        max_iters = 5       # maximum number of cycles
+        
+        for i in range(max_iters):
+            # 1) fit to the current inliers
+            slope, intercept = np.polyfit(x[mask], y[mask], 1)
+        
+            # 2) compute residuals of all points to that fit
+            resid = y - (slope*x + intercept)
+        
+            # 3) measure the scatter on the CURRENT inliers
+            sigma = np.std(resid[mask])
+        
+            # 4) build a new mask
+            new_mask = np.abs(resid) <= n_sigma * sigma
+        
+            # 5) if nothing changed, stop early
+            if new_mask.sum() == mask.sum():
+                break
+            mask = new_mask
+        
+        # prepare your fit‐line for plotting
+        x_line = np.linspace(x.min(), x.max(), 200)
+        y_line = slope*x_line + intercept
+        
+        plt.figure(figsize=(6,4))
+        plt.scatter(x[mask],    y[mask],    alpha=0.7, label='Inliers')
+        plt.scatter(x[~mask],   y[~mask],   color='red', alpha=0.7, label='Outliers')
+        plt.plot(x_line, y_line, color='black', linewidth=2, label=f'{n_sigma}σ fit')
+        plt.legend()
+        # plt.title('Sky Temperature vs Forecast Cloud Cover with Regression Line')
+        # plt.xlabel('Average Forecast Cloud Cover (%)')
+        # plt.ylabel('Sky Temperature (°C)')
+        # plt.savefig(directory + '/' + part_of_day + '/skytempvsclouds_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+        # … set labels, title, save …    
+        # plt.figure(figsize=(6, 4)) 
+        # sns.regplot(x='avg_forecast_cloudcover', y='sky_temp_C', data=region_df)
         plt.title('Sky Temperature vs Forecast Cloud Cover with Regression Line')
         plt.xlabel('Average Forecast Cloud Cover (%)')
         plt.ylabel('Sky Temperature (°C)')
         plt.savefig(directory + '/' + part_of_day + '/skytempvsclouds_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
 
     
-        plt.figure(figsize=(6, 4)) 
-        sns.regplot(x='avg_forecast_cloudcover', y='sky-ambient', data=region_df)
+        # 1) grab x and y
+        x = region_df['avg_forecast_cloudcover'].to_numpy()
+        y = region_df['sky-ambient'].to_numpy()        
+        
+        # initial mask: everyone in
+        mask = np.ones_like(y, dtype=bool)
+        
+        n_sigma   = 2.0     # how many σ out to reject
+        max_iters = 5       # maximum number of cycles
+        
+        for i in range(max_iters):
+            # 1) fit to the current inliers
+            slope, intercept = np.polyfit(x[mask], y[mask], 1)
+        
+            # 2) compute residuals of all points to that fit
+            resid = y - (slope*x + intercept)
+        
+            # 3) measure the scatter on the CURRENT inliers
+            sigma = np.std(resid[mask])
+        
+            # 4) build a new mask
+            new_mask = np.abs(resid) <= n_sigma * sigma
+        
+            # 5) if nothing changed, stop early
+            if new_mask.sum() == mask.sum():
+                break
+            mask = new_mask
+        
+        # prepare your fit‐line for plotting
+        x_line = np.linspace(x.min(), x.max(), 200)
+        y_line = slope*x_line + intercept
+        
+        plt.figure(figsize=(6,4))
+        plt.scatter(x[mask],    y[mask],    alpha=0.7, label='Inliers')
+        plt.scatter(x[~mask],   y[~mask],   color='red', alpha=0.7, label='Outliers')
+        plt.plot(x_line, y_line, color='black', linewidth=2, label=f'{n_sigma}σ fit')
+        plt.legend()
+        #sns.regplot(x='avg_forecast_cloudcover', y='sky-ambient', data=region_df)
         plt.xlabel('Average Forecast Cloud Cover (%)')
         plt.ylabel('Sky Temperature - Ambient Temperature (°C)')
         plt.title('Sky - Ambient Temperature vs Forecast Cloud Cover')
@@ -178,16 +258,87 @@ def fit_cloud_prediction_model(df, directory):
         
         plt.savefig(directory + '/' + part_of_day + '/skyminusambientvsclouds_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
     
+    
+        # 1) grab x and y
+        x = region_df['avg_forecast_cloudcover'].to_numpy()
+        y = region_df['sky-ambient^2'].to_numpy()        
+        
+        # initial mask: everyone in
+        mask = np.ones_like(y, dtype=bool)
+        
+        n_sigma   = 2.0     # how many σ out to reject
+        max_iters = 5       # maximum number of cycles
+        
+        for i in range(max_iters):
+            # 1) fit to the current inliers
+            slope, intercept = np.polyfit(x[mask], y[mask], 1)
+        
+            # 2) compute residuals of all points to that fit
+            resid = y - (slope*x + intercept)
+        
+            # 3) measure the scatter on the CURRENT inliers
+            sigma = np.std(resid[mask])
+        
+            # 4) build a new mask
+            new_mask = np.abs(resid) <= n_sigma * sigma
+        
+            # 5) if nothing changed, stop early
+            if new_mask.sum() == mask.sum():
+                break
+            mask = new_mask
+        
+        # prepare your fit‐line for plotting
+        x_line = np.linspace(x.min(), x.max(), 200)
+        y_line = slope*x_line + intercept
+        
+        plt.figure(figsize=(6,4))
+        plt.scatter(x[mask],    y[mask],    alpha=0.7, label='Inliers')
+        plt.scatter(x[~mask],   y[~mask],   color='red', alpha=0.7, label='Outliers')
+        plt.plot(x_line, y_line, color='black', linewidth=2, label=f'{n_sigma}σ fit')
+        plt.legend()
 
-        plt.figure(figsize=(6, 4)) 
-        sns.regplot(x='avg_forecast_cloudcover', y='sky-ambient^2', data=region_df)
+        # plt.figure(figsize=(6, 4)) 
+        # sns.regplot(x='avg_forecast_cloudcover', y='sky-ambient^2', data=region_df)
         plt.xlabel('Average Forecast Cloud Cover (%)')
         plt.ylabel('Sky-Ambient^2 Temperature (°C)')
         plt.title('Sky-Ambient^2 Temperature vs Forecast Cloud Cover')
         
         plt.savefig(directory + '/' + part_of_day + '/skyminusambientsquaredvsclouds_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
     
-       
+        
+    
+        # Now remove ALL these outliers from the actual model fit
+        def sigma_clip_mask(x, y, n_sigma=2.0, max_iters=5):
+            """
+            Iterative σ–clipping mask: returns a boolean array (True=inlier).
+            """
+            mask = np.ones_like(y, dtype=bool)
+            for _ in range(max_iters):
+                # fit only to current inliers
+                m, b = np.polyfit(x[mask], y[mask], 1)
+                resid = y - (m*x + b)
+                sigma = np.std(resid[mask])
+                new_mask = np.abs(resid) <= n_sigma*sigma
+                if new_mask.sum() == mask.sum():
+                    break
+                mask = new_mask
+            return mask
+        
+        # --- prepare x once ---
+        x = region_df['avg_forecast_cloudcover'].to_numpy()
+        
+        # --- get masks for each y-series ---
+        m1 = sigma_clip_mask(x, region_df['sky_temp_C'].to_numpy())
+        m2 = sigma_clip_mask(x, region_df['sky-ambient'].to_numpy())
+        m3 = sigma_clip_mask(x, region_df['sky-ambient^2'].to_numpy())
+        
+        # --- combine: only keep rows that are inliers in *all* three ---
+        keep = m1 & m2 & m3
+        
+        # --- filter your original DataFrame ---
+        region_df = region_df.loc[keep].copy()           
+    
+           
         X = region_df[features].copy()
         y = region_df['avg_forecast_cloudcover'].copy()        
     
@@ -3176,6 +3327,76 @@ class WxEncAgent:
             line_of_weather_info.append(self.worldweather_nexthour_cloud)
             
             
+            obs_properties_dict={}
+            
+            for obsid in self.obs_ids:
+                uri_status = f"https://status.photonranch.org/status/{obsid}/device"
+
+                
+                try:
+                    #plog ("Grabbing obs settings")                            
+                    obs_status=requests.get(uri_status, timeout=20, allow_redirects=False, headers=close_headers, stream=False)
+                    #plog ("Grabbed obs settings")
+                except:
+                    plog ("Some error in getting the obs_settings")
+                    plog(traceback.format_exc())
+                    obs_status=None
+
+                if '[200]' in str(obs_status): # If reading successful
+                    last_status_time=obs_status.json()['server_timestamp_ms']/1000
+                    try:
+                        if time.time() - last_status_time < 600:
+                            # Get focuser temperatuer
+                        
+                            focuser_status=obs_status.json()['status']['focuser']
+                            focuser_status=focuser_status[next(iter(focuser_status))] # first focuser
+                            focuser_temperature= focuser_status['focus_temperature']['val']
+                            
+                            current_fwhm_seeing=obs_status.json()['status']['current_fwhm_seeing']
+                            try:
+                                estimated_sky_transmissiveness= obs_status.json()['status']['suspected_sky_transmissiveness']
+                                #estimated_sky_transmissiveness_filter= obs_status.json()['status']['estimated_sky_transmissiveness_filter']
+                            except:
+                                plog(traceback.format_exc())
+                                estimated_sky_transmissiveness=None
+                                #estimated_sky_transmissiveness_filter=None
+                        
+                        else:
+                            focuser_temperature=None
+                            current_fwhm_seeing=None
+                            estimated_sky_transmissiveness=None
+                            #estimated_sky_transmissiveness_filter=None
+                    except:
+                        plog ("Some error in getting the obs status keys")
+                        focuser_temperature=None
+                        current_fwhm_seeing=None
+                        estimated_sky_transmissiveness=None
+                        #estimated_sky_transmissiveness_filter=None
+                        plog(traceback.format_exc())
+                else:
+                    plog ("not successful obs status reading")
+                    focuser_temperature=None
+                    current_fwhm_seeing=None
+                    estimated_sky_transmissiveness=None
+                    #estimated_sky_transmissiveness_filter=None
+                    plog (obs_status)
+                
+                obs_properties_dict[obsid]={}
+                obs_properties_dict[obsid]['focuser_temperature']=focuser_temperature
+                obs_properties_dict[obsid]['current_fwhm_seeing']=current_fwhm_seeing
+                obs_properties_dict[obsid]['estimated_sky_transmissiveness']=estimated_sky_transmissiveness
+                #obs_properties_dict[obsid]['estimated_sky_transmissiveness_filter']= estimated_sky_transmissiveness_filter
+            
+            
+            
+            line_of_weather_info.append(json.dumps(obs_properties_dict))
+
+            #breakpoint()
+            
+            
+            
+            
+            
             if self.config['send_hourly_cloud_forecast_emails']:
                 # Your cPanel email credentials
                 smtp_server = self.smtp_server
@@ -3226,7 +3447,7 @@ class WxEncAgent:
             
             print (line_of_weather_info)
             
-            column_names = ['date','time','OWM_clouds','Local_clouds','Humidity','sky_temp_C','local_temperature_C', 'dewpoint', 'rain_rate','wind_m/s', 'OWM_temperature','openmeteo_clouds', 'avg_forecast_cloudcover', 'OWMClouds_inanhour', 'openmeteoclouds_inanhour','sun_altitude','moon_altitude','moon_illumination','moon_flux_on_ground', 'sun_azimuth', 'tomorrowio_nowclouds','tomorrowio_nexthourclouds','pirate_clouds_now','pirate_clouds_inanhour','metocean_clouds_now','metocean_clouds_inanhour','worldweather_clouds_now','worldweather_clouds_inanhour']
+            column_names = ['date','time','OWM_clouds','Local_clouds','Humidity','sky_temp_C','local_temperature_C', 'dewpoint', 'rain_rate','wind_m/s', 'OWM_temperature','openmeteo_clouds', 'avg_forecast_cloudcover', 'OWMClouds_inanhour', 'openmeteoclouds_inanhour','sun_altitude','moon_altitude','moon_illumination','moon_flux_on_ground', 'sun_azimuth', 'tomorrowio_nowclouds','tomorrowio_nexthourclouds','pirate_clouds_now','pirate_clouds_inanhour','metocean_clouds_now','metocean_clouds_inanhour','worldweather_clouds_now','worldweather_clouds_inanhour','obs_dict']
             
 
             # Open the file in append mode and write the line
@@ -3261,83 +3482,85 @@ class WxEncAgent:
                 # Read CSV without a header and assign column names
                 df = pd.read_csv(self.wema_path+self.name + '_weatherlog.csv', header=0)#, names=column_names)
                 
-                # Need to remove some rows with nan values
-                #df = df.dropna()
+                # # Need to remove some rows with nan values
+                # #df = df.dropna()
                 
-                # Convert to years as main value
-                # Arbitrary reference point is the 1st of janurary 2025
-                # time.time() then is 1735689600.0
-                df['time_in_days']= df['time'] - 1735689600.0
-                df['time_in_days']= df['time_in_days'] / 86400 
-                df['phase_of_day']= df['time_in_days'] % 1
+                # # Convert to years as main value
+                # # Arbitrary reference point is the 1st of janurary 2025
+                # # time.time() then is 1735689600.0
+                # df['time_in_days']= df['time'] - 1735689600.0
+                # df['time_in_days']= df['time_in_days'] / 86400 
+                # df['phase_of_day']= df['time_in_days'] % 1
                 
-                df['time_in_years']= df['time'] - 1735689600.0
-                df['time_in_years']= df['time_in_years'] / 31536000
-                df['phase_of_year']= df['time_in_years'] % 1
-                
-                
-                # Solar flux is essentially zero at -18 so set minimum sun altitude to -18
-                df['sun_altitude'] = df['sun_altitude'].clip(lower=-18)
-                
-                #To transform the sun altitude so that the relationship with solar flux becomes linear.
-                df['transformed_sun_altitude']= np.exp( df['sun_altitude'] / 6.0)
-                
-                X = df[['transformed_sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
-                y = df['sky_temp_C']
-                
-                # Train-test split (for verification purposes)
-                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-                
-                # Initialize the model
-                self.sky_temp_model = LinearRegression()
-                
-                # Train the model
-                self.sky_temp_model.fit(X_train, y_train)
-                
-                # Predict the contributions of the factors to sky_temp_C
-                df['predicted_factor_contributions'] = self.sky_temp_model.predict(X)
-                
-                # Calculate corrected sky temperature
-                df['corrected_sky_temp_C'] = df['sky_temp_C'] - df['predicted_factor_contributions']
-                
-                # Plotting before and after
-                plt.figure(figsize=(14, 6))
-                
-                # Original Sky Temperature Plot
-                plt.subplot(1, 2, 1)
-                sns.scatterplot(x=df.index, y=df['sky_temp_C'], label='Original Sky Temperature', color='blue')
-                plt.title(f'Original Sky Temperature\nR² = {r2_score(y, self.sky_temp_model.predict(X)):.2f}')
-                plt.xlabel('Index')
-                plt.ylabel('Sky Temperature (°C)')
-                
-                # Corrected Sky Temperature Plot
-                plt.subplot(1, 2, 2)
-                sns.scatterplot(x=df.index, y=df['corrected_sky_temp_C'], label='Corrected Sky Temperature', color='green')
-                plt.title('Corrected Sky Temperature (After Removing Factors)')
-                plt.xlabel('Index')
-                plt.ylabel('Sky Temperature (°C)')
+                # df['time_in_years']= df['time'] - 1735689600.0
+                # df['time_in_years']= df['time_in_years'] / 31536000
+                # df['phase_of_year']= df['time_in_years'] % 1
                 
                 
-                plt.savefig(weather_directory + '/CorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+                # # Solar flux is essentially zero at -18 so set minimum sun altitude to -18
+                # df['sun_altitude'] = df['sun_altitude'].clip(lower=-18)
+                
+                # #To transform the sun altitude so that the relationship with solar flux becomes linear.
+                # df['transformed_sun_altitude']= np.exp( df['sun_altitude'] / 6.0)
+                
+                # X = df[['transformed_sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
+                # y = df['sky_temp_C']
+                
+                # # Train-test split (for verification purposes)
+                # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+                
+                # # Initialize the model
+                # self.sky_temp_model = LinearRegression()
+                
+                
+                # breakpoint()
+                # # Train the model
+                # self.sky_temp_model.fit(X_train, y_train)
+                
+                # # Predict the contributions of the factors to sky_temp_C
+                # df['predicted_factor_contributions'] = self.sky_temp_model.predict(X)
+                
+                # # Calculate corrected sky temperature
+                # df['corrected_sky_temp_C'] = df['sky_temp_C'] - df['predicted_factor_contributions']
+                
+                # # Plotting before and after
+                # plt.figure(figsize=(14, 6))
+                
+                # # Original Sky Temperature Plot
+                # plt.subplot(1, 2, 1)
+                # sns.scatterplot(x=df.index, y=df['sky_temp_C'], label='Original Sky Temperature', color='blue')
+                # plt.title(f'Original Sky Temperature\nR² = {r2_score(y, self.sky_temp_model.predict(X)):.2f}')
+                # plt.xlabel('Index')
+                # plt.ylabel('Sky Temperature (°C)')
+                
+                # # Corrected Sky Temperature Plot
+                # plt.subplot(1, 2, 2)
+                # sns.scatterplot(x=df.index, y=df['corrected_sky_temp_C'], label='Corrected Sky Temperature', color='green')
+                # plt.title('Corrected Sky Temperature (After Removing Factors)')
+                # plt.xlabel('Index')
+                # plt.ylabel('Sky Temperature (°C)')
+                
+                
+                # plt.savefig(weather_directory + '/CorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
     
                 
-                # Checking if the required columns are present in the DataFrame
-                required_columns = ['avg_forecast_cloudcover', 'corrected_sky_temp_C']
+                # # Checking if the required columns are present in the DataFrame
+                # required_columns = ['avg_forecast_cloudcover', 'corrected_sky_temp_C']
                 
-                if all(col in df.columns for col in required_columns):
-                    # Plotting avg_forecast_cloudcover vs corrected_sky_temp_C
-                    plt.figure(figsize=(10, 6))
-                    sns.scatterplot(data=df, x='avg_forecast_cloudcover', y='corrected_sky_temp_C', color='purple')
-                    plt.title('Corrected Sky Temperature vs. Average Forecast Cloud Cover')
-                    plt.xlabel('Average Forecast Cloud Cover (%)')
-                    plt.ylabel('Corrected Sky Temperature (°C)')
-                    plt.savefig(weather_directory + '/CloudsvsCorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+                # if all(col in df.columns for col in required_columns):
+                #     # Plotting avg_forecast_cloudcover vs corrected_sky_temp_C
+                #     plt.figure(figsize=(10, 6))
+                #     sns.scatterplot(data=df, x='avg_forecast_cloudcover', y='corrected_sky_temp_C', color='purple')
+                #     plt.title('Corrected Sky Temperature vs. Average Forecast Cloud Cover')
+                #     plt.xlabel('Average Forecast Cloud Cover (%)')
+                #     plt.ylabel('Corrected Sky Temperature (°C)')
+                #     plt.savefig(weather_directory + '/CloudsvsCorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
     
-                else:
-                    missing_columns = [col for col in required_columns if col not in df.columns]
-                    raise ValueError(f"The following columns are missing from the DataFrame: {missing_columns}")
+                # else:
+                #     missing_columns = [col for col in required_columns if col not in df.columns]
+                #     raise ValueError(f"The following columns are missing from the DataFrame: {missing_columns}")
                 
-                df['sky-ambient'] = df['corrected_sky_temp_C'] - df['OWM_temperature']
+                df['sky-ambient'] = df['sky_temp_C'] - df['OWM_temperature']
                 
                 # dew point depression
                 df['dew_point_depression'] =  df['OWM_temperature'] - df['dewpoint']                
