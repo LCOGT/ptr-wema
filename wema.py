@@ -2804,8 +2804,8 @@ class WxEncAgent:
                         tempFn=tempFn+40
                     elif 20 < hourly_report['wind_speed'] :
                         tempFn=tempFn+101
-    
-                    if 'rain'  in hourly_report['weather'][0]['description'] or 'storm'  in hourly_report['weather'][0]['description']: # Need to figure out pop thing here. 
+        
+                    if 'rain'  in hourly_report['weather'][0]['description'] or 'storm'  in hourly_report['weather'][0]['description'] or hourly_report['pop'] > 0: # Need to figure out pop thing here. 
                         tempFn=tempFn+101
     
                     weatherline=[ hourly_report['humidity'], hourly_report['clouds'],hourly_report['wind_speed'],hourly_report['weather'][0]['main'], hourly_report['weather'][0]['description'], clock_hour, tempFn, iso_time,  hourly_report['temp'], hourly_report['pop']] # Last one meant to be rain but it has s
