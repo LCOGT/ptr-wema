@@ -2713,7 +2713,7 @@ class WxEncAgent:
                 for entry in fitzgerald_weather_number_grid:
                     if hourcounter >= hours_until_start_of_observing and hourcounter <= hours_until_end_of_observing:
                         
-                        textdescription= entry[4]+ '   Cloud:   ' + str(entry[1]) + '%     Hum:    ' + str(entry[0]) +   '%    Wind:  ' +str(entry[2])+' m/s      rain: ' + str(entry[9])  # WER changed to make more readable.
+                        textdescription= entry[4]+ '   Cloud:   ' + str(entry[1]) + '%     Hum:    ' + str(entry[0]) +   '%    Wind:  ' +str(entry[2])+' m/s      rain probability: ' + str(entry[9]) +'%' # WER changed to make more readable.
     
                         hourly_fitzgerald_number.append(entry[6])
                         hourly_fitzgerald_number_by_hour.append([entry[5],entry[6],textdescription])
