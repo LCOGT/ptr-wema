@@ -1677,11 +1677,12 @@ class WxEncAgent:
             
             quick_status=ocn_status['observing_conditions']['observing_conditions1']
             
-            if quick_status['humidity_%'] == -1:
-                plog ("local weather station not reporting humidity, using last owm report")
-                ocn_status['observing_conditions']['observing_conditions1']['humidity_%']=self.current_owm_humidity
-                quick_status['humidity_%'] = self.current_owm_humidity
-                plog ("OWM Humidity: " + str(self.current_owm_humidity))      
+            if self.ocn_exists:
+                if quick_status['humidity_%'] == -1:
+                    plog ("local weather station not reporting humidity, using last owm report")
+                    ocn_status['observing_conditions']['observing_conditions1']['humidity_%']=self.current_owm_humidity
+                    quick_status['humidity_%'] = self.current_owm_humidity
+                    plog ("OWM Humidity: " + str(self.current_owm_humidity))      
             
             # Simply override cloud_cover for the moment
             quick_status['forecast_cloud_cover_%']=self.medianforecast_current_cloud_cover
@@ -1699,84 +1700,102 @@ class WxEncAgent:
                 
             wx_reasons = []            
             
-            if self.rain_limit_on:
-                rain_limit = quick_status['rain_rate'] > self.rain_limit_setting
-                if rain_limit:
-                    plog("Reported rain rate in mm/hr:  ", quick_status['rain_rate'])
-                    wx_reasons.append('Rain > ' + str(self.rain_limit_setting))
-                    # Also here move the next allowed open time to much later
-                    # Like until 45 minutes later. If there is rain around
-                    # We have to be safe. This should continually update as the status
-                    # is updated such that the enclosure won't be able to open until
-                    # at least 45 minutes after the last reported rain fall
-                    self.enclosure_next_open_time = time.time() + 2700
-            else:
-                rain_limit=False
             
-            if self.humidity_limit_on:
-                humidity_limit = quick_status['humidity_%'] < self.humidity_limit_setting
-                if not humidity_limit:
-                    wx_reasons.append('Humidity >= ' + str(self.humidity_limit_setting) + '%')
-            else:
-                humidity_limit=True
-            
-            if self.windspeed_limit_on:
-                wind_limit = (
-                        quick_status['wind_m/s']*0.2778 < self.windspeed_limit_setting
-                )  # sky_monitor reports km/h, Clarity may report in MPH
-                if not wind_limit:
-                    wx_reasons.append('Wind > ' + str(self.windspeed_limit_setting) + ' km/h')
-            else:
-                wind_limit=True
-            
-            if self.temp_minus_dew_on:
-                dewpoint_gap = (
-                    not (quick_status['temperature_C']- quick_status['dewpoint_C']) < self.temp_minus_dew_setting
-                )
-                if not dewpoint_gap:
-                    wx_reasons.append('Ambient - Dewpoint < ' + str(self.temp_minus_dew_setting) + 'C')
-            else:
-                dewpoint_gap=True
-            
-            if self.sky_minus_ambient_limit_on:
-                sky_amb_limit = (
-                                        quick_status['sky_temp_C']- quick_status['temperature_C']
-                                ) < self.sky_minus_ambient_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
-                if not sky_amb_limit:
-                    wx_reasons.append('(sky - amb) > ' + str(self.sky_minus_ambient_limit_setting) + 'C')
-            else:
-                sky_amb_limit=True
+            if self.ocn_exists:
+                if self.rain_limit_on:
+                    rain_limit = quick_status['rain_rate'] > self.rain_limit_setting
+                    if rain_limit:
+                        plog("Reported rain rate in mm/hr:  ", quick_status['rain_rate'])
+                        wx_reasons.append('Rain > ' + str(self.rain_limit_setting))
+                        # Also here move the next allowed open time to much later
+                        # Like until 45 minutes later. If there is rain around
+                        # We have to be safe. This should continually update as the status
+                        # is updated such that the enclosure won't be able to open until
+                        # at least 45 minutes after the last reported rain fall
+                        self.enclosure_next_open_time = time.time() + 2700
+                else:
+                    rain_limit=False
                 
-            if self.sky_temperature_limit_on:
-                sky_temp_limit = (
-                                        quick_status['sky_temp_C']
-                                ) < self.sky_temperature_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
-                if not sky_temp_limit:
-                    wx_reasons.append('(sky temperature) > ' + str(self.sky_temperature_limit_setting) + 'C')
-            else:
-                sky_temp_limit=True
-            
-            if self.local_cloud_cover_limit_on:                
-                try:
-                    local_cloud_cover_value = float(quick_status['local_cloud_cover_%'])
-                    #status['cloud_cover_%'] = round(cloud_cover_value, 0)
-                    if local_cloud_cover_value == None:
-                        local_cloud_cover = False
+                if self.humidity_limit_on:
+                    humidity_limit = quick_status['humidity_%'] < self.humidity_limit_setting
+                    if not humidity_limit:
+                        wx_reasons.append('Humidity >= ' + str(self.humidity_limit_setting) + '%')
+                else:
+                    humidity_limit=True
+                
+                if self.windspeed_limit_on:
+                    wind_limit = (
+                            quick_status['wind_m/s']*0.2778 < self.windspeed_limit_setting
+                    )  # sky_monitor reports km/h, Clarity may report in MPH
+                    if not wind_limit:
+                        wx_reasons.append('Wind > ' + str(self.windspeed_limit_setting) + ' km/h')
+                else:
+                    wind_limit=True
+                
+                if self.temp_minus_dew_on:
+                    dewpoint_gap = (
+                        not (quick_status['temperature_C']- quick_status['dewpoint_C']) < self.temp_minus_dew_setting
+                    )
+                    if not dewpoint_gap:
+                        wx_reasons.append('Ambient - Dewpoint < ' + str(self.temp_minus_dew_setting) + 'C')
+                else:
+                    dewpoint_gap=True
+                
+                if self.sky_minus_ambient_limit_on:
+                    sky_amb_limit = (
+                                            quick_status['sky_temp_C']- quick_status['temperature_C']
+                                    ) < self.sky_minus_ambient_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
+                    if not sky_amb_limit:
+                        wx_reasons.append('(sky - amb) > ' + str(self.sky_minus_ambient_limit_setting) + 'C')
+                else:
+                    sky_amb_limit=True
                     
-                    elif local_cloud_cover_value <= self.local_cloud_cover_limit_setting:
-                        local_cloud_cover = False
-                        #wx_reasons.append('>=' + str(self.cloud_cover_limit_setting) + '% Cloudy')
+                if self.sky_temperature_limit_on:
+                    sky_temp_limit = (
+                                            quick_status['sky_temp_C']
+                                    ) < self.sky_temperature_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
+                    if not sky_temp_limit:
+                        wx_reasons.append('(sky temperature) > ' + str(self.sky_temperature_limit_setting) + 'C')
+                else:
+                    sky_temp_limit=True
                 
-                    else:
-                        local_cloud_cover = True
-                        wx_reasons.append('>=' + str(self.local_cloud_cover_limit_setting) + '% Cloudy Local Sensor')
-                except:
-                    #status['cloud_cover_%'] = "no report"
-                    plog ("failed to get local cloud cover... usually the model is not ready yet due to lack of weather data points.")
-                    local_cloud_cover = False  # We cannot use this signal to force a wX hold or close
-            else:
-                local_cloud_cover = False
-            
+                if self.local_cloud_cover_limit_on:                
+                    try:
+                        local_cloud_cover_value = float(quick_status['local_cloud_cover_%'])
+                        #status['cloud_cover_%'] = round(cloud_cover_value, 0)
+                        if local_cloud_cover_value == None:
+                            local_cloud_cover = False
+                        
+                        elif local_cloud_cover_value <= self.local_cloud_cover_limit_setting:
+                            local_cloud_cover = False
+                            #wx_reasons.append('>=' + str(self.cloud_cover_limit_setting) + '% Cloudy')
+                    
+                        else:
+                            local_cloud_cover = True
+                            wx_reasons.append('>=' + str(self.local_cloud_cover_limit_setting) + '% Cloudy Local Sensor')
+                    except:
+                        #status['cloud_cover_%'] = "no report"
+                        plog ("failed to get local cloud cover... usually the model is not ready yet due to lack of weather data points.")
+                        local_cloud_cover = False  # We cannot use this signal to force a wX hold or close
+                else:
+                    local_cloud_cover = False
+                
+                
+                if self.lowest_temperature_on:
+                    low_temp_bound=not quick_status['temperature_C'] < self.lowest_temperature_setting
+                else: 
+                    low_temp_bound=True
+                
+                if self.highest_temperature_on:
+                    high_temp_bound=not quick_status['temperature_C'] > self.highest_temperature_setting
+                else:
+                    high_temp_bound=True
+                    
+                temp_bounds=True
+                if not low_temp_bound or not high_temp_bound:
+                    temp_bounds=False
+                    wx_reasons.append('amb temp out of range')
+                
             if self.forecast_cloud_cover_limit_on:
                 try:
                     forecast_cloud_cover_value = float(quick_status['forecast_cloud_cover_%'])
@@ -1795,23 +1814,15 @@ class WxEncAgent:
                 forecast_cloud_cover = False
             
             
-            if self.lowest_temperature_on:
-                low_temp_bound=not quick_status['temperature_C'] < self.lowest_temperature_setting
-            else: 
-                low_temp_bound=True
             
-            if self.highest_temperature_on:
-                high_temp_bound=not quick_status['temperature_C'] > self.highest_temperature_setting
+            
+            if self.ocn_exists:
+                self.local_weather_ok = dewpoint_gap and temp_bounds and wind_limit and sky_amb_limit  and sky_temp_limit and humidity_limit and not rain_limit and not local_cloud_cover and not forecast_cloud_cover 
             else:
-                high_temp_bound=True
-                
-            temp_bounds=True
-            if not low_temp_bound or not high_temp_bound:
-                temp_bounds=False
-                wx_reasons.append('amb temp out of range')
-
-            self.local_weather_ok = dewpoint_gap and temp_bounds and wind_limit and sky_amb_limit  and sky_temp_limit and humidity_limit and not rain_limit and not local_cloud_cover and not forecast_cloud_cover 
-                
+                self.local_weather_ok =  not forecast_cloud_cover 
+            
+            
+            
             if self.local_weather_ok:
                 ocn_status['observing_conditions']['observing_conditions1']["local_weather_ok"] = "Yes"
             else:
@@ -2118,52 +2129,54 @@ class WxEncAgent:
                 if self.keep_closed_all_night:                
                     plog("Roof is being forced to stay CLOSED ALL NIGHT")
     
-    
-                model_skyambient=ocn_status['sky_temp_C']-self.current_owm_ambient_temperature
-                
-                
-                ########## FIRST CORRECT SKY TEMPERATURE FOR SUN ADN MOON EFFECTS
-                
-                
-                sun_altitude, moon_altitude, moon_illumination, flux_ground, sun_azimuth = self.get_sun_and_moon_info()
-            
-                               
-                new_data = pd.DataFrame({
-                    'corrected_sky_temp_C': ocn_status['sky_temp_C'],
-                    'sky-ambient': [model_skyambient],
-                    'sky-ambient^2': [model_skyambient **2]
-                })
-                
-                plog (new_data)
-                try:                    
+                if self.ocn_exists:
+                    model_skyambient=ocn_status['sky_temp_C']-self.current_owm_ambient_temperature
                     
-                    if sun_altitude.deg >= 18:
-                        self.predicted_clouds = self.daytime_cloud_model.predict(new_data)
-                    elif sun_altitude.deg <= -18:
-                        self.predicted_clouds = self.nighttime_cloud_model.predict(new_data)
-                    else:
-                        fraction_through_transition = (sun_altitude.deg + 18) / 36
-                        daytime_cloud_prediction=self.daytime_cloud_model.predict(new_data)
-                        plog ("daytime prediction: "+ str(daytime_cloud_prediction))
-                        nighttime_cloud_prediction=self.nighttime_cloud_model.predict(new_data)
-                        plog ("nighttime prediction: "+ str(nighttime_cloud_prediction))
-                        
-                        self.predicted_clouds= fraction_through_transition *  daytime_cloud_prediction + (1-fraction_through_transition) * nighttime_cloud_prediction
-                        
-                    self.cloud_tracker.append(self.predicted_clouds[0])
-                    if len(self.cloud_tracker) > 10:
-                        self.cloud_tracker.pop(0)
                     
-                    self.median_cloud_estimate=round(np.median(self.cloud_tracker),2)
+                    ########## FIRST CORRECT SKY TEMPERATURE FOR SUN ADN MOON EFFECTS
+                    
+                    
+                    sun_altitude, moon_altitude, moon_illumination, flux_ground, sun_azimuth = self.get_sun_and_moon_info()
                 
-                    plog(f"Predicted clouds: {self.predicted_clouds[0]:.2f}")
-                    plog ("Past clouds: " + str(self.cloud_tracker))
-                    plog ("Median of last ten observations: " + str(round(np.median(self.cloud_tracker),2)) + " std " + str(round(np.std(self.cloud_tracker),2)))
-    
-                except:
-                    plog ("failed model? Perhaps can happen if we haven't built up enough points yet.")
-                    self.median_cloud_estimate=100
-                    plog(traceback.format_exc())
+                                   
+                    new_data = pd.DataFrame({
+                        'corrected_sky_temp_C': ocn_status['sky_temp_C'],
+                        'sky-ambient': [model_skyambient],
+                        'sky-ambient^2': [model_skyambient **2]
+                    })
+                    
+                    plog (new_data)
+                    try:                    
+                        
+                        if sun_altitude.deg >= 18:
+                            self.predicted_clouds = self.daytime_cloud_model.predict(new_data)
+                        elif sun_altitude.deg <= -18:
+                            self.predicted_clouds = self.nighttime_cloud_model.predict(new_data)
+                        else:
+                            fraction_through_transition = (sun_altitude.deg + 18) / 36
+                            daytime_cloud_prediction=self.daytime_cloud_model.predict(new_data)
+                            plog ("daytime prediction: "+ str(daytime_cloud_prediction))
+                            nighttime_cloud_prediction=self.nighttime_cloud_model.predict(new_data)
+                            plog ("nighttime prediction: "+ str(nighttime_cloud_prediction))
+                            
+                            self.predicted_clouds= fraction_through_transition *  daytime_cloud_prediction + (1-fraction_through_transition) * nighttime_cloud_prediction
+                            
+                        self.cloud_tracker.append(self.predicted_clouds[0])
+                        if len(self.cloud_tracker) > 10:
+                            self.cloud_tracker.pop(0)
+                        
+                        self.median_cloud_estimate=round(np.median(self.cloud_tracker),2)
+                    
+                        plog(f"Predicted clouds: {self.predicted_clouds[0]:.2f}")
+                        plog ("Past clouds: " + str(self.cloud_tracker))
+                        plog ("Median of last ten observations: " + str(round(np.median(self.cloud_tracker),2)) + " std " + str(round(np.std(self.cloud_tracker),2)))
+        
+                    except:
+                        plog ("failed model? Perhaps can happen if we haven't built up enough points yet.")
+                        self.median_cloud_estimate=100
+                        plog(traceback.format_exc())
+                else:
+                    self.median_cloud_estimate=None
     
                 try:
                     plog ("****************************")
@@ -3026,6 +3039,9 @@ class WxEncAgent:
 
             # Output to the log the various interesting things about the weather
             # Which will be used at some stage to calibrate the weather station
+            # BUT ONLY IF THERE IS ACTUALLY A WEATHER STATION! although we will
+            # still collect non-weather station stuff.....
+            
             
             line_of_weather_info=[]
             line_of_weather_info.append(str(datetime.datetime.now()))
@@ -3036,38 +3052,63 @@ class WxEncAgent:
 
             
             # Reported cloud_cover
-            try:
-                line_of_weather_info.append(self.predicted_clouds[0])
-            except:
-                line_of_weather_info.append(None)
-                plog ("using none rather than predicted clouds for weatherline")
             
+            if self.ocn_exists:
+                try:
+                    line_of_weather_info.append(self.predicted_clouds[0])
+                except:
+                    line_of_weather_info.append(None)
+                    plog ("using none rather than predicted clouds for weatherline")
+            else:
+                line_of_weather_info.append(None)
+                
             # Current humidity
-            if ocn_status['humidity_%'] == -1:
-                line_of_weather_info.append(data['current']['humidity'])
+            if self.ocn_exists:
+                if ocn_status['humidity_%'] == -1:
+                    line_of_weather_info.append(data['current']['humidity'])
+                else:
+                    line_of_weather_info.append(ocn_status['humidity_%'])
             else:
                 line_of_weather_info.append(ocn_status['humidity_%'])
             
             
-            # Measured sky_temp
-            line_of_weather_info.append(ocn_status['sky_temp_C'])
-        
-            # Measured temp
-            line_of_weather_info.append(ocn_status['temperature_C'])
+            if self.ocn_exists:
+            
+                # Measured sky_temp
+                line_of_weather_info.append(ocn_status['sky_temp_C'])
+            
+                # Measured temp
+                line_of_weather_info.append(ocn_status['temperature_C'])
+                
+                # Dewpoint
+                if ocn_status['dewpoint_C'] == 100:
+                    line_of_weather_info.append(self.owm_current_dewpoint)
+                else:
+                    line_of_weather_info.append(ocn_status['dewpoint_C'])
+
+                # Rain Rate
+                line_of_weather_info.append(ocn_status['rain_rate'])
+                
+                # Wind Speed
+                line_of_weather_info.append(ocn_status['wind_m/s']) 
                         
-            # Dewpoint
-            if ocn_status['dewpoint_C'] == 100:
-                line_of_weather_info.append(self.owm_current_dewpoint)
             else:
-                line_of_weather_info.append(ocn_status['dewpoint_C'])
+                # Measured sky_temp
+                line_of_weather_info.append(None)
             
-           
+                # Measured temp
+                line_of_weather_info.append(None)
+                
+                # Dewpoint
+                line_of_weather_info.append(self.owm_current_dewpoint)
+                
+                # Rain Rate
+                line_of_weather_info.append(None)
+                
+                # Wind Speed
+                line_of_weather_info.append(None)
+                        
             
-            # Rain Rate
-            line_of_weather_info.append(ocn_status['rain_rate'])
-            
-            # Wind Speed
-            line_of_weather_info.append(ocn_status['wind_m/s'])                        
             
             # OWM temperature - can be more reliable than weather station
             line_of_weather_info.append(self.owm_current_temp)

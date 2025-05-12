@@ -81,13 +81,14 @@ class ObservingConditions:
         self.unihedron_connected = True  # NB NB NB His needs improving, drive from config
         self.hostname = socket.gethostname()
 
+        self.driver=driver
 
-
+        self.aagsolo=False
         if driver is not None:
 
 
 
-            self.aagsolo=False
+            
             if driver == 'aagsolo':
                 self.aagsolo=True
                 
@@ -404,7 +405,7 @@ class ObservingConditions:
                 
                 return self.status
 
-        else:  # These operations are common to a generic single computer or wema site.
+        elif self.driver is not None:  # These operations are common to a generic single computer or wema site.
             ## Here we get the status from local devices, including MRC
 
             status = {}
