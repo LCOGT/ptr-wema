@@ -42,7 +42,9 @@ from wema_config import get_enc_status_custom
 from wema_config import get_ocn_status_custom
 import csv
 #from requests.auth import HTTPBasicAuth
-from astropy.coordinates import EarthLocation, AltAz, SkyCoord, get_body#, solar_system_ephemeris depricated: get_sun, get_moon, 
+
+from astropy.coordinates import EarthLocation, AltAz, SkyCoord, get_body
+
 from astropy.time import Time
 import astropy.units as u
 
@@ -62,7 +64,7 @@ import numpy as np
 #import http.client
 #http.client.HTTPConnection.debuglevel = 1
 #logging.getLogger("urllib3").setLevel(logging.DEBUG)
-from sklearn.linear_model import LinearRegression
+#from sklearn.linear_model import LinearRegression
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -71,7 +73,7 @@ import pandas as pd
 # import numpy as np
 # from scipy.signal import correlate
 import seaborn as sns
-from sklearn.model_selection import train_test_split#,cross_val_predict, KFold
+#from sklearn.model_selection import train_test_split#,cross_val_predict, KFold
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 #from sklearn.preprocessing import PolynomialFeatures
@@ -160,17 +162,97 @@ def fit_cloud_prediction_model(df, directory):
         except:
             plog ("failed at splitting dataset by cloud levels... usually we don't have good coverage yet.")
 
-    
-        plt.figure(figsize=(6, 4)) 
-        sns.regplot(x='avg_forecast_cloudcover', y='sky_temp_C', data=region_df)
+
+
+
+        # 1) grab x and y
+        x = region_df['avg_forecast_cloudcover'].to_numpy()
+        y = region_df['sky_temp_C'].to_numpy()        
+        
+        # initial mask: everyone in
+        mask = np.ones_like(y, dtype=bool)
+        
+        n_sigma   = 2.0     # how many σ out to reject
+        max_iters = 5       # maximum number of cycles
+        
+        for i in range(max_iters):
+            # 1) fit to the current inliers
+            slope, intercept = np.polyfit(x[mask], y[mask], 1)
+        
+            # 2) compute residuals of all points to that fit
+            resid = y - (slope*x + intercept)
+        
+            # 3) measure the scatter on the CURRENT inliers
+            sigma = np.std(resid[mask])
+        
+            # 4) build a new mask
+            new_mask = np.abs(resid) <= n_sigma * sigma
+        
+            # 5) if nothing changed, stop early
+            if new_mask.sum() == mask.sum():
+                break
+            mask = new_mask
+        
+        # prepare your fit‐line for plotting
+        x_line = np.linspace(x.min(), x.max(), 200)
+        y_line = slope*x_line + intercept
+        
+        plt.figure(figsize=(6,4))
+        plt.scatter(x[mask],    y[mask],    alpha=0.7, label='Inliers')
+        plt.scatter(x[~mask],   y[~mask],   color='red', alpha=0.7, label='Outliers')
+        plt.plot(x_line, y_line, color='black', linewidth=2, label=f'{n_sigma}σ fit')
+        plt.legend()
+        # plt.title('Sky Temperature vs Forecast Cloud Cover with Regression Line')
+        # plt.xlabel('Average Forecast Cloud Cover (%)')
+        # plt.ylabel('Sky Temperature (°C)')
+        # plt.savefig(directory + '/' + part_of_day + '/skytempvsclouds_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+        # … set labels, title, save …    
+        # plt.figure(figsize=(6, 4)) 
+        # sns.regplot(x='avg_forecast_cloudcover', y='sky_temp_C', data=region_df)
         plt.title('Sky Temperature vs Forecast Cloud Cover with Regression Line')
         plt.xlabel('Average Forecast Cloud Cover (%)')
         plt.ylabel('Sky Temperature (°C)')
         plt.savefig(directory + '/' + part_of_day + '/skytempvsclouds_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
 
     
-        plt.figure(figsize=(6, 4)) 
-        sns.regplot(x='avg_forecast_cloudcover', y='sky-ambient', data=region_df)
+        # 1) grab x and y
+        x = region_df['avg_forecast_cloudcover'].to_numpy()
+        y = region_df['sky-ambient'].to_numpy()        
+        
+        # initial mask: everyone in
+        mask = np.ones_like(y, dtype=bool)
+        
+        n_sigma   = 2.0     # how many σ out to reject
+        max_iters = 5       # maximum number of cycles
+        
+        for i in range(max_iters):
+            # 1) fit to the current inliers
+            slope, intercept = np.polyfit(x[mask], y[mask], 1)
+        
+            # 2) compute residuals of all points to that fit
+            resid = y - (slope*x + intercept)
+        
+            # 3) measure the scatter on the CURRENT inliers
+            sigma = np.std(resid[mask])
+        
+            # 4) build a new mask
+            new_mask = np.abs(resid) <= n_sigma * sigma
+        
+            # 5) if nothing changed, stop early
+            if new_mask.sum() == mask.sum():
+                break
+            mask = new_mask
+        
+        # prepare your fit‐line for plotting
+        x_line = np.linspace(x.min(), x.max(), 200)
+        y_line = slope*x_line + intercept
+        
+        plt.figure(figsize=(6,4))
+        plt.scatter(x[mask],    y[mask],    alpha=0.7, label='Inliers')
+        plt.scatter(x[~mask],   y[~mask],   color='red', alpha=0.7, label='Outliers')
+        plt.plot(x_line, y_line, color='black', linewidth=2, label=f'{n_sigma}σ fit')
+        plt.legend()
+        #sns.regplot(x='avg_forecast_cloudcover', y='sky-ambient', data=region_df)
         plt.xlabel('Average Forecast Cloud Cover (%)')
         plt.ylabel('Sky Temperature - Ambient Temperature (°C)')
         plt.title('Sky - Ambient Temperature vs Forecast Cloud Cover')
@@ -178,16 +260,87 @@ def fit_cloud_prediction_model(df, directory):
         
         plt.savefig(directory + '/' + part_of_day + '/skyminusambientvsclouds_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
     
+    
+        # 1) grab x and y
+        x = region_df['avg_forecast_cloudcover'].to_numpy()
+        y = region_df['sky-ambient^2'].to_numpy()        
+        
+        # initial mask: everyone in
+        mask = np.ones_like(y, dtype=bool)
+        
+        n_sigma   = 2.0     # how many σ out to reject
+        max_iters = 5       # maximum number of cycles
+        
+        for i in range(max_iters):
+            # 1) fit to the current inliers
+            slope, intercept = np.polyfit(x[mask], y[mask], 1)
+        
+            # 2) compute residuals of all points to that fit
+            resid = y - (slope*x + intercept)
+        
+            # 3) measure the scatter on the CURRENT inliers
+            sigma = np.std(resid[mask])
+        
+            # 4) build a new mask
+            new_mask = np.abs(resid) <= n_sigma * sigma
+        
+            # 5) if nothing changed, stop early
+            if new_mask.sum() == mask.sum():
+                break
+            mask = new_mask
+        
+        # prepare your fit‐line for plotting
+        x_line = np.linspace(x.min(), x.max(), 200)
+        y_line = slope*x_line + intercept
+        
+        plt.figure(figsize=(6,4))
+        plt.scatter(x[mask],    y[mask],    alpha=0.7, label='Inliers')
+        plt.scatter(x[~mask],   y[~mask],   color='red', alpha=0.7, label='Outliers')
+        plt.plot(x_line, y_line, color='black', linewidth=2, label=f'{n_sigma}σ fit')
+        plt.legend()
 
-        plt.figure(figsize=(6, 4)) 
-        sns.regplot(x='avg_forecast_cloudcover', y='sky-ambient^2', data=region_df)
+        # plt.figure(figsize=(6, 4)) 
+        # sns.regplot(x='avg_forecast_cloudcover', y='sky-ambient^2', data=region_df)
         plt.xlabel('Average Forecast Cloud Cover (%)')
         plt.ylabel('Sky-Ambient^2 Temperature (°C)')
         plt.title('Sky-Ambient^2 Temperature vs Forecast Cloud Cover')
         
         plt.savefig(directory + '/' + part_of_day + '/skyminusambientsquaredvsclouds_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
     
-       
+        
+    
+        # Now remove ALL these outliers from the actual model fit
+        def sigma_clip_mask(x, y, n_sigma=2.0, max_iters=5):
+            """
+            Iterative σ–clipping mask: returns a boolean array (True=inlier).
+            """
+            mask = np.ones_like(y, dtype=bool)
+            for _ in range(max_iters):
+                # fit only to current inliers
+                m, b = np.polyfit(x[mask], y[mask], 1)
+                resid = y - (m*x + b)
+                sigma = np.std(resid[mask])
+                new_mask = np.abs(resid) <= n_sigma*sigma
+                if new_mask.sum() == mask.sum():
+                    break
+                mask = new_mask
+            return mask
+        
+        # --- prepare x once ---
+        x = region_df['avg_forecast_cloudcover'].to_numpy()
+        
+        # --- get masks for each y-series ---
+        m1 = sigma_clip_mask(x, region_df['sky_temp_C'].to_numpy())
+        m2 = sigma_clip_mask(x, region_df['sky-ambient'].to_numpy())
+        m3 = sigma_clip_mask(x, region_df['sky-ambient^2'].to_numpy())
+        
+        # --- combine: only keep rows that are inliers in *all* three ---
+        keep = m1 & m2 & m3
+        
+        # --- filter your original DataFrame ---
+        region_df = region_df.loc[keep].copy()           
+    
+           
         X = region_df[features].copy()
         y = region_df['avg_forecast_cloudcover'].copy()        
     
@@ -958,8 +1111,10 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
         sun_altitude = sun_altaz.alt
         sun_azimuth = sun_altaz.az
         plog(f"Current Sun altitude: {sun_altitude:.2f}")           
+
         #moon = get_moon(obstime, location=self.observer_location)  Deprication warning
         moon = get_body('moon',obstime, location=self.observer_location )
+
         moon_altaz = moon.transform_to(altaz_frame)
         moon_altitude = moon_altaz.alt       
         # altitude = moon_altaz.alt
@@ -1331,7 +1486,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                                 altaz_frame = AltAz(obstime=observation_time, location=self.observer_location)
                                 altaz_coords = sky_coord.transform_to(altaz_frame)
                                 
-                                obs_current_altitude = altaz_coords.alt.deg
+                                #obs_current_altitude = altaz_coords.alt.deg
                                 obs_current_azimuth = altaz_coords.az.deg
                                 
                                 
@@ -1526,11 +1681,12 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             
             quick_status=ocn_status['observing_conditions']['observing_conditions1']
             
-            if quick_status['humidity_%'] == -1:
-                plog ("local weather station not reporting humidity, using last owm report")
-                ocn_status['observing_conditions']['observing_conditions1']['humidity_%']=self.current_owm_humidity
-                quick_status['humidity_%'] = self.current_owm_humidity
-                plog ("OWM Humidity: " + str(self.current_owm_humidity))      
+            if self.ocn_exists:
+                if quick_status['humidity_%'] == -1:
+                    plog ("local weather station not reporting humidity, using last owm report")
+                    ocn_status['observing_conditions']['observing_conditions1']['humidity_%']=self.current_owm_humidity
+                    quick_status['humidity_%'] = self.current_owm_humidity
+                    plog ("OWM Humidity: " + str(self.current_owm_humidity))      
             
             # Simply override cloud_cover for the moment
             quick_status['forecast_cloud_cover_%']=self.medianforecast_current_cloud_cover
@@ -1548,84 +1704,102 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                 
             wx_reasons = []            
             
-            if self.rain_limit_on:
-                rain_limit = quick_status['rain_rate'] > self.rain_limit_setting
-                if rain_limit:
-                    plog("Reported rain rate in mm/hr:  ", quick_status['rain_rate'])
-                    wx_reasons.append('Rain > ' + str(self.rain_limit_setting))
-                    # Also here move the next allowed open time to much later
-                    # Like until 45 minutes later. If there is rain around
-                    # We have to be safe. This should continually update as the status
-                    # is updated such that the enclosure won't be able to open until
-                    # at least 45 minutes after the last reported rain fall
-                    self.enclosure_next_open_time = time.time() + 2700
-            else:
-                rain_limit=False
             
-            if self.humidity_limit_on:
-                humidity_limit = quick_status['humidity_%'] < self.humidity_limit_setting
-                if not humidity_limit:
-                    wx_reasons.append('Humidity >= ' + str(self.humidity_limit_setting) + '%')
-            else:
-                humidity_limit=True
-            
-            if self.windspeed_limit_on:
-                wind_limit = (
-                        quick_status['wind_m/s']*0.2778 < self.windspeed_limit_setting
-                )  # sky_monitor reports km/h, Clarity may report in MPH
-                if not wind_limit:
-                    wx_reasons.append('Wind > ' + str(self.windspeed_limit_setting) + ' km/h')
-            else:
-                wind_limit=True
-            
-            if self.temp_minus_dew_on:
-                dewpoint_gap = (
-                    not (quick_status['temperature_C']- quick_status['dewpoint_C']) < self.temp_minus_dew_setting
-                )
-                if not dewpoint_gap:
-                    wx_reasons.append('Ambient - Dewpoint < ' + str(self.temp_minus_dew_setting) + 'C')
-            else:
-                dewpoint_gap=True
-            
-            if self.sky_minus_ambient_limit_on:
-                sky_amb_limit = (
-                                        quick_status['sky_temp_C']- quick_status['temperature_C']
-                                ) < self.sky_minus_ambient_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
-                if not sky_amb_limit:
-                    wx_reasons.append('(sky - amb) > ' + str(self.sky_minus_ambient_limit_setting) + 'C')
-            else:
-                sky_amb_limit=True
+            if self.ocn_exists:
+                if self.rain_limit_on:
+                    rain_limit = quick_status['rain_rate'] > self.rain_limit_setting
+                    if rain_limit:
+                        plog("Reported rain rate in mm/hr:  ", quick_status['rain_rate'])
+                        wx_reasons.append('Rain > ' + str(self.rain_limit_setting))
+                        # Also here move the next allowed open time to much later
+                        # Like until 45 minutes later. If there is rain around
+                        # We have to be safe. This should continually update as the status
+                        # is updated such that the enclosure won't be able to open until
+                        # at least 45 minutes after the last reported rain fall
+                        self.enclosure_next_open_time = time.time() + 2700
+                else:
+                    rain_limit=False
                 
-            if self.sky_temperature_limit_on:
-                sky_temp_limit = (
-                                        quick_status['sky_temp_C']
-                                ) < self.sky_temperature_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
-                if not sky_temp_limit:
-                    wx_reasons.append('(sky temperature) > ' + str(self.sky_temperature_limit_setting) + 'C')
-            else:
-                sky_temp_limit=True
-            
-            if self.local_cloud_cover_limit_on:                
-                try:
-                    local_cloud_cover_value = float(quick_status['local_cloud_cover_%'])
-                    #status['cloud_cover_%'] = round(cloud_cover_value, 0)
-                    if local_cloud_cover_value == None:
-                        local_cloud_cover = False
+                if self.humidity_limit_on:
+                    humidity_limit = quick_status['humidity_%'] < self.humidity_limit_setting
+                    if not humidity_limit:
+                        wx_reasons.append('Humidity >= ' + str(self.humidity_limit_setting) + '%')
+                else:
+                    humidity_limit=True
+                
+                if self.windspeed_limit_on:
+                    wind_limit = (
+                            quick_status['wind_m/s']*0.2778 < self.windspeed_limit_setting
+                    )  # sky_monitor reports km/h, Clarity may report in MPH
+                    if not wind_limit:
+                        wx_reasons.append('Wind > ' + str(self.windspeed_limit_setting) + ' km/h')
+                else:
+                    wind_limit=True
+                
+                if self.temp_minus_dew_on:
+                    dewpoint_gap = (
+                        not (quick_status['temperature_C']- quick_status['dewpoint_C']) < self.temp_minus_dew_setting
+                    )
+                    if not dewpoint_gap:
+                        wx_reasons.append('Ambient - Dewpoint < ' + str(self.temp_minus_dew_setting) + 'C')
+                else:
+                    dewpoint_gap=True
+                
+                if self.sky_minus_ambient_limit_on:
+                    sky_amb_limit = (
+                                            quick_status['sky_temp_C']- quick_status['temperature_C']
+                                    ) < self.sky_minus_ambient_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
+                    if not sky_amb_limit:
+                        wx_reasons.append('(sky - amb) > ' + str(self.sky_minus_ambient_limit_setting) + 'C')
+                else:
+                    sky_amb_limit=True
                     
-                    elif local_cloud_cover_value <= self.local_cloud_cover_limit_setting:
-                        local_cloud_cover = False
-                        #wx_reasons.append('>=' + str(self.cloud_cover_limit_setting) + '% Cloudy')
+                if self.sky_temperature_limit_on:
+                    sky_temp_limit = (
+                                            quick_status['sky_temp_C']
+                                    ) < self.sky_temperature_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
+                    if not sky_temp_limit:
+                        wx_reasons.append('(sky temperature) > ' + str(self.sky_temperature_limit_setting) + 'C')
+                else:
+                    sky_temp_limit=True
                 
-                    else:
-                        local_cloud_cover = True
-                        wx_reasons.append('>=' + str(self.local_cloud_cover_limit_setting) + '% Cloudy Local Sensor')
-                except:
-                    #status['cloud_cover_%'] = "no report"
-                    plog ("failed to get local cloud cover... usually the model is not ready yet due to lack of weather data points.")
-                    local_cloud_cover = False  # We cannot use this signal to force a wX hold or close
-            else:
-                local_cloud_cover = False
-            
+                if self.local_cloud_cover_limit_on:                
+                    try:
+                        local_cloud_cover_value = float(quick_status['local_cloud_cover_%'])
+                        #status['cloud_cover_%'] = round(cloud_cover_value, 0)
+                        if local_cloud_cover_value == None:
+                            local_cloud_cover = False
+                        
+                        elif local_cloud_cover_value <= self.local_cloud_cover_limit_setting:
+                            local_cloud_cover = False
+                            #wx_reasons.append('>=' + str(self.cloud_cover_limit_setting) + '% Cloudy')
+                    
+                        else:
+                            local_cloud_cover = True
+                            wx_reasons.append('>=' + str(self.local_cloud_cover_limit_setting) + '% Cloudy Local Sensor')
+                    except:
+                        #status['cloud_cover_%'] = "no report"
+                        plog ("failed to get local cloud cover... usually the model is not ready yet due to lack of weather data points.")
+                        local_cloud_cover = False  # We cannot use this signal to force a wX hold or close
+                else:
+                    local_cloud_cover = False
+                
+                
+                if self.lowest_temperature_on:
+                    low_temp_bound=not quick_status['temperature_C'] < self.lowest_temperature_setting
+                else: 
+                    low_temp_bound=True
+                
+                if self.highest_temperature_on:
+                    high_temp_bound=not quick_status['temperature_C'] > self.highest_temperature_setting
+                else:
+                    high_temp_bound=True
+                    
+                temp_bounds=True
+                if not low_temp_bound or not high_temp_bound:
+                    temp_bounds=False
+                    wx_reasons.append('amb temp out of range')
+                
             if self.forecast_cloud_cover_limit_on:
                 try:
                     forecast_cloud_cover_value = float(quick_status['forecast_cloud_cover_%'])
@@ -1644,23 +1818,15 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                 forecast_cloud_cover = False
             
             
-            if self.lowest_temperature_on:
-                low_temp_bound=not quick_status['temperature_C'] < self.lowest_temperature_setting
-            else: 
-                low_temp_bound=True
             
-            if self.highest_temperature_on:
-                high_temp_bound=not quick_status['temperature_C'] > self.highest_temperature_setting
+            
+            if self.ocn_exists:
+                self.local_weather_ok = dewpoint_gap and temp_bounds and wind_limit and sky_amb_limit  and sky_temp_limit and humidity_limit and not rain_limit and not local_cloud_cover and not forecast_cloud_cover 
             else:
-                high_temp_bound=True
-                
-            temp_bounds=True
-            if not low_temp_bound or not high_temp_bound:
-                temp_bounds=False
-                wx_reasons.append('amb temp out of range')
-
-            self.local_weather_ok = dewpoint_gap and temp_bounds and wind_limit and sky_amb_limit  and sky_temp_limit and humidity_limit and not rain_limit and not local_cloud_cover and not forecast_cloud_cover 
-                
+                self.local_weather_ok =  not forecast_cloud_cover 
+            
+            
+            
             if self.local_weather_ok:
                 ocn_status['observing_conditions']['observing_conditions1']["local_weather_ok"] = "Yes"
             else:
@@ -1967,52 +2133,54 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                 if self.keep_closed_all_night:                
                     plog("Roof is being forced to stay CLOSED ALL NIGHT")
     
-    
-                model_skyambient=ocn_status['sky_temp_C']-self.current_owm_ambient_temperature
-                
-                
-                ########## FIRST CORRECT SKY TEMPERATURE FOR SUN ADN MOON EFFECTS
-                
-                
-                sun_altitude, moon_altitude, moon_illumination, flux_ground, sun_azimuth = self.get_sun_and_moon_info()
-            
-                               
-                new_data = pd.DataFrame({
-                    'corrected_sky_temp_C': ocn_status['sky_temp_C'],
-                    'sky-ambient': [model_skyambient],
-                    'sky-ambient^2': [model_skyambient **2]
-                })
-                
-                plog (new_data)
-                try:                    
+                if self.ocn_exists:
+                    model_skyambient=ocn_status['sky_temp_C']-self.current_owm_ambient_temperature
                     
-                    if sun_altitude.deg >= 18:
-                        self.predicted_clouds = self.daytime_cloud_model.predict(new_data)
-                    elif sun_altitude.deg <= -18:
-                        self.predicted_clouds = self.nighttime_cloud_model.predict(new_data)
-                    else:
-                        fraction_through_transition = (sun_altitude.deg + 18) / 36
-                        daytime_cloud_prediction=self.daytime_cloud_model.predict(new_data)
-                        plog ("daytime prediction: "+ str(daytime_cloud_prediction))
-                        nighttime_cloud_prediction=self.nighttime_cloud_model.predict(new_data)
-                        plog ("nighttime prediction: "+ str(nighttime_cloud_prediction))
-                        
-                        self.predicted_clouds= fraction_through_transition *  daytime_cloud_prediction + (1-fraction_through_transition) * nighttime_cloud_prediction
-                        
-                    self.cloud_tracker.append(self.predicted_clouds[0])
-                    if len(self.cloud_tracker) > 10:
-                        self.cloud_tracker.pop(0)
                     
-                    self.median_cloud_estimate=round(np.median(self.cloud_tracker),2)
+                    ########## FIRST CORRECT SKY TEMPERATURE FOR SUN ADN MOON EFFECTS
+                    
+                    
+                    sun_altitude, moon_altitude, moon_illumination, flux_ground, sun_azimuth = self.get_sun_and_moon_info()
                 
-                    plog(f"Predicted clouds: {self.predicted_clouds[0]:.2f}")
-                    plog ("Past clouds: " + str(self.cloud_tracker))
-                    plog ("Median of last ten observations: " + str(round(np.median(self.cloud_tracker),2)) + " std " + str(round(np.std(self.cloud_tracker),2)))
-    
-                except:
-                    plog ("failed model? Perhaps can happen if we haven't built up enough points yet.")
-                    self.median_cloud_estimate=100
-                    plog(traceback.format_exc())
+                                   
+                    new_data = pd.DataFrame({
+                        'corrected_sky_temp_C': ocn_status['sky_temp_C'],
+                        'sky-ambient': [model_skyambient],
+                        'sky-ambient^2': [model_skyambient **2]
+                    })
+                    
+                    plog (new_data)
+                    try:                    
+                        
+                        if sun_altitude.deg >= 18:
+                            self.predicted_clouds = self.daytime_cloud_model.predict(new_data)
+                        elif sun_altitude.deg <= -18:
+                            self.predicted_clouds = self.nighttime_cloud_model.predict(new_data)
+                        else:
+                            fraction_through_transition = (sun_altitude.deg + 18) / 36
+                            daytime_cloud_prediction=self.daytime_cloud_model.predict(new_data)
+                            plog ("daytime prediction: "+ str(daytime_cloud_prediction))
+                            nighttime_cloud_prediction=self.nighttime_cloud_model.predict(new_data)
+                            plog ("nighttime prediction: "+ str(nighttime_cloud_prediction))
+                            
+                            self.predicted_clouds= fraction_through_transition *  daytime_cloud_prediction + (1-fraction_through_transition) * nighttime_cloud_prediction
+                            
+                        self.cloud_tracker.append(self.predicted_clouds[0])
+                        if len(self.cloud_tracker) > 10:
+                            self.cloud_tracker.pop(0)
+                        
+                        self.median_cloud_estimate=round(np.median(self.cloud_tracker),2)
+                    
+                        plog(f"Predicted clouds: {self.predicted_clouds[0]:.2f}")
+                        plog ("Past clouds: " + str(self.cloud_tracker))
+                        plog ("Median of last ten observations: " + str(round(np.median(self.cloud_tracker),2)) + " std " + str(round(np.std(self.cloud_tracker),2)))
+        
+                    except:
+                        plog ("failed model? Perhaps can happen if we haven't built up enough points yet.")
+                        self.median_cloud_estimate=100
+                        plog(traceback.format_exc())
+                else:
+                    self.median_cloud_estimate=None
     
                 try:
                     plog ("****************************")
@@ -2653,8 +2821,8 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                         tempFn=tempFn+40
                     elif 20 < hourly_report['wind_speed'] :
                         tempFn=tempFn+101
-    
-                    if 'rain'  in hourly_report['weather'][0]['description'] or 'storm'  in hourly_report['weather'][0]['description']: # Need to figure out pop thing here. 
+        
+                    if 'rain'  in hourly_report['weather'][0]['description'] or 'storm'  in hourly_report['weather'][0]['description'] or hourly_report['pop'] > 0: # Need to figure out pop thing here. 
                         tempFn=tempFn+101
     
                     weatherline=[ hourly_report['humidity'], hourly_report['clouds'],hourly_report['wind_speed'],hourly_report['weather'][0]['main'], hourly_report['weather'][0]['description'], clock_hour, tempFn, iso_time,  hourly_report['temp'], hourly_report['pop']] # Last one meant to be rain but it has s
@@ -2717,9 +2885,9 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                     if hourcounter >= hours_until_start_of_observing and hourcounter <= hours_until_end_of_observing:
                         
 
-                        textdescription= entry[4]+ '   Cloud:   ' + str(entry[1]) + '%     Hum:    ' + str(entry[0]) +   '%    Wind:  ' +str(entry[2])+' m/s      rain probability: ' + str(entry[9]) +'%' # WER changed to make more readable.
+                        textdescription= entry[4]+ '   Cloud:   ' + str(entry[1]) + '%     Hum:    ' + str(entry[0]) +   '%    Wind:  ' +str(entry[2])+' m/s   rain probability: ' + str(entry[9]) +'%'  # WER changed to make more readable.
 
-    
+
                         hourly_fitzgerald_number.append(entry[6])
                         hourly_fitzgerald_number_by_hour.append([entry[5],entry[6],textdescription])
                     hourcounter=hourcounter+1
@@ -2880,6 +3048,9 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
 
             # Output to the log the various interesting things about the weather
             # Which will be used at some stage to calibrate the weather station
+            # BUT ONLY IF THERE IS ACTUALLY A WEATHER STATION! although we will
+            # still collect non-weather station stuff.....
+            
             
             line_of_weather_info=[]
             line_of_weather_info.append(str(datetime.datetime.now()))
@@ -2890,38 +3061,63 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
 
             
             # Reported cloud_cover
-            try:
-                line_of_weather_info.append(self.predicted_clouds[0])
-            except:
-                line_of_weather_info.append(None)
-                plog ("using none rather than predicted clouds for weatherline")
             
+            if self.ocn_exists:
+                try:
+                    line_of_weather_info.append(self.predicted_clouds[0])
+                except:
+                    line_of_weather_info.append(None)
+                    plog ("using none rather than predicted clouds for weatherline")
+            else:
+                line_of_weather_info.append(None)
+                
             # Current humidity
-            if ocn_status['humidity_%'] == -1:
-                line_of_weather_info.append(data['current']['humidity'])
+            if self.ocn_exists:
+                if ocn_status['humidity_%'] == -1:
+                    line_of_weather_info.append(data['current']['humidity'])
+                else:
+                    line_of_weather_info.append(ocn_status['humidity_%'])
             else:
                 line_of_weather_info.append(ocn_status['humidity_%'])
             
             
-            # Measured sky_temp
-            line_of_weather_info.append(ocn_status['sky_temp_C'])
-        
-            # Measured temp
-            line_of_weather_info.append(ocn_status['temperature_C'])
+            if self.ocn_exists:
+            
+                # Measured sky_temp
+                line_of_weather_info.append(ocn_status['sky_temp_C'])
+            
+                # Measured temp
+                line_of_weather_info.append(ocn_status['temperature_C'])
+                
+                # Dewpoint
+                if ocn_status['dewpoint_C'] == 100:
+                    line_of_weather_info.append(self.owm_current_dewpoint)
+                else:
+                    line_of_weather_info.append(ocn_status['dewpoint_C'])
+
+                # Rain Rate
+                line_of_weather_info.append(ocn_status['rain_rate'])
+                
+                # Wind Speed
+                line_of_weather_info.append(ocn_status['wind_m/s']) 
                         
-            # Dewpoint
-            if ocn_status['dewpoint_C'] == 100:
-                line_of_weather_info.append(self.owm_current_dewpoint)
             else:
-                line_of_weather_info.append(ocn_status['dewpoint_C'])
+                # Measured sky_temp
+                line_of_weather_info.append(None)
             
-           
+                # Measured temp
+                line_of_weather_info.append(None)
+                
+                # Dewpoint
+                line_of_weather_info.append(self.owm_current_dewpoint)
+                
+                # Rain Rate
+                line_of_weather_info.append(None)
+                
+                # Wind Speed
+                line_of_weather_info.append(None)
+                        
             
-            # Rain Rate
-            line_of_weather_info.append(ocn_status['rain_rate'])
-            
-            # Wind Speed
-            line_of_weather_info.append(ocn_status['wind_m/s'])                        
             
             # OWM temperature - can be more reliable than weather station
             line_of_weather_info.append(self.owm_current_temp)
@@ -3182,6 +3378,76 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             line_of_weather_info.append(self.worldweather_nexthour_cloud)
             
             
+            obs_properties_dict={}
+            
+            for obsid in self.obs_ids:
+                uri_status = f"https://status.photonranch.org/status/{obsid}/device"
+
+                
+                try:
+                    #plog ("Grabbing obs settings")                            
+                    obs_status=requests.get(uri_status, timeout=20, allow_redirects=False, headers=close_headers, stream=False)
+                    #plog ("Grabbed obs settings")
+                except:
+                    plog ("Some error in getting the obs_settings")
+                    plog(traceback.format_exc())
+                    obs_status=None
+
+                if '[200]' in str(obs_status): # If reading successful
+                    last_status_time=obs_status.json()['server_timestamp_ms']/1000
+                    try:
+                        if time.time() - last_status_time < 600:
+                            # Get focuser temperatuer
+                        
+                            focuser_status=obs_status.json()['status']['focuser']
+                            focuser_status=focuser_status[next(iter(focuser_status))] # first focuser
+                            focuser_temperature= focuser_status['focus_temperature']['val']
+                            
+                            current_fwhm_seeing=obs_status.json()['status']['current_fwhm_seeing']
+                            try:
+                                estimated_sky_transmissiveness= obs_status.json()['status']['suspected_sky_transmissiveness']
+                                #estimated_sky_transmissiveness_filter= obs_status.json()['status']['estimated_sky_transmissiveness_filter']
+                            except:
+                                plog(traceback.format_exc())
+                                estimated_sky_transmissiveness=None
+                                #estimated_sky_transmissiveness_filter=None
+                        
+                        else:
+                            focuser_temperature=None
+                            current_fwhm_seeing=None
+                            estimated_sky_transmissiveness=None
+                            #estimated_sky_transmissiveness_filter=None
+                    except:
+                        plog ("Some error in getting the obs status keys")
+                        focuser_temperature=None
+                        current_fwhm_seeing=None
+                        estimated_sky_transmissiveness=None
+                        #estimated_sky_transmissiveness_filter=None
+                        plog(traceback.format_exc())
+                else:
+                    plog ("not successful obs status reading")
+                    focuser_temperature=None
+                    current_fwhm_seeing=None
+                    estimated_sky_transmissiveness=None
+                    #estimated_sky_transmissiveness_filter=None
+                    plog (obs_status)
+                
+                obs_properties_dict[obsid]={}
+                obs_properties_dict[obsid]['focuser_temperature']=focuser_temperature
+                obs_properties_dict[obsid]['current_fwhm_seeing']=current_fwhm_seeing
+                obs_properties_dict[obsid]['estimated_sky_transmissiveness']=estimated_sky_transmissiveness
+                #obs_properties_dict[obsid]['estimated_sky_transmissiveness_filter']= estimated_sky_transmissiveness_filter
+            
+            
+            
+            line_of_weather_info.append(json.dumps(obs_properties_dict))
+
+            #breakpoint()
+            
+            
+            
+            
+            
             if self.config['send_hourly_cloud_forecast_emails']:
                 # Your cPanel email credentials
                 smtp_server = self.smtp_server
@@ -3232,7 +3498,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             
             print (line_of_weather_info)
             
-            column_names = ['date','time','OWM_clouds','Local_clouds','Humidity','sky_temp_C','local_temperature_C', 'dewpoint', 'rain_rate','wind_m/s', 'OWM_temperature','openmeteo_clouds', 'avg_forecast_cloudcover', 'OWMClouds_inanhour', 'openmeteoclouds_inanhour','sun_altitude','moon_altitude','moon_illumination','moon_flux_on_ground', 'sun_azimuth', 'tomorrowio_nowclouds','tomorrowio_nexthourclouds','pirate_clouds_now','pirate_clouds_inanhour','metocean_clouds_now','metocean_clouds_inanhour','worldweather_clouds_now','worldweather_clouds_inanhour']
+            column_names = ['date','time','OWM_clouds','Local_clouds','Humidity','sky_temp_C','local_temperature_C', 'dewpoint', 'rain_rate','wind_m/s', 'OWM_temperature','openmeteo_clouds', 'avg_forecast_cloudcover', 'OWMClouds_inanhour', 'openmeteoclouds_inanhour','sun_altitude','moon_altitude','moon_illumination','moon_flux_on_ground', 'sun_azimuth', 'tomorrowio_nowclouds','tomorrowio_nexthourclouds','pirate_clouds_now','pirate_clouds_inanhour','metocean_clouds_now','metocean_clouds_inanhour','worldweather_clouds_now','worldweather_clouds_inanhour','obs_dict']
             
 
             # Open the file in append mode and write the line
@@ -3257,7 +3523,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                 weather_directory=self.wema_path+self.name+ '/weatherfits'
                 if not os.path.exists(weather_directory):
                     os.makedirs(weather_directory)
-                file_date_string = str(datetime.datetime.now()).replace(' ', '_').split('.')[0].replace(':', '-')
+                #file_date_string = str(datetime.datetime.now()).replace(' ', '_').split('.')[0].replace(':', '-')
                 ######## We also need to update our cloud prediction model.
                 # So lets open the weatherlog
                 # Assign column names manually
@@ -3267,83 +3533,85 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                 # Read CSV without a header and assign column names
                 df = pd.read_csv(self.wema_path+self.name + '_weatherlog.csv', header=0)#, names=column_names)
                 
-                # Need to remove some rows with nan values
-                #df = df.dropna()
+                # # Need to remove some rows with nan values
+                # #df = df.dropna()
                 
-                # Convert to years as main value
-                # Arbitrary reference point is the 1st of janurary 2025
-                # time.time() then is 1735689600.0
-                df['time_in_days']= df['time'] - 1735689600.0
-                df['time_in_days']= df['time_in_days'] / 86400 
-                df['phase_of_day']= df['time_in_days'] % 1
+                # # Convert to years as main value
+                # # Arbitrary reference point is the 1st of janurary 2025
+                # # time.time() then is 1735689600.0
+                # df['time_in_days']= df['time'] - 1735689600.0
+                # df['time_in_days']= df['time_in_days'] / 86400 
+                # df['phase_of_day']= df['time_in_days'] % 1
                 
-                df['time_in_years']= df['time'] - 1735689600.0
-                df['time_in_years']= df['time_in_years'] / 31536000
-                df['phase_of_year']= df['time_in_years'] % 1
-                
-                
-                # Solar flux is essentially zero at -18 so set minimum sun altitude to -18
-                df['sun_altitude'] = df['sun_altitude'].clip(lower=-18)
-                
-                #To transform the sun altitude so that the relationship with solar flux becomes linear.
-                df['transformed_sun_altitude']= np.exp( df['sun_altitude'] / 6.0)
-                
-                X = df[['transformed_sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
-                y = df['sky_temp_C']
-                
-                # Train-test split (for verification purposes)
-                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-                
-                # Initialize the model
-                self.sky_temp_model = LinearRegression()
-                
-                # Train the model
-                self.sky_temp_model.fit(X_train, y_train)
-                
-                # Predict the contributions of the factors to sky_temp_C
-                df['predicted_factor_contributions'] = self.sky_temp_model.predict(X)
-                
-                # Calculate corrected sky temperature
-                df['corrected_sky_temp_C'] = df['sky_temp_C'] - df['predicted_factor_contributions']
-                
-                # Plotting before and after
-                plt.figure(figsize=(14, 6))
-                
-                # Original Sky Temperature Plot
-                plt.subplot(1, 2, 1)
-                sns.scatterplot(x=df.index, y=df['sky_temp_C'], label='Original Sky Temperature', color='blue')
-                plt.title(f'Original Sky Temperature\nR² = {r2_score(y, self.sky_temp_model.predict(X)):.2f}')
-                plt.xlabel('Index')
-                plt.ylabel('Sky Temperature (°C)')
-                
-                # Corrected Sky Temperature Plot
-                plt.subplot(1, 2, 2)
-                sns.scatterplot(x=df.index, y=df['corrected_sky_temp_C'], label='Corrected Sky Temperature', color='green')
-                plt.title('Corrected Sky Temperature (After Removing Factors)')
-                plt.xlabel('Index')
-                plt.ylabel('Sky Temperature (°C)')
+                # df['time_in_years']= df['time'] - 1735689600.0
+                # df['time_in_years']= df['time_in_years'] / 31536000
+                # df['phase_of_year']= df['time_in_years'] % 1
                 
                 
-                plt.savefig(weather_directory + '/CorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+                # # Solar flux is essentially zero at -18 so set minimum sun altitude to -18
+                # df['sun_altitude'] = df['sun_altitude'].clip(lower=-18)
+                
+                # #To transform the sun altitude so that the relationship with solar flux becomes linear.
+                # df['transformed_sun_altitude']= np.exp( df['sun_altitude'] / 6.0)
+                
+                # X = df[['transformed_sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
+                # y = df['sky_temp_C']
+                
+                # # Train-test split (for verification purposes)
+                # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+                
+                # # Initialize the model
+                # self.sky_temp_model = LinearRegression()
+                
+                
+                # breakpoint()
+                # # Train the model
+                # self.sky_temp_model.fit(X_train, y_train)
+                
+                # # Predict the contributions of the factors to sky_temp_C
+                # df['predicted_factor_contributions'] = self.sky_temp_model.predict(X)
+                
+                # # Calculate corrected sky temperature
+                # df['corrected_sky_temp_C'] = df['sky_temp_C'] - df['predicted_factor_contributions']
+                
+                # # Plotting before and after
+                # plt.figure(figsize=(14, 6))
+                
+                # # Original Sky Temperature Plot
+                # plt.subplot(1, 2, 1)
+                # sns.scatterplot(x=df.index, y=df['sky_temp_C'], label='Original Sky Temperature', color='blue')
+                # plt.title(f'Original Sky Temperature\nR² = {r2_score(y, self.sky_temp_model.predict(X)):.2f}')
+                # plt.xlabel('Index')
+                # plt.ylabel('Sky Temperature (°C)')
+                
+                # # Corrected Sky Temperature Plot
+                # plt.subplot(1, 2, 2)
+                # sns.scatterplot(x=df.index, y=df['corrected_sky_temp_C'], label='Corrected Sky Temperature', color='green')
+                # plt.title('Corrected Sky Temperature (After Removing Factors)')
+                # plt.xlabel('Index')
+                # plt.ylabel('Sky Temperature (°C)')
+                
+                
+                # plt.savefig(weather_directory + '/CorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
     
                 
-                # Checking if the required columns are present in the DataFrame
-                required_columns = ['avg_forecast_cloudcover', 'corrected_sky_temp_C']
+                # # Checking if the required columns are present in the DataFrame
+                # required_columns = ['avg_forecast_cloudcover', 'corrected_sky_temp_C']
                 
-                if all(col in df.columns for col in required_columns):
-                    # Plotting avg_forecast_cloudcover vs corrected_sky_temp_C
-                    plt.figure(figsize=(10, 6))
-                    sns.scatterplot(data=df, x='avg_forecast_cloudcover', y='corrected_sky_temp_C', color='purple')
-                    plt.title('Corrected Sky Temperature vs. Average Forecast Cloud Cover')
-                    plt.xlabel('Average Forecast Cloud Cover (%)')
-                    plt.ylabel('Corrected Sky Temperature (°C)')
-                    plt.savefig(weather_directory + '/CloudsvsCorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+                # if all(col in df.columns for col in required_columns):
+                #     # Plotting avg_forecast_cloudcover vs corrected_sky_temp_C
+                #     plt.figure(figsize=(10, 6))
+                #     sns.scatterplot(data=df, x='avg_forecast_cloudcover', y='corrected_sky_temp_C', color='purple')
+                #     plt.title('Corrected Sky Temperature vs. Average Forecast Cloud Cover')
+                #     plt.xlabel('Average Forecast Cloud Cover (%)')
+                #     plt.ylabel('Corrected Sky Temperature (°C)')
+                #     plt.savefig(weather_directory + '/CloudsvsCorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
     
-                else:
-                    missing_columns = [col for col in required_columns if col not in df.columns]
-                    raise ValueError(f"The following columns are missing from the DataFrame: {missing_columns}")
+                # else:
+                #     missing_columns = [col for col in required_columns if col not in df.columns]
+                #     raise ValueError(f"The following columns are missing from the DataFrame: {missing_columns}")
                 
-                df['sky-ambient'] = df['corrected_sky_temp_C'] - df['OWM_temperature']
+                df['sky-ambient'] = df['sky_temp_C'] - df['OWM_temperature']
                 
                 # dew point depression
                 df['dew_point_depression'] =  df['OWM_temperature'] - df['dewpoint']                

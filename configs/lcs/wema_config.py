@@ -221,7 +221,7 @@ wema_config = {
     'sky_minus_ambient_limit': -13,
     'sky_temperature_limit': 4,
     'local_cloud_cover_limit': 70,
-    'forecast_cloud_cover_limit' : 70,
+    'forecast_cloud_cover_limit' : 90,
     'lowest_ambient_temperature': -5,
     'highest_ambient_temperature': 60,
     

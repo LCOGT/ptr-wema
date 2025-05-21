@@ -203,7 +203,7 @@ wema_config = {
 
     # Whether these limits are on by default
     'rain_limit_on': True,
-    'humidity_limit_on': False,
+    'humidity_limit_on': True,
     'windspeed_limit_on': False,
     'lightning_limit_on': False,
     'temperature_minus_dewpoint_limit_on': False,
@@ -222,14 +222,14 @@ wema_config = {
 
     # Local weather DANGER limits - will cause the roof to shut
     'rain_limit': 0,
-    'humidity_limit': 95,
+    'humidity_limit': 98,
     'windspeed_limit': 25,
     'lightning_limit': 15,
     'temperature_minus_dewpoint_limit': 2,
-    'sky_minus_ambient_limit': -14,
-    'sky_temperature_limit': -3,
+    'sky_minus_ambient_limit': -12,
+    'sky_temperature_limit': -1,
     'local_cloud_cover_limit': 70,
-    'forecast_cloud_cover_limit' : 70,
+    'forecast_cloud_cover_limit' : 90,
     'lowest_ambient_temperature': -5,
     'highest_ambient_temperature': 60,
     
