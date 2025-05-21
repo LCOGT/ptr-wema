@@ -42,7 +42,9 @@ from wema_config import get_enc_status_custom
 from wema_config import get_ocn_status_custom
 import csv
 #from requests.auth import HTTPBasicAuth
-from astropy.coordinates import EarthLocation, AltAz, SkyCoord, get_sun,  get_body#get_moon,, solar_system_ephemeris
+
+from astropy.coordinates import EarthLocation, AltAz, SkyCoord, get_body
+
 from astropy.time import Time
 import astropy.units as u
 
@@ -501,7 +503,7 @@ class WxEncAgent:
     
     """
     Re-working ARO Weather 20231226 WER.  Currently the Wema-attached external 
-    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert 
+n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert 
     provided by a reflection from AWS -- and we have an inside skyalert which
     measures the underside roof temp during the day!  Unfortunately the AWS
     style reflection gets stale so I am putting in a redis based way to pass
@@ -1102,15 +1104,17 @@ class WxEncAgent:
         # Define the AltAz frame
         altaz_frame = AltAz(obstime=obstime, location=self.observer_location)            
         # Get the Sun's position
-        sun = get_sun(obstime)            
+        sun = get_body("sun", obstime)    #get_sun(obstime)  Will be depricated          
         # Transform to AltAz
         sun_altaz = sun.transform_to(altaz_frame)            
         # Get the altitude
         sun_altitude = sun_altaz.alt
         sun_azimuth = sun_altaz.az
         plog(f"Current Sun altitude: {sun_altitude:.2f}")           
-        #moon = get_moon(obstime, location=self.observer_location)
-        moon = get_body("moon", obstime, location=self.observer_location)
+
+        #moon = get_moon(obstime, location=self.observer_location)  Deprication warning
+        moon = get_body('moon',obstime, location=self.observer_location )
+
         moon_altaz = moon.transform_to(altaz_frame)
         moon_altitude = moon_altaz.alt       
         # altitude = moon_altaz.alt
@@ -1122,7 +1126,7 @@ class WxEncAgent:
             flux_ground=0
         else:
             # Illumination estimate (simplified using elongation)
-            sun = get_sun(obstime)
+            sun = get_body('sun', obstime)
             elongation = sun.separation(moon)
             moon_illumination = (1 + np.cos(elongation)) / 2
             
@@ -2855,7 +2859,8 @@ class WxEncAgent:
     
                     forecast_status.append(status_line)
                     
-    
+                    
+
                 if forecast_status is not None:
                     lane = "forecast"
                     obsy = self.config['wema_name']
@@ -2865,6 +2870,7 @@ class WxEncAgent:
                         "statusType": "forecast",
                         "status": { "forecast": forecast_status }
                     })
+
                     try:
                         response = requests.request("POST", url, data=payload, allow_redirects=False, headers=close_headers, stream=False)
                     except:
@@ -2878,8 +2884,10 @@ class WxEncAgent:
                 for entry in fitzgerald_weather_number_grid:
                     if hourcounter >= hours_until_start_of_observing and hourcounter <= hours_until_end_of_observing:
                         
+
                         textdescription= entry[4]+ '   Cloud:   ' + str(entry[1]) + '%     Hum:    ' + str(entry[0]) +   '%    Wind:  ' +str(entry[2])+' m/s   rain probability: ' + str(entry[9]) +'%'  # WER changed to make more readable.
-    
+
+
                         hourly_fitzgerald_number.append(entry[6])
                         hourly_fitzgerald_number_by_hour.append([entry[5],entry[6],textdescription])
                     hourcounter=hourcounter+1
@@ -2902,6 +2910,7 @@ class WxEncAgent:
                 for line in hourly_fitzgerald_number_by_hour:
                     plog (str(line[0]) + '         | '+ str(line[1]) + '        | ' + str(line[2]))
                     self.hourly_report_holder.append(str(line[0]) + '         | '+ str(line[1]) + '        | ' + str(line[2]))
+
                 
                 plog ("Night's total fitzgerald number: " + str(sum(hourly_fitzgerald_number)))
                 

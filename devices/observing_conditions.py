@@ -270,36 +270,60 @@ class ObservingConditions:
 
 
         elif self.config['observing_conditions']['observing_conditions1']["name"] == 'SkyAlert Custom for ARO':
-        #This is the normal path for ARO
+# =============================================================================
+#         #This is the normal path for ARO
+#         20200514 decommisioning SkyAlert for two skywatchers.  No Solo yet.
+# =============================================================================
         #NB NB NB 20240218  Boltwood bw1[15] reporting 3 all the time. WE may need to mask this out.
         #DO NOT RELY ON THE BOLTWOOD FOR SKY TEMP
         #10.0.0.195 is NWEST (Black Cube), detects wind and moisture
         #10.0.0.196 is NEAST, detects no wind, but yes to moisture
-           
+ 
+
+        # THIS IS ARO CUSTOM - THE OTHER VERSION
+        #    try:
+        #        with open('c://users//obs//Documents//AAG_sld.dat', 'r') as sa_rec:
+        #            sa_ne = sa_rec.readline().split()
+        #       # with open('W:\skyalert\weatherdata_ne.txt', 'r') as sa_rec:
+        #            #sa_ne = sa_rec.readline().split()
+        #        #print('SkyAlert NW: w wind ', sa_nw, '\n')
+        #        print('SkyAlert NE: ', sa_ne, '\n')
+                
+                
+
+
+        #C:/Users/obs/Documents
             try:
-                with open('c://users//obs//Documents//AAG_sld.dat', 'r') as sa_rec:
+                with open('C://Users//obs//Documents//AAG_SLD.dat', 'r') as sa_rec:
+                    #with open('W:\skyalert\weatherdata_nw.txt', 'r') as sa_rec:
+                    sa_nw = sa_rec.readline().split()
+                with open('Q://Documents//AAG_SLD.dat', 'r') as sa_rec:
+                    #with open('W:\skyalert\weatherdata_ne.txt', 'r') as sa_rec:
+                        #****Note not reading second cloudwatcher yet.
                     sa_ne = sa_rec.readline().split()
-               # with open('W:\skyalert\weatherdata_ne.txt', 'r') as sa_rec:
-                    #sa_ne = sa_rec.readline().split()
-                #print('SkyAlert NW: w wind ', sa_nw, '\n')
-                print('SkyAlert NE: ', sa_ne, '\n')
-                
-                
+                    sa_nw = sa_ne
+                print('Cloud_watcher NW: ', sa_nw, '\n')
+                print('Cloud_watcher NE: no Hum, Press ', sa_ne, '\n')
+
                 #The datetime for the data above needs to be verified as current,
                 #if not current go directly to commanding a close.
+
 
 
                 rate = ["Unk.", 'Dry', 'Wet', 'Raining']
                 cover = ["Unk.", 'Clear',' Cloudy', 'Very Cloudy']
                 self.temperature = round(float(sa_ne[5]), 1)
-                self.sky_temp = round(float(sa_ne[4]), 1)
-                self.windspeed = round(float(sa_ne[7]), 1)  # incoming is km/h
+                self.sky_temp = round(float(sa_ne[4]), 1)# + float(sa_nw[4]))/2, 1)
+                self.windspeed = round(float(sa_nw[7]), 1)  # incoming is km/h  Note change os skyalert
                 if self.windspeed > self.gust_memory:
                     self.gust_memory = self.windspeed
                 self.humidity = round(float(sa_ne[8]), 1)
                 self.dewpoint = round(float(sa_ne[9]), 1)
                 
-                self.rain_alert = int(sa_ne[11])
+               # self.rain_alert = int(sa_ne[11])
+
+                self.rain_alert = int(sa_nw[11]) or int(sa_ne[11])
+
                 self.wet_alert = int(sa_ne[12])
                 time_since = int(float(sa_ne[13]))
                 plog("time since:  ", time_since)
@@ -370,14 +394,14 @@ class ObservingConditions:
 
 
                 try:
-                    self.new_pressure = round(float(self.pressure[0]), 2)  # was [0]), 2)
+                    self.new_pressure = round(float(self.pressure), 2)  # was [0]), 2)
                 except:
                     self.new_pressure = round(float(self.pressure), 2)
 
                 '''
                 #Now let us check for lightning:  Read a file from ARO-0m30
                 '''
-
+               
                 status = {
                     "temperature_C": self.temperature,
                     "pressure_mbar": self.new_pressure,
