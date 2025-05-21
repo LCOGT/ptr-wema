@@ -282,7 +282,7 @@ wema_config = {
         'observing_conditions1': {
             'ocn_is_custom':  False,  # Indicates some special site code.
             # Intention it is found near bottom of this file.
-            'name': 'Weather Station #1',
+            'name': 'SkyAlert Custom for ARO',
             'driver': 'ASCOM.SkyAlert.ObservingConditions',
             
             # From reading the aagsolo manual and papers around it,

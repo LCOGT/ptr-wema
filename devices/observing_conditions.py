@@ -84,6 +84,7 @@ class ObservingConditions:
         self.driver=driver
 
         self.aagsolo=False
+
         if driver is not None:
 
 
@@ -164,7 +165,7 @@ class ObservingConditions:
         # Just need to initialise this.
         status = None
         
-
+        
         if self.aagsolo:
 
 
@@ -274,14 +275,15 @@ class ObservingConditions:
         #DO NOT RELY ON THE BOLTWOOD FOR SKY TEMP
         #10.0.0.195 is NWEST (Black Cube), detects wind and moisture
         #10.0.0.196 is NEAST, detects no wind, but yes to moisture
-
+           
             try:
-                with open('W:\skyalert\weatherdata_nw.txt', 'r') as sa_rec:
-                    sa_nw = sa_rec.readline().split()
-                with open('W:\skyalert\weatherdata_ne.txt', 'r') as sa_rec:
+                with open('c://users//obs//Documents//AAG_sld.dat', 'r') as sa_rec:
                     sa_ne = sa_rec.readline().split()
-                print('SkyAlert NW: w wind ', sa_nw, '\n')
-                print('SkyAlert NE: no wind ', sa_ne, '\n')
+               # with open('W:\skyalert\weatherdata_ne.txt', 'r') as sa_rec:
+                    #sa_ne = sa_rec.readline().split()
+                #print('SkyAlert NW: w wind ', sa_nw, '\n')
+                print('SkyAlert NE: ', sa_ne, '\n')
+                
                 
                 #The datetime for the data above needs to be verified as current,
                 #if not current go directly to commanding a close.
@@ -297,20 +299,20 @@ class ObservingConditions:
                 self.humidity = round(float(sa_ne[8]), 1)
                 self.dewpoint = round(float(sa_ne[9]), 1)
                 
-                self.rain_alert = int(sa_nw[11]) or int(sa_ne[11])
-                self.wet_alert = int(sa_nw[12])
-                time_since = int(float(sa_nw[13]))
+                self.rain_alert = int(sa_ne[11])
+                self.wet_alert = int(sa_ne[12])
+                time_since = int(float(sa_ne[13]))
                 plog("time since:  ", time_since)
                 
                 timestamp=time.time()-time_since
-                self.time_of_update = round(float(sa_nw[14]), 5)
+                self.time_of_update = round(float(sa_ne[14]), 5)
 
 
-                self.cloud_condition = int(sa_nw[15]) # unk, Clear, Cloudy, Very Cloudy
-                self.wind_condition = int(sa_nw[16]) # unk, Calm, Windy, Very Windy
-                self.rain_condition = int(sa_nw[17]) # unk, Dry, Wet, Raining  #NB NB NB 20250102 NW unit shows rain at -2C  WER
-                self.daylight_condition = bool(sa_nw[18]) # unk Dark, Light, Very Light
-                self.close_requested = bool(sa_nw[19])
+                self.cloud_condition = int(sa_ne[15]) # unk, Clear, Cloudy, Very Cloudy
+                self.wind_condition = int(sa_ne[16]) # unk, Calm, Windy, Very Windy
+                self.rain_condition = int(sa_ne[17]) # unk, Dry, Wet, Raining  #NB NB NB 20250102 NW unit shows rain at -2C  WER
+                self.daylight_condition = bool(sa_ne[18]) # unk Dark, Light, Very Light
+                self.close_requested = bool(sa_ne[19])
                 #Note the rates and cover are synthesized by a lookup.
                 self.rain_rate = rate[self.rain_condition]
                 self.cloud_cover = cover[self.cloud_condition]
