@@ -3455,7 +3455,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                             
                             current_fwhm_seeing=obs_status.json()['status']['current_fwhm_seeing']
                             try:
-                                estimated_sky_transmissiveness= obs_status.json()['status']['suspected_sky_transmissiveness']
+                                estimated_sky_transmissiveness= obs_status.json()['status']['estimated_sky_transmissiveness']
                                 #estimated_sky_transmissiveness_filter= obs_status.json()['status']['estimated_sky_transmissiveness_filter']
                             except:
                                 plog(traceback.format_exc())
