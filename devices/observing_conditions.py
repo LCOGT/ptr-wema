@@ -308,13 +308,13 @@ class ObservingConditions:
                 #The datetime for the data above needs to be verified as current,
                 #if not current go directly to commanding a close.
 
-
+                
 
                 rate = ["Unk.", 'Dry', 'Wet', 'Raining']
                 cover = ["Unk.", 'Clear',' Cloudy', 'Very Cloudy']
                 self.temperature = round(float(sa_ne[5]), 1)
                 self.sky_temp = round(float(sa_ne[4]), 1)# + float(sa_nw[4]))/2, 1)
-                self.windspeed = round(float(sa_nw[7]), 1)  # incoming is km/h  Note change os skyalert
+                self.windspeed = round(float(sa_ne[7]), 1)  # incoming is km/h  Note change os skyalert
                 if self.windspeed > self.gust_memory:
                     self.gust_memory = self.windspeed
                 self.humidity = round(float(sa_ne[8]), 1)
@@ -323,6 +323,173 @@ class ObservingConditions:
                # self.rain_alert = int(sa_ne[11])
 
                 self.rain_alert = int(sa_nw[11]) or int(sa_ne[11])
+
+                self.wet_alert = int(sa_ne[12])
+                time_since = int(float(sa_ne[13]))
+                plog("time since:  ", time_since)
+                
+                timestamp=time.time()-time_since
+                self.time_of_update = round(float(sa_ne[14]), 5)
+
+
+                self.cloud_condition = int(sa_ne[15]) # unk, Clear, Cloudy, Very Cloudy
+                self.wind_condition = int(sa_ne[16]) # unk, Calm, Windy, Very Windy
+                self.rain_condition = int(sa_ne[17]) # unk, Dry, Wet, Raining  #NB NB NB 20250102 NW unit shows rain at -2C  WER
+                self.daylight_condition = bool(sa_ne[18]) # unk Dark, Light, Very Light
+                self.close_requested = bool(sa_ne[19])
+                #Note the rates and cover are synthesized by a lookup.
+                self.rain_rate = rate[self.rain_condition]
+                self.cloud_cover = cover[self.cloud_condition]
+                # This is important new code for ARO and evntually MRC -- add lightning later.
+
+                if self.rain_alert or self.wet_alert or self.rain_condition in \
+                    ['Wet', 'Raining']:
+                    self.wet_flag = True   #This is intended to latch the roof closed for the night
+                    self.rain_rate = 1
+                else:
+                    self.rain_rate = 0
+
+                if self.cloud_condition==1:
+                    self.cloud_cover = 0
+                elif self.cloud_condition==2:
+                    self.cloud_cover = 40
+                elif self.cloud_condition==3:
+                    self.cloud_cover=100
+
+                #
+                status = {}
+                illum, mag = self.astro_events.illuminationNow()
+                # illum = float(redis_monitor["illum lux"])
+                if illum > 500:
+                    illum = int(illum)
+                else:
+                    illum = round(illum, 3)
+                if self.unihedron_connected:
+                    try:
+                        uni_measure = (
+                            self.unihedron.SkyQuality
+                        )  # Provenance of 20.01 is dubious 20200504 WER
+                    except:
+                        uni_measure = 0
+                else:
+                    uni_measure = 0
+                if uni_measure == 0:
+                    uni_measure = round(
+                        (mag - 20.01), 2
+                    )  # Fixes Unihedron when sky is too bright
+                    status["meas_sky_mpsas"] = uni_measure
+                    self.meas_sky_lux = illum
+                else:
+                    self.meas_sky_lux = linearize_unihedron(uni_measure)
+                    status["meas_sky_mpsas"] = uni_measure
+
+                # self.temperature = round((bw1[5] + sa_nw[5])/2., 2)
+                self.humidity
+                try:  # NB NB Boltwood vs. SkyAlert difference.
+                    self.pressure = self.sky_monitor.Pressure
+                    assert self.pressure > 200
+
+                except:
+                    self.pressure = self.config["reference_pressure"]
+
+
+                try:
+                    self.new_pressure = round(float(self.pressure), 2)  # was [0]), 2)
+                except:
+                    self.new_pressure = round(float(self.pressure), 2)
+
+                '''
+                #Now let us check for lightning:  Read a file from ARO-0m30
+                '''
+               
+                status = {
+                    "temperature_C": self.temperature,
+                    "pressure_mbar": self.new_pressure,
+                    "humidity_%": self.humidity,
+                    "dewpoint_C": self.dewpoint,
+                    "sky_temp_C": self.sky_temp,
+                    "last_sky_update_s": timestamp,
+                    "wind_m/s": self.windspeed,
+                    "rain_rate": self.rain_rate,
+                    "solar_flux_w/m^2": None,
+                    "calc_HSI_lux": illum,
+                    "calc_sky_mpsas": round(uni_measure, 2),
+                    "lightning_strike_radius km": 'n/a',
+                    "general_obscuration %": 'n/a',
+                    "photometric extinction k'": 'n/a',
+                }
+
+                # Store status in self.status
+                self.status=status
+
+                return status
+            except:
+                plog(traceback.format_exc())
+
+                plog('something went wrong with the boltwood stuff')
+                plog('above is an unglamourous traceback but continuing onwards')
+                
+                return self.status
+            
+        elif self.config['observing_conditions']['observing_conditions1']["name"] == 'SkyAlert Custom for MRC':
+# =============================================================================
+#         #This is the normal path for ARO
+#         20200514 decommisioning SkyAlert for two skywatchers.  No Solo yet.
+# =============================================================================
+        #NB NB NB 20240218  Boltwood bw1[15] reporting 3 all the time. WE may need to mask this out.
+        #DO NOT RELY ON THE BOLTWOOD FOR SKY TEMP
+        #10.0.0.195 is NWEST (Black Cube), detects wind and moisture
+        #10.0.0.196 is NEAST, detects no wind, but yes to moisture
+ 
+
+        # THIS IS ARO CUSTOM - THE OTHER VERSION
+        #    try:
+        #        with open('c://users//obs//Documents//AAG_sld.dat', 'r') as sa_rec:
+        #            sa_ne = sa_rec.readline().split()
+        #       # with open('W:\skyalert\weatherdata_ne.txt', 'r') as sa_rec:
+        #            #sa_ne = sa_rec.readline().split()
+        #        #print('SkyAlert NW: w wind ', sa_nw, '\n')
+        #        print('SkyAlert NE: ', sa_ne, '\n')
+                
+                
+
+
+        #C:/Users/obs/Documents
+            try:
+                # with open('C://Users//obs//Documents//AAG_SLD.dat', 'r') as sa_rec:
+                #     #with open('W:\skyalert\weatherdata_nw.txt', 'r') as sa_rec:
+                #     sa_nw = sa_rec.readline().split()
+                # with open('Q://Documents//AAG_SLD.dat', 'r') as sa_rec:
+                #     #with open('W:\skyalert\weatherdata_ne.txt', 'r') as sa_rec:
+                #         #****Note not reading second cloudwatcher yet.
+                #     sa_ne = sa_rec.readline().split()
+                #     sa_nw = sa_ne
+                # print('Cloud_watcher NW: ', sa_nw, '\n')
+                # print('Cloud_watcher NE: no Hum, Press ', sa_ne, '\n')
+                
+                with open('c://users//obs//Documents//AAG_sld.dat', 'r') as sa_rec:
+                    sa_ne = sa_rec.readline().split()
+                  
+                    print('SkyAlert NE: ', sa_ne, '\n')
+
+                #The datetime for the data above needs to be verified as current,
+                #if not current go directly to commanding a close.
+
+
+
+                rate = ["Unk.", 'Dry', 'Wet', 'Raining']
+                cover = ["Unk.", 'Clear',' Cloudy', 'Very Cloudy']
+                self.temperature = round(float(sa_ne[5]), 1)
+                self.sky_temp = round(float(sa_ne[4]), 1)# + float(sa_nw[4]))/2, 1)
+                self.windspeed = round(float(sa_ne[7]), 1)  # incoming is km/h  Note change os skyalert
+                if self.windspeed > self.gust_memory:
+                    self.gust_memory = self.windspeed
+                self.humidity = round(float(sa_ne[8]), 1)
+                self.dewpoint = round(float(sa_ne[9]), 1)
+                
+               # self.rain_alert = int(sa_ne[11])
+
+                self.rain_alert = int(sa_ne[11])
 
                 self.wet_alert = int(sa_ne[12])
                 time_since = int(float(sa_ne[13]))
