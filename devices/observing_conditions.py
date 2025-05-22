@@ -278,7 +278,6 @@ class ObservingConditions:
         #DO NOT RELY ON THE BOLTWOOD FOR SKY TEMP
         #10.0.0.195 is NWEST (Black Cube), detects wind and moisture
         #10.0.0.196 is NEAST, detects no wind, but yes to moisture
- 
 
         # THIS IS ARO CUSTOM - THE OTHER VERSION
         #    try:
@@ -294,6 +293,7 @@ class ObservingConditions:
 
         #C:/Users/obs/Documents
             try:
+# <<<<<<< Updated upstream
                 with open('C://Users//obs//Documents//AAG_SLD.dat', 'r') as sa_rec:
                     #with open('W:\skyalert\weatherdata_nw.txt', 'r') as sa_rec:
                     sa_nw = sa_rec.readline().split()
@@ -305,6 +305,15 @@ class ObservingConditions:
                 print('Cloud_watcher NW: ', sa_nw, '\n')
                 print('Cloud_watcher NE: no Hum, Press ', sa_ne, '\n')
 
+# =======
+                # with open('W:\skyalert\weatherdata_nw.txt', 'r') as sa_rec:
+                #     sa_nw = sa_rec.readline().split()
+                # with open('W:\skyalert\weatherdata_ne.txt', 'r') as sa_rec:
+                #     sa_ne = sa_rec.readline().split()
+                # print('SkyAlert NW: w wind ', sa_nw, '\n')
+                # print('SkyAlert NE: no wind ', sa_ne, '\n')
+                
+# >>>>>>> Stashed changes
                 #The datetime for the data above needs to be verified as current,
                 #if not current go directly to commanding a close.
 
@@ -317,10 +326,11 @@ class ObservingConditions:
                 self.windspeed = round(float(sa_ne[7]), 1)  # incoming is km/h  Note change os skyalert
                 if self.windspeed > self.gust_memory:
                     self.gust_memory = self.windspeed
+# <<<<<<< Updated upstream
                 self.humidity = round(float(sa_ne[8]), 1)
                 self.dewpoint = round(float(sa_ne[9]), 1)
                 
-               # self.rain_alert = int(sa_ne[11])
+                # self.rain_alert = int(sa_ne[11])
 
                 self.rain_alert = int(sa_nw[11]) or int(sa_ne[11])
 
@@ -337,6 +347,26 @@ class ObservingConditions:
                 self.rain_condition = int(sa_ne[17]) # unk, Dry, Wet, Raining  #NB NB NB 20250102 NW unit shows rain at -2C  WER
                 self.daylight_condition = bool(sa_ne[18]) # unk Dark, Light, Very Light
                 self.close_requested = bool(sa_ne[19])
+# =======
+                # self.humidity = round(float(sa_nw[8]), 1)
+                # self.dewpoint = round(float(sa_nw[9]), 1)
+                # #Fixed gross error mixing mph and m/s 20231226 WER
+                # #breakpoint()
+                
+                # self.rain_alert = int(sa_nw[11]) or int(sa_ne[11])
+                # self.wet_alert = int(sa_nw[12])
+                # self.time_since = int(float(sa_nw[13]))
+                # plog("time since:  ", self.time_since)
+                # timestamp=time.time()-self.time_since
+                # self.time_of_update = round(float(sa_nw[14]), 5)
+
+
+                # self.cloud_condition = int(sa_nw[15]) # unk, Clear, Cloudy, Very Cloudy
+                # self.wind_condition = int(sa_nw[16]) # unk, Calm, Windy, Very Windy
+                # self.rain_condition = int(sa_nw[17]) # unk, Dry, Wet, Raining  #NB NB NB 20250102 NW unit shows rain at -2C  WER
+                # self.daylight_condition = bool(sa_nw[18]) # unk Dark, Light, Very Light
+                # self.close_requested = bool(sa_nw[19])
+# >>>>>>> Stashed changes
                 #Note the rates and cover are synthesized by a lookup.
                 self.rain_rate = rate[self.rain_condition]
                 self.cloud_cover = cover[self.cloud_condition]

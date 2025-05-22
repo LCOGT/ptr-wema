@@ -1416,7 +1416,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
         ocn_status = None
         wema = self.config['wema_name']  
         sync_obs= self.config['obsp_ids'][0]
-
+        
         # For those domes not synced by ascom, check in with telescope      
         
         # pointing and rotate dome accordingly
@@ -1678,15 +1678,37 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             # Here is where we actually make the decision about the weather
             # Independantly of the actual observing conditions device        
             # THE WAYNE ROSING BRAND WEATHER DECISION DESK!!! Made from the status, not in the device
-            
+
             quick_status=ocn_status['observing_conditions']['observing_conditions1']
             
             if self.ocn_exists:
-                if quick_status['humidity_%'] == -1:
-                    plog ("local weather station not reporting humidity, using last owm report")
-                    ocn_status['observing_conditions']['observing_conditions1']['humidity_%']=self.current_owm_humidity
-                    quick_status['humidity_%'] = self.current_owm_humidity
-                    plog ("OWM Humidity: " + str(self.current_owm_humidity))      
+                try:
+
+                    if quick_status['humidity_%'] == -1:
+                        plog ("local weather station not reporting humidity, using last owm report")
+                        ocn_status['observing_conditions']['observing_conditions1']['humidity_%']=self.current_owm_humidity
+                        quick_status['humidity_%'] = self.current_owm_humidity
+    
+                        plog ("OWM Humidity: " + str(self.current_owm_humidity))      
+
+                except:
+                    pass
+            
+            
+            
+            #self.lightning_limit_on = self.config['lightning_limit_on']
+            
+            
+            
+            # if self.rain_limit_on:
+            #     try:
+            #         rain_limit = quick_status['rain_rate'] > self.rain_limit_setting
+            #     except:
+            #         rain_limit = False
+            #     if rain_limit:
+            #         plog("Reported rain rate in mm/hr:  ", quick_status['rain_rate'])
+            #         wx_reasons.append('Rain > ' + str(self.rain_limit_setting))
+
             
             # Simply override cloud_cover for the moment
             quick_status['forecast_cloud_cover_%']=self.medianforecast_current_cloud_cover
@@ -1694,6 +1716,9 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             if self.number_of_nighttime_weather_observations < 250:
                 plog ("We haven't built up enough data points yet to be confident in predicting local clouds yet. Not using Local Cloud Cover yet.")
                 quick_status['local_cloud_cover_%']=None 
+
+            
+            
             else:
                 try:           
                     quick_status['local_cloud_cover_%']=self.predicted_clouds[0]
@@ -2051,6 +2076,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             
             plog(traceback.format_exc())
             plog ("failed to update status")
+
 
         if time.time() > self.scan_requests_timer + self.scan_requests_check_period:
             self.scan_requests_timer=time.time()
@@ -2860,7 +2886,6 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                     forecast_status.append(status_line)
                     
                     
-
                 if forecast_status is not None:
                     lane = "forecast"
                     obsy = self.config['wema_name']
@@ -2870,6 +2895,31 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                         "statusType": "forecast",
                         "status": { "forecast": forecast_status }
                     })
+# =======
+#                     hourly_fitzgerald_number.append(entry[6])
+#                     hourly_fitzgerald_number_by_hour.append([entry[5],entry[6],textdescription])
+#                 hourcounter=hourcounter+1
+            
+#             plog ("Hourly Fitzgerald number report")
+#             self.hourly_report_holder.append("Hourly Fitzgerald number report")
+            
+#             plog ("For Evening of " +str(g_dev['dayhyphened']) )
+#             self.hourly_report_holder.append("For LOCAL Evening of " +str(g_dev['dayhyphened']) )
+            
+#             plog("Time of OWM Weather Forecast: " + str(time.asctime()))
+#             self.hourly_report_holder.append("Time ofOWM  Weather Forecast (UTC): " + str(time.asctime()))
+            
+#             plog ("*******************************")
+#             self.hourly_report_holder.append("*******************************")
+#             plog ("Hour(UTC) |  FNumber |  Text    ")
+#             self.hourly_report_holder.append("Hour(UTC) |  FNumber |  Text    ")
+#             for line in hourly_fitzgerald_number_by_hour:
+#                 plog (str(line[0]) + '         | '+ str(line[1]) + '        | ' + str(line[2]))
+#                 self.hourly_report_holder.append(str(line[0]) + '         | '+ str(line[1]) + '        | ' + str(line[2]))
+            
+#             plog ("Night's total fitzgerald number: " + str(sum(hourly_fitzgerald_number)))
+            
+# >>>>>>> Stashed changes
 
                     try:
                         response = requests.request("POST", url, data=payload, allow_redirects=False, headers=close_headers, stream=False)
