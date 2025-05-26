@@ -303,7 +303,7 @@ class ObservingConditions:
                     sa_ne = sa_rec.readline().split()
                     sa_nw = sa_ne
                 print('Cloud_watcher NW: ', sa_nw, '\n')
-                print('Cloud_watcher NE: no Hum, Press ', sa_ne, '\n')
+                print('Cloud_watcher NE: no Hum, no Press ', sa_ne, '\n')
 
 # =======
                 # with open('W:\skyalert\weatherdata_nw.txt', 'r') as sa_rec:

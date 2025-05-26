@@ -163,17 +163,17 @@ wema_config = {
     #############################################################
 
     # Whether these limits are on by default
-    'rain_limit_on': False,
-    'humidity_limit_on': False,
-    'windspeed_limit_on': False,
+    'rain_limit_on': True,
+    'humidity_limit_on': True,
+    'windspeed_limit_on': True,
     'lightning_limit_on': False,
-    'temperature_minus_dewpoint_limit_on': False,
+    'temperature_minus_dewpoint_limit_on': True,
     'sky_minus_ambient_limit_on': True,
     'sky_temperature_limit_on': True,
-    'local_cloud_cover_limit_on': True,
+    'local_cloud_cover_limit_on': False,
     'forecast_cloud_cover_limit_on': True,
-    'lowest_ambient_temperature_on': False,
-    'highest_ambient_temperature_on': False,
+    'lowest_ambient_temperature_on': True,
+    'highest_ambient_temperature_on': True,
     
     #############################################################
     #### BE AWARE THAT THESE VALUES ARE JUST FOR INITILIASATION!#
@@ -183,16 +183,16 @@ wema_config = {
 
     # Local weather DANGER limits - will cause the roof to shut
     'rain_limit': 0,
-    'humidity_limit': 95,
-    'windspeed_limit': 25,
+    'humidity_limit': 75,
+    'windspeed_limit': 15,
     'lightning_limit': 15,
-    'temperature_minus_dewpoint_limit': 2,
-    'sky_minus_ambient_limit': -1,
-    'sky_temperature_limit': -3,
-    'local_cloud_cover_limit': 70,
-    'forecast_cloud_cover_limit' : 70,
-    'lowest_ambient_temperature': -5,
-    'highest_ambient_temperature': 60,
+    'temperature_minus_dewpoint_limit': 4,
+    'sky_minus_ambient_limit': -20,
+    'sky_temperature_limit': -1,
+    'local_cloud_cover_limit': 60,
+    'forecast_cloud_cover_limit' : 60,
+    'lowest_ambient_temperature': 2,
+    'highest_ambient_temperature': 40,
     
     #############################################################
     #### BE AWARE THAT THESE VALUES ARE JUST FOR INITILIASATION!#
@@ -202,15 +202,15 @@ wema_config = {
 
     # Local weather warning limits, will send a warning, but leave the roof alone
     'warning_rain_limit': 0,
-    'warning_humidity_limit': 75,
-    'warning_windspeed_limit': 15,
-    'warning_lightning_limit': 10,
-    'warning_temperature_minus_dewpoint_limit': 2,
-    'warning_sky_minus_ambient_limit': -17,
-    'warning_sky_temperature_limit': -6,
-    'warning_local_cloud_cover_limit': 25,
-    'warning_forecast_cloud_cover_limit': 25,
-    'warning_lowest_ambient_temperature': 5,
+    'warning_humidity_limit': 70,
+    'warning_windspeed_limit': 10,
+    'warning_lightning_limit': 25,
+    'warning_temperature_minus_dewpoint_limit': 6,
+    'warning_sky_minus_ambient_limit': -22,
+    'warning_sky_temperature_limit': -3,
+    'warning_local_cloud_cover_limit': 40,
+    'warning_forecast_cloud_cover_limit': 40,
+    'warning_lowest_ambient_temperature': 4,
     'warning_highest_ambient_temperature': 35,
     
     

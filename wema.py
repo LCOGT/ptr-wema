@@ -737,6 +737,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
         #######################
         
         plog ("Loading limits from config: TO BE DEPRECATED ONCE WE HAVE AN ONLINE LIMIT SYSTEM")
+
         try:
             wema_settings_shelf = shelve.open(self.wema_settings_shelf_filename)
             
@@ -828,6 +829,8 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             wema_settings_shelf['lowtemperature_limit_warning_level'] = self.warning_lowest_temperature_setting
             
             #pid = camShelf["pid_obs"]  # a 9 character string
+            
+            
             wema_settings_shelf.close()
         except:
             plog ("Startup shelf load failed.")
@@ -850,13 +853,33 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             #plog ("woo")
             
             #plog (wema_settings_shelf['local_weather_active'])
-            
-            g_dev['enc'].mode =wema_settings_shelf['mode']
-            self.observing_mode=wema_settings_shelf['observing_mode']
-            self.local_weather_active=wema_settings_shelf['local_weather_active']
-            self.owm_active=wema_settings_shelf['owm_active']
-            self.keep_open_all_night=wema_settings_shelf['keep_open_all_night']
-            self.keep_closed_all_night=wema_settings_shelf['keep_closed_all_night']
+            #*********************************************************************
+            # FIXME WER 20250526  THis fix primes a new shelf with defaults.
+            try:
+                g_dev['enc'].mode =wema_settings_shelf['mode']
+            except:
+                g_dev['enc'].mode = "Automatic"  #The Default
+            try:
+                self.observing_mode = wema_settings_shelf['observing_mode']
+            except:
+                self.observing_mode='Online'
+            try:
+                self.local_weather_active = wema_settings_shelf['local_weather_active']
+            except:
+                self.local_weather_active = True   #Again the defult
+            try:             
+                self.owm_active=wema_settings_shelf['owm_active']
+            except:
+                self.owm_active = True    #Again the default
+            try:
+                self.keep_open_all_night = wema_settings_shelf['keep_open_all_night']
+            except:
+                self.keep_open_all_night = False
+            try:
+                self.keep_closed_all_night = wema_settings_shelf['keep_closed_all_night']
+            except:
+                self.keep_closed_all_night = False
+            #********************************************************************* 
             if self.ocn_exists:
                 try:
                     self.rain_limit_on=wema_settings_shelf['rain_limit_on']
@@ -952,56 +975,57 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                     self.forecast_cloud_cover_limit_on = self.config['forecast_cloud_cover_limit_on']
                     self.lowest_temperature_on = self.config['lowest_ambient_temperature_on']
                     self.highest_temperature_on = self.config['highest_ambient_temperature_on']
-                                        
-                    wema_settings_shelf['rain_limit_on'] = self.rain_limit_on
-                    wema_settings_shelf['warning_rain_limit_setting'] = self.warning_rain_limit_setting
-                    wema_settings_shelf['rain_limit_setting'] = self.rain_limit_setting
-                    
-                    wema_settings_shelf['local_cloud_cover_limit_on'] = self.local_cloud_cover_limit_on
-                    wema_settings_shelf['forecast_cloud_cover_limit_on'] = self.forecast_cloud_cover_limit_on
-                    wema_settings_shelf['warning_local_cloud_cover_limit_setting'] = self.warning_local_cloud_cover_limit_setting
-                    wema_settings_shelf['warning_forecast_cloud_cover_limit_setting'] = self.warning_forecast_cloud_cover_limit_setting
-                    wema_settings_shelf['local_cloud_cover_limit_setting'] = self.local_cloud_cover_limit_setting
-                    wema_settings_shelf['forecast_cloud_cover_limit_setting'] = self.forecast_cloud_cover_limit_setting
-                    
-                    
-                    wema_settings_shelf['humidity_limit_on'] = self.humidity_limit_on
-                    wema_settings_shelf['warning_humidity_limit_setting'] = self.warning_humidity_limit_setting
-                    wema_settings_shelf['humidity_limit_setting'] = self.humidity_limit_setting
-                    
-                    wema_settings_shelf['windspeed_limit_on'] = self.windspeed_limit_on
-                    wema_settings_shelf['warning_windspeed_limit_setting'] = self.warning_windspeed_limit_setting
-                    wema_settings_shelf['windspeed_limit_setting'] = self.windspeed_limit_setting
-                    
-                    wema_settings_shelf['lightning_limit_on'] = self.lightning_limit_on
-                    wema_settings_shelf['warning_lightning_limit_setting'] = self.warning_lightning_limit_setting
-                    wema_settings_shelf['lightning_limit_setting'] = self.lightning_limit_setting
-                    
-                    wema_settings_shelf['temp_minus_dew_on'] = self.temp_minus_dew_on
-                    wema_settings_shelf['warning_temp_minus_dew_setting'] = self.warning_temp_minus_dew_setting
-                    wema_settings_shelf['temp_minus_dew_setting'] = self.temp_minus_dew_setting
-                    
-                    wema_settings_shelf['sky_minus_ambient_limit_on'] = self.sky_minus_ambient_limit_on
-                    wema_settings_shelf['warning_sky_minus_ambient_limit_setting'] = self.warning_sky_minus_ambient_limit_setting
-                    wema_settings_shelf['sky_minus_ambient_limit_setting'] = self.sky_minus_ambient_limit_setting
-                    
-                    wema_settings_shelf['sky_temperature_limit_on'] = self.sky_temperature_limit_on
-                    wema_settings_shelf['warning_sky_temperature_limit_setting'] = self.warning_sky_temperature_limit_setting
-                    wema_settings_shelf['sky_temperature_limit_setting'] = self.sky_temperature_limit_setting
-                    
-                    wema_settings_shelf['lowest_ambient_temperature'] = self.lowest_temperature_setting
-                    wema_settings_shelf['highest_ambient_temperature'] = self.highest_temperature_setting
-
-                    wema_settings_shelf['lowest_ambient_temperature_on'] = self.lowest_temperature_on
-                    wema_settings_shelf['highest_ambient_temperature_on']= self.highest_temperature_on
-                    
-                    wema_settings_shelf['hightemperature_limit_warning_level'] = self.warning_highest_temperature_setting
-                    #status['wema_settings']['hightemperature_limit_danger_level'] = self.highest_temperature_setting
-                    
-                    # status['wema_settings']['lowtemperature_limit_on']  = self.lowest_temperature_on
-                    # status['wema_settings']['lowtemperature_limit_quiet'] = self.lowtemp_limit_quiet
-                    wema_settings_shelf['lowtemperature_limit_warning_level'] = self.warning_lowest_temperature_setting
-                    
+                    try:                   
+                        wema_settings_shelf['rain_limit_on'] = self.rain_limit_on
+                        wema_settings_shelf['warning_rain_limit_setting'] = self.warning_rain_limit_setting
+                        wema_settings_shelf['rain_limit_setting'] = self.rain_limit_setting
+                        
+                        wema_settings_shelf['local_cloud_cover_limit_on'] = self.local_cloud_cover_limit_on
+                        wema_settings_shelf['forecast_cloud_cover_limit_on'] = self.forecast_cloud_cover_limit_on
+                        wema_settings_shelf['warning_local_cloud_cover_limit_setting'] = self.warning_local_cloud_cover_limit_setting
+                        wema_settings_shelf['warning_forecast_cloud_cover_limit_setting'] = self.warning_forecast_cloud_cover_limit_setting
+                        wema_settings_shelf['local_cloud_cover_limit_setting'] = self.local_cloud_cover_limit_setting
+                        wema_settings_shelf['forecast_cloud_cover_limit_setting'] = self.forecast_cloud_cover_limit_setting
+                        
+                        
+                        wema_settings_shelf['humidity_limit_on'] = self.humidity_limit_on
+                        wema_settings_shelf['warning_humidity_limit_setting'] = self.warning_humidity_limit_setting
+                        wema_settings_shelf['humidity_limit_setting'] = self.humidity_limit_setting
+                        
+                        wema_settings_shelf['windspeed_limit_on'] = self.windspeed_limit_on
+                        wema_settings_shelf['warning_windspeed_limit_setting'] = self.warning_windspeed_limit_setting
+                        wema_settings_shelf['windspeed_limit_setting'] = self.windspeed_limit_setting
+                        
+                        wema_settings_shelf['lightning_limit_on'] = self.lightning_limit_on
+                        wema_settings_shelf['warning_lightning_limit_setting'] = self.warning_lightning_limit_setting
+                        wema_settings_shelf['lightning_limit_setting'] = self.lightning_limit_setting
+                        
+                        wema_settings_shelf['temp_minus_dew_on'] = self.temp_minus_dew_on
+                        wema_settings_shelf['warning_temp_minus_dew_setting'] = self.warning_temp_minus_dew_setting
+                        wema_settings_shelf['temp_minus_dew_setting'] = self.temp_minus_dew_setting
+                        
+                        wema_settings_shelf['sky_minus_ambient_limit_on'] = self.sky_minus_ambient_limit_on
+                        wema_settings_shelf['warning_sky_minus_ambient_limit_setting'] = self.warning_sky_minus_ambient_limit_setting
+                        wema_settings_shelf['sky_minus_ambient_limit_setting'] = self.sky_minus_ambient_limit_setting
+                        
+                        wema_settings_shelf['sky_temperature_limit_on'] = self.sky_temperature_limit_on
+                        wema_settings_shelf['warning_sky_temperature_limit_setting'] = self.warning_sky_temperature_limit_setting
+                        wema_settings_shelf['sky_temperature_limit_setting'] = self.sky_temperature_limit_setting
+                        
+                        wema_settings_shelf['lowest_ambient_temperature'] = self.lowest_temperature_setting
+                        wema_settings_shelf['highest_ambient_temperature'] = self.highest_temperature_setting
+    
+                        wema_settings_shelf['lowest_ambient_temperature_on'] = self.lowest_temperature_on
+                        wema_settings_shelf['highest_ambient_temperature_on']= self.highest_temperature_on
+                        
+                        wema_settings_shelf['hightemperature_limit_warning_level'] = self.warning_highest_temperature_setting
+                        #status['wema_settings']['hightemperature_limit_danger_level'] = self.highest_temperature_setting
+                        
+                        # status['wema_settings']['lowtemperature_limit_on']  = self.lowest_temperature_on
+                        # status['wema_settings']['lowtemperature_limit_quiet'] = self.lowtemp_limit_quiet
+                        wema_settings_shelf['lowtemperature_limit_warning_level'] = self.warning_lowest_temperature_setting
+                    except:
+                        plog("Wx shelf not working yet.")
             #pid = camShelf["pid_obs"]  # a 9 character string
             wema_settings_shelf.close()
             
@@ -1325,8 +1349,9 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                 
                 # Open and store the settings in the wema settings shelf
                 wema_settings_shelf = shelve.open(self.wema_settings_shelf_filename)
-                
-                
+                # FIXME  WER Temp fix 20250526
+                g_dev['enc'].mode = 'Automatic'
+                self.observing_mode = 'Online'
                 wema_settings_shelf['mode']=g_dev['enc'].mode 
                 wema_settings_shelf['observing_mode']=self.observing_mode
                 wema_settings_shelf['local_weather_active']=self.local_weather_active
@@ -1624,6 +1649,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
         # Enclosure and Weather Status
         if time.time() > self.enclosure_status_check_timer + self.enclosure_status_check_period:
             self.enclosure_status_check_timer = time.time()
+            #WER breakpoint()
             status = {}
             status["timestamp"] = round(time.time(), 1)
             status['enclosure']={}
@@ -1771,9 +1797,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                     dewpoint_gap=True
                 
                 if self.sky_minus_ambient_limit_on:
-                    sky_amb_limit = (
-                                            quick_status['sky_temp_C']- quick_status['temperature_C']
-                                    ) < self.sky_minus_ambient_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
+                    sky_amb_limit = (quick_status['sky_temp_C'] - quick_status['temperature_C']) < self.sky_minus_ambient_limit_setting  # NB THIS NEEDS ATTENTION, Sky alert defaults to -17
                     if not sky_amb_limit:
                         wx_reasons.append('(sky - amb) > ' + str(self.sky_minus_ambient_limit_setting) + 'C')
                 else:
