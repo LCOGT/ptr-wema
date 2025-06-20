@@ -38,6 +38,10 @@ wema_config = {
     'instance_type': 'wema',
     'instance_is_private': False,
     'obsp_ids': ['aro1', 'aro2'], #, 'aro2','aro3', 'aro4']  #Possible hint to site about who are its children.
+    'api_http_base' : 'https://api.photonranch.org/api/',
+    'jobs_http_base' : 'https://jobs.photonranch.org/jobs/',
+    'logs_http_base' : 'https://logs.photonranch.org/logs/',
+    'status_http_base' : 'https://status.photonranch.org/status/',
     
     # These values are to help the weather station self-organise
     # If it is only a nighttime or a daytime observatory, we can restrict

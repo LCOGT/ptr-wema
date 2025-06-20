@@ -43,6 +43,12 @@ wema_config = {
     'instance_type': 'wema',
     'instance_is_private': False,
     'obsp_ids': ['mrc1', 'mrc2'],  # a list of the obsp's in an enclosure.  
+    'api_http_base' : 'https://api.photonranch.org/api/',
+    'jobs_http_base' : 'https://jobs.photonranch.org/jobs/',
+    'logs_http_base' : 'https://logs.photonranch.org/logs/',
+    'status_http_base' : 'https://status.photonranch.org/status/',
+    
+
 
     # These values are to help the weather station self-organise
     # If it is only a nighttime or a daytime observatory, we can restrict

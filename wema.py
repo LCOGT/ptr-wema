@@ -480,10 +480,10 @@ def terminate_restart_observer(site_path, no_restart=False):
     return
 
 
-def send_status(obsy, status_type, status_to_send):
+def send_status(obsy, status_type, status_to_send, status_http_base):
     """Sends a status update to AWS."""
     
-    uri_status = f"https://status.photonranch.org/status/{obsy}/status/"
+    uri_status = status_http_base + f"{obsy}/status/"
     # NB None of the strings can be empty. Otherwise this POST faults.
     payload = {"statusType": str(status_type), "status": status_to_send}
     data = json.dumps(payload)
@@ -532,6 +532,13 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
         self.command_interval = 30
         self.status_interval = 30
         self.config = config
+        
+        self.api_http_base=self.config['api_http_base']
+        self.jobs_http_base=self.config['jobs_http_base']
+        self.status_http_base=self.config['status_http_base']
+        self.logs_http_base=self.config['logs_http_base']
+        
+        
         g_dev["wema"] = self
 
         # Initialise location
@@ -712,7 +719,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
 
         # This prevents commands from previous nights/runs suddenly running
         # when wema.py is booted (has happened a bit!)
-        url_job = "https://jobs.photonranch.org/jobs/getnewjobs"
+        url_job = self.jobs_http_base + "getnewjobs"
         body = {"site": self.config['wema_name']}
         
         try:
@@ -1178,7 +1185,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
         """
 
 
-        url_job = "https://jobs.photonranch.org/jobs/getnewjobs"
+        url_job = self.jobs_http_base + "getnewjobs"
         body = {"site": self.config['wema_name']}
         cmd = {}
         # Get a list of new jobs to complete (this request
@@ -1455,7 +1462,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                             
                             # Call out to aws to get current main scope pointing and ra and dec
                             
-                            uri_status = f"https://status.photonranch.org/status/{sync_obs}/device"
+                            uri_status = self.status_http_base + f"{sync_obs}/device"
                             try:
                                 #plog ("Grabbing obs status")
 
@@ -1889,7 +1896,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             if ocn_status is not None:
                 lane = "weather"
                 try:
-                    send_status(wema, lane, ocn_status)
+                    send_status(wema, lane, ocn_status, self.status_http_base)
                 except:
                     plog('could not send weather status')                  
 
@@ -1977,7 +1984,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
 
             lane = "wema_settings"
             try:                
-                send_status(wema, lane, status)
+                send_status(wema, lane, status, self.status_http_base)
             except:
                 plog('could not send wema_settings status') 
                     
@@ -2061,7 +2068,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                 lane = "enclosure"
                 wema = self.config['wema_name']  
                 try:                        
-                    send_status(wema, lane, enc_status)
+                    send_status(wema, lane, enc_status, self.status_http_base)
                 except:
                     plog('could not send enclosure status')   
                     plog(traceback.format_exc())
@@ -2378,7 +2385,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                     if not self.morning_flats_finished:
                         completed=[]
                         for obsid in self.obs_ids:
-                            uri_status = f"https://status.photonranch.org/status/{obsid}/obs_settings/"
+                            uri_status = self.status_http_base + f"{obsid}/obs_settings/"
     
                             
                             try:
@@ -2480,7 +2487,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
 
     def send_to_user(self, p_log, p_level="INFO"):
         """ """
-        url_log = "https://logs.photonranch.org/logs/newlog"
+        url_log = self.logs_http_base + "newlog"
         body = json.dumps(
             {
                 "site": self.config["obsp_ids"][0],
@@ -2889,7 +2896,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                 if forecast_status is not None:
                     lane = "forecast"
                     obsy = self.config['wema_name']
-                    url = f"https://status.photonranch.org/status/{obsy}/status"
+                    url = self.status_http_base + f"{obsy}/status"
     
                     payload = json.dumps({
                         "statusType": "forecast",
@@ -3090,7 +3097,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                 status = {}
                 status['owm_report'] = json.dumps(self.weather_text_report)
                 lane = "owm_report"
-                send_status(self.config['wema_name'], lane, status)
+                send_status(self.config['wema_name'], lane, status, self.status_http_base)
             except:
                 plog('could not send owm_report status')
                 plog(traceback.format_exc())
@@ -3431,7 +3438,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             obs_properties_dict={}
             
             for obsid in self.obs_ids:
-                uri_status = f"https://status.photonranch.org/status/{obsid}/device"
+                uri_status = self.status_http_base + f"{obsid}/device"
 
                 
                 try:

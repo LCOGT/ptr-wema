@@ -26,6 +26,12 @@ wema_config = {
     'instance_is_private': False,
 
     'obsp_ids': ['tbo1'],  # a list of the obsp's in an enclosure.  
+    
+    'api_http_base' : 'https://api.photonranch.org/api/',
+    'jobs_http_base' : 'https://jobs.photonranch.org/jobs/',
+    'logs_http_base' : 'https://logs.photonranch.org/logs/',
+    'status_http_base' : 'https://status.photonranch.org/status/',
+
 
     #'obs_id': None,  # a WEMA is not a telescope aka Observatory
     #'observatory_location': site_name.lower(),  # in LCO case, an airport code such as OGG
