@@ -27,15 +27,22 @@ wema_config = {
 
     'obsp_ids': ['lcs1'],  # a list of the obsp's in an enclosure.  
     
-    'api_http_base' : 'https://api.photonranch.org/api/',
-    'jobs_http_base' : 'https://jobs.photonranch.org/jobs/',
-    'logs_http_base' : 'https://logs.photonranch.org/logs/',
-    'status_http_base' : 'https://status.photonranch.org/status/',
+    # 'api_http_base' : 'https://api.photonranch.org/api/',
+    # 'jobs_http_base' : 'https://jobs.photonranch.org/jobs/',
+    # 'logs_http_base' : 'https://logs.photonranch.org/logs/',
+    # 'status_http_base' : 'https://status.photonranch.org/status/',
     
     # 'api_http_base' : 'https://hub.nextastro.org/api/',
     # 'jobs_http_base' : 'https://hub.nextastro.org/jobs/',
     # 'logs_http_base' : 'https://hub.nextastro.org/logs/',
     # 'status_http_base' : 'https://hub.nextastro.org/status/',
+    
+    'api_http_base' : 'https://hub.nextastro.org/',
+    'jobs_http_base' : 'https://hub.nextastro.org/jobs/',
+    'logs_http_base' : 'https://hub.nextastro.org/logs/',
+    'status_http_base' : 'https://hub.nextastro.org/status/',
+        
+    
 
     # These values are to help the weather station self-organise
     # If it is only a nighttime or a daytime observatory, we can restrict

@@ -23,7 +23,6 @@ import requests
 import traceback
 import ephem
 import ptr_config
-from api_calls import API_calls
 import wema_events
 from devices.observing_conditions import ObservingConditions
 from devices.enclosure import Enclosure
@@ -88,6 +87,18 @@ import pytz
 import datetime
 from datetime import timezone
 
+def authenticated_request(method: str, uri: str, payload: dict, base_url: str) -> str:
+
+    # Populate the request parameters. Include data only if it was sent.
+    request_kwargs = { 
+        "method": method,
+        "url": f"{base_url}{uri}",
+    }
+    if payload is not None: 
+        request_kwargs["data"] = json.dumps(payload)
+
+    response = requests.request(**request_kwargs)
+    return response.json()
 
 
 def fit_cloud_prediction_model(df, directory):
@@ -528,7 +539,6 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
 
         self.name=name        
 
-        self.api = API_calls()
         self.command_interval = 30
         self.status_interval = 30
         self.config = config
@@ -1101,9 +1111,9 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
 
         uri = f"{self.config['wema_name']}/config/"
         self.config["events"] = g_dev["events"]
-        response = self.api.authenticated_request("PUT", uri, self.config)
+        response = authenticated_request("PUT", uri, self.config, self.api_http_base)
         if response:
-            plog("\n\nConfig uploaded successfully.")
+            plog("\n\nConfig uploaded successfully.")            
             
     def get_sun_and_moon_info(self):
         # Get current time
@@ -2451,7 +2461,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
         '''
         uri = f"{self.config['wema_name']}/config/"
         # self.config['events'] = g_dev['events']
-        response = self.api.authenticated_request("PUT", uri, self.config)
+        response = authenticated_request("PUT", uri, self.config, self.api_http_base)
         if response:
             plog("Config uploaded successfully.")
 
