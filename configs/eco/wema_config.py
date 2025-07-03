@@ -27,16 +27,23 @@ wema_config = {
 
     'obsp_ids': ['eco1', 'eco2', 'eco3'],  # a list of the obsp's in an enclosure.  
 
-    'api_http_base' : 'https://api.photonranch.org/api/',
-    'jobs_http_base' : 'https://jobs.photonranch.org/jobs/',
-    'logs_http_base' : 'https://logs.photonranch.org/logs/',
-    'status_http_base' : 'https://status.photonranch.org/status/',
+    # 'api_http_base' : 'https://api.photonranch.org/api/',
+    # 'jobs_http_base' : 'https://jobs.photonranch.org/jobs/',
+    # 'logs_http_base' : 'https://logs.photonranch.org/logs/',
+    # 'status_http_base' : 'https://status.photonranch.org/status/',
     
     # 'api_http_base' : 'https://hub.nextastro.org/api/',
     # 'jobs_http_base' : 'https://hub.nextastro.org/jobs/',
     # 'logs_http_base' : 'https://hub.nextastro.org/logs/',
     # 'status_http_base' : 'https://hub.nextastro.org/status/',
 
+
+        
+    'api_http_base' : 'https://hub.nextastro.org/',
+    'jobs_http_base' : 'https://hub.nextastro.org/jobs/',
+    'logs_http_base' : 'https://hub.nextastro.org/logs/',
+    'status_http_base' : 'https://hub.nextastro.org/status/',
+        
 
     #'obs_id': None,  # a WEMA is not a telescope aka Observatory
     #'observatory_location': site_name.lower(),  # in LCO case, an airport code such as OGG
