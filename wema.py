@@ -143,14 +143,40 @@ def fit_cloud_prediction_model(df, directory):
         
         # Only consider those values where all the forecasts tend to agree on it.
         
-        region_df['clouds_row_stdev'] = region_df[
-            ['OWM_clouds', 'openmeteo_clouds', 
-             'OWMClouds_inanhour', 'openmeteoclouds_inanhour', 
-             'tomorrowio_nowclouds', 'tomorrowio_nexthourclouds',
-             'pirate_clouds_now', 'pirate_clouds_inanhour', 
-             'metocean_clouds_now', 'metocean_clouds_inanhour', 
-             'worldweather_clouds_now', 'worldweather_clouds_inanhour']
-        ].std(axis=1).copy()
+        
+        try:
+            # region_df['clouds_row_stdev'] = region_df[
+            #     ['OWM_clouds', 'openmeteo_clouds', 
+            #      'OWMClouds_inanhour', 'openmeteoclouds_inanhour', 
+            #      'tomorrowio_nowclouds', 'tomorrowio_nexthourclouds',
+            #      'pirate_clouds_now', 'pirate_clouds_inanhour', 
+            #      'metocean_clouds_now', 'metocean_clouds_inanhour', 
+            #      'worldweather_clouds_now', 'worldweather_clouds_inanhour']
+            # ].std(axis=1).copy()
+            # Drop columns that are non-floats
+            
+            cols = [
+                'OWM_clouds', 'openmeteo_clouds',
+                'OWMClouds_inanhour', 'openmeteoclouds_inanhour',
+                'tomorrowio_nowclouds', 'tomorrowio_nexthourclouds',
+                'pirate_clouds_now', 'pirate_clouds_inanhour',
+                'metocean_clouds_now', 'metocean_clouds_inanhour',
+                'worldweather_clouds_now', 'worldweather_clouds_inanhour'
+            ]
+            
+            # 1. coerce to numeric (invalid parses → NaN)
+            region_df[cols] = region_df[cols].apply(pd.to_numeric, errors='coerce')
+            
+            # 2. drop any row where any of those columns is NaN
+            region_df = region_df.dropna(subset=cols)
+            
+            # 3. now safely compute the row-wise standard deviation
+            region_df['clouds_row_stdev'] = region_df[cols].std(axis=1)
+            
+        except:
+            
+            plog(traceback.format_exc())
+            #breakpoint()
         
         # Split the weather stuff into cloud ranges to apply threshholds        
         
