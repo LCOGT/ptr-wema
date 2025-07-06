@@ -503,7 +503,11 @@ class Enclosure:
         else:
             status['dome_slewing'] = False
         
-        status['enclosure_mode'] = str(self.mode)
+        try:
+            status['enclosure_mode'] = str(self.mode)
+        except:
+            status['enclosure_mode'] = 'Manual'
+        
         status['dome_azimuth'] = 0.0
         status['inside_temperature C'] = 'n/a'
         status['inside_humidity %'] = 'n/a'

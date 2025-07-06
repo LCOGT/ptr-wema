@@ -97,9 +97,14 @@ def authenticated_request(method: str, uri: str, payload: dict, base_url: str) -
     if payload is not None: 
         request_kwargs["data"] = json.dumps(payload)
 
-    response = requests.request(**request_kwargs)
-    return response.json()
-
+    try:
+        response = requests.request(**request_kwargs)
+        return response.json()
+    except:
+        print ("failed authentication")
+        print (payload)
+        print (request_kwargs)
+        return None
 
 def fit_cloud_prediction_model(df, directory):
     
@@ -893,8 +898,11 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             #plog ("woo")
             
             #plog (wema_settings_shelf['local_weather_active'])
+            try:
+                g_dev['enc'].mode =wema_settings_shelf['mode']
+            except:
+                g_dev['enc'].mode = 'Manual'
             
-            g_dev['enc'].mode =wema_settings_shelf['mode']
             self.observing_mode=wema_settings_shelf['observing_mode']
             self.local_weather_active=wema_settings_shelf['local_weather_active']
             self.owm_active=wema_settings_shelf['owm_active']
