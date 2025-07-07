@@ -173,8 +173,12 @@ class ObservingConditions:
             url = "http://aagsolo/cgi-bin/cgiLastData"
 
             # Fetch the data
-            response = requests.get(url)
-
+            try:
+                response = requests.get(url)
+            except:
+                #plog(traceback.format_exc())
+                plog("Failed aagsolo http call")
+                return None
 
 
             # Check if the request was successful

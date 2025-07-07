@@ -671,6 +671,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
         plog("Fresh WEMA_PID:  ", self.wema_pid)
         
         self.update_config()
+        #breakpoint()
         self.create_devices(config)
         self.time_last_status = time.time() - 60  #forces early status on startup.
         self.loud_status = False
