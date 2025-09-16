@@ -113,8 +113,8 @@ wema_config = {
     'wema_allowed_to_open_roof': True,
     "ARO_wema_patch": True,
     #next few are enclosure parameteers
-    'period_of_time_to_wait_for_roof_to_open' : 125, # seconds - needed to check if the roof ACTUALLY opens. ARO takes ~35 seconds as of 20231101
-    'only_scope_that_controls_the_roof': True, # If multiple scopes control the roof, set this to False
+    'period_of_time_to_wait_for_roof_to_open' : 125, # seconds - needed to check if the roof ACTUALLY opens.
+    'only_computer_that_controls_the_roof': True, # If multiple scopes control the roof, set this to False
     'check_time': 300,    #   20231106   Unused WER
     'maximum_roof_opens_per_evening' : 6,
 

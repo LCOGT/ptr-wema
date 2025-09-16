@@ -21,6 +21,7 @@ from pathlib import Path
 import math
 import requests
 import traceback
+import datetime
 import ephem
 import ptr_config
 from api_calls import API_calls
@@ -491,7 +492,7 @@ def send_status(obsy, status_type, status_to_send):
     try:
         response = requests.post(uri_status, data=data, timeout=20, allow_redirects=False, headers=close_headers)
         if response.ok:
-            plog(f"~ sent latest {status_type} status")  # clearer success log including the type that was sent
+            pass #plog(f"~ sent latest {status_type} status")  # clearer success log including the type that was sent
         else:
             plog(f"Failed! Status code: {response.status_code}, Response: {response.text}")
     except Exception as e:
@@ -603,7 +604,8 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
         try:
             self.dome_offset = self.config['enclosure']['enclosure1']['dome_offset_in_degrees'] ### THIS IS PURELY FOR LCS
         except:
-            plog ("Couldn't load dome offset. mayhaps not a dome")
+            pass
+        #plog ("Couldn't load dome offset. mayhaps not a dome")
 
 
         self.last_request = None
@@ -736,7 +738,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
         # UNTIL THEN IT WILL LOAD THE VALUES FROM THE CONFIG
         #######################
         
-        plog ("Loading limits from config: TO BE DEPRECATED ONCE WE HAVE AN ONLINE LIMIT SYSTEM")
+        #plog ("Loading limits from config: TO BE DEPRECATED ONCE WE HAVE AN ONLINE LIMIT SYSTEM")
         try:
             wema_settings_shelf = shelve.open(self.wema_settings_shelf_filename)
             
@@ -833,7 +835,8 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             plog ("Startup shelf load failed.")
             plog(traceback.format_exc())
         
-        plog ("passed startup shelf load")
+        #plog ("passed startup shelf load")
+
         #######################
         # ^^^^^^^^^^^^^^ THIS AREA JUST GETS DELETED ONCE WE HAVE AN ONLINE ADJUSTABLE WEMA SETTINGS
         # UNTIL THEN IT WILL LOAD THE VALUES FROM THE CONFIG
@@ -1005,9 +1008,9 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             #pid = camShelf["pid_obs"]  # a 9 character string
             wema_settings_shelf.close()
             
-            self.update_status()
+            #self.update_status()   #WER Deleting because this is called during construction of WEMA -- too soon
         
-        plog ("booted up and got status from ocn device")
+        #plog ("booted up and got status from ocn device")
 
         # The LCS dome loses it's position if the wema code gets restarted.
         # If the WEMA code is restarted while the shutter is open, it needs to rehome
@@ -1110,7 +1113,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
         # Get the altitude
         sun_altitude = sun_altaz.alt
         sun_azimuth = sun_altaz.az
-        plog(f"Current Sun altitude: {sun_altitude:.2f}")           
+        #plog(f"Current Sun altitude: {sun_altitude:.2f}")           
 
         #moon = get_moon(obstime, location=self.observer_location)  Deprication warning
         moon = get_body('moon',obstime, location=self.observer_location )
@@ -1121,37 +1124,40 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
         
         # Skip if below horizon
         if moon_altitude < 0 * u.deg:
-            plog("Moon is below the horizon — no flux on ground.")
+            #plog("Moon is below the horizon — no flux on ground.")
             moon_illumination=0
             flux_ground=0
         else:
-            # Illumination estimate (simplified using elongation)
-            sun = get_body('sun', obstime)
-            elongation = sun.separation(moon)
-            moon_illumination = (1 + np.cos(elongation)) / 2
-            
-            # Apparent magnitude scaling (very approximate)
-            full_moon_mag = -12.74
-            moon_mag = full_moon_mag + 2.5 * np.log10(1 / moon_illumination)
-            
-            # Flux above atmosphere (visible range)
-            F0 = 3.6e-8  # W/m² for mag 0
-            F_top = F0 * 10**(-0.4 * moon_mag)
-            
-            # Air mass approximation
-            zenith_angle = 90 * u.deg - moon_altitude
-            airmass = 1 / np.cos(zenith_angle.to(u.rad))
-            
-            # Atmospheric extinction (assuming extinction coefficient k ~ 0.2 mag/airmass)
-            k = 0.2  # typical in visual band
-            transmission = 10**(-0.4 * k * airmass)
-            
-            # Flux on ground
-            flux_ground = F_top * transmission * np.sin(moon_altitude.to(u.rad))
-        
-        plog(f"Moon altitude: {moon_altitude:.2f}")
-        plog(f"Moon illumination: {moon_illumination:.2%}")
-        plog(f"Approx. moon flux on ground: {flux_ground:.2e} W/m²")
+            # try:
+            #     # Illumination estimate (simplified using elongation)
+            #     sun = get_body('sun', obstime)
+            #     elongation = sun.separation(moon)
+            #     moon_illumination = (1 + np.cos(elongation)) / 2
+                
+            #     # Apparent magnitude scaling (very approximate)
+            #     full_moon_mag = -12.74
+            #     moon_mag = full_moon_mag + 2.5 * np.log10(1 / moon_illumination)
+                
+            #     # Flux above atmosphere (visible range)
+            #     F0 = 3.6e-8  # W/m² for mag 0
+            #     F_top = F0 * 10**(-0.4 * moon_mag)
+                
+            #     # Air mass approximation
+            #     zenith_angle = 90 * u.deg - moon_altitude
+            #     airmass = 1 / np.cos(zenith_angle.to(u.rad))
+                
+            #     # Atmospheric extinction (assuming extinction coefficient k ~ 0.2 mag/airmass)
+            #     k = 0.2  # typical in visual band
+            #     transmission = 10**(-0.4 * k * airmass)
+                
+            #     # Flux on ground
+            #     flux_ground = F_top * transmission * np.sin(moon_altitude.to(u.rad))
+            # except:
+            flux_ground = 0
+            moon_illumination = 0
+        #plog(f"Moon altitude: {moon_altitude:.2f}")
+        #plog(f"Moon illumination: {moon_illumination:.2%}")
+        #plog(f"Approx. moon flux on ground: {flux_ground:.2e} W/m²")
         
         return sun_altitude, moon_altitude, moon_illumination, flux_ground, sun_azimuth
      
@@ -1714,7 +1720,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             quick_status['forecast_cloud_cover_%']=self.medianforecast_current_cloud_cover
             
             if self.number_of_nighttime_weather_observations < 250:
-                plog ("We haven't built up enough data points yet to be confident in predicting local clouds yet. Not using Local Cloud Cover yet.")
+                pass#plog ("We haven't built up enough data points yet to be confident in predicting local clouds yet. Not using Local Cloud Cover yet.")
                 quick_status['local_cloud_cover_%']=None 
 
             
@@ -1804,7 +1810,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                             wx_reasons.append('>=' + str(self.local_cloud_cover_limit_setting) + '% Cloudy Local Sensor')
                     except:
                         #status['cloud_cover_%'] = "no report"
-                        plog ("failed to get local cloud cover... usually the model is not ready yet due to lack of weather data points.")
+                        #plog ("failed to get local cloud cover... usually the model is not ready yet due to lack of weather data points.")
                         local_cloud_cover = False  # We cannot use this signal to force a wX hold or close
                 else:
                     local_cloud_cover = False
@@ -1872,7 +1878,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                 combined_weather_ok = 'Not considered'
                             
             ocn_status['observing_conditions']['observing_conditions1']["wx_ok"] = combined_weather_ok
-            plog('Wx Ok: ', combined_weather_ok, wx_reasons)
+           #plog('Wx Ok: ', combined_weather_ok, wx_reasons)
     
             
             #######
@@ -1987,8 +1993,9 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             
             # Reformulate a short enclosure status - bit of a hack for the moment.
             try: 
-                plog (enc_status['enclosure']['enclosure1']['shutter_status'] )
-                plog ("good")
+                pass
+                #plog (enc_status['enclosure']['enclosure1']['shutter_status'] )
+                #plog ("good")
             except:
                 enc_status_extended={}
 
@@ -1999,7 +2006,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                 enc_status_extended['enclosure']['enclosure1'] = enc_status
                 
                 enc_status=enc_status_extended
-                plog ("bad")
+                plog ("bad WEMA line 2003")
             
             # New Tim Entries
             if enc_status['enclosure']['enclosure1']['shutter_status']  is not None:
@@ -2105,6 +2112,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                     ocn_status = g_dev['ocn'].get_status()
                 else:
                     ocn_status = get_ocn_status_custom()
+                    
                 if self.enc_status_custom==False:                
                     enc_status = g_dev['enc'].get_status()
                 else:
@@ -2175,7 +2183,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                         'sky-ambient^2': [model_skyambient **2]
                     })
                     
-                    plog (new_data)
+                    #plog (new_data)   #NB this faults.
                     try:                    
                         
                         if sun_altitude.deg >= 18:
@@ -2202,42 +2210,43 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                         plog ("Median of last ten observations: " + str(round(np.median(self.cloud_tracker),2)) + " std " + str(round(np.std(self.cloud_tracker),2)))
         
                     except:
-                        plog ("failed model? Perhaps can happen if we haven't built up enough points yet.")
-                        self.median_cloud_estimate=100
-                        plog(traceback.format_exc())
+                        # plog ("failed model? Perhaps can happen if we haven't built up enough points yet.")
+                        # self.median_cloud_estimate=100
+                        # plog(traceback.format_exc())
+                        pass
                 else:
                     self.median_cloud_estimate=None
     
                 try:
-                    plog ("****************************")
-                    plog("FORECAST DERIVED CLOUD COVER")
+                    #plog ("****************************")
+                    # plog("FORECAST DERIVED CLOUD COVER")
                     plog("OWM cloud cover: " +str(round(self.owm_cloud_cover,1)) +'%')
-                    plog("Open Meteo cloud cover: " +str(round(self.open_meteo_cloud_cover,1))+'%')
-                    plog("TomorrowIO Now: " +str(round(self.tomorrowio_cloud_now,1))+'%')
-                    plog("Pirate Now: " +str(round(self.pirate_clouds_now,1))+'%')
-                    plog("Metocean Now: " +str(round(self.metocean_clouds_now,1))+'%')
-                    plog("Worldweather Now: " +str(round(self.worldweather_current_cloud,1))+'%')
+                    # plog("Open Meteo cloud cover: " +str(round(self.open_meteo_cloud_cover,1))+'%')
+                    # plog("TomorrowIO Now: " +str(round(self.tomorrowio_cloud_now,1))+'%')
+                    # plog("Pirate Now: " +str(round(self.pirate_clouds_now,1))+'%')
+                    # plog("Metocean Now: " +str(round(self.metocean_clouds_now,1))+'%')
+                    # plog("Worldweather Now: " +str(round(self.worldweather_current_cloud,1))+'%')
                     
-                    plog('**')
+                    # plog('**')
                     
-                    plog("OWM Next Hour: " +str(round(self.owm_cloud_cover_next_hour,1))+'%')
-                    plog("Open Meteo Next Hour: " +str(round(self.open_meteo_cloud_cover_next_hour,1))+'%')
-                    plog("TomorrowIO Next Hour: " +str(round(self.tomorrowio_cloud_inanhour,1))+'%')
+                    # plog("OWM Next Hour: " +str(round(self.owm_cloud_cover_next_hour,1))+'%')
+                    # plog("Open Meteo Next Hour: " +str(round(self.open_meteo_cloud_cover_next_hour,1))+'%')
+                    # plog("TomorrowIO Next Hour: " +str(round(self.tomorrowio_cloud_inanhour,1))+'%')
                     
-                    plog("Pirate Next Hour: " +str(round(self.pirate_clouds_inanhour,1))+'%')
+                    # plog("Pirate Next Hour: " +str(round(self.pirate_clouds_inanhour,1))+'%')
                     
-                    plog("Metocean Next Hour: " +str(round(self.metocean_clouds_inanhour,1))+'%')
+                    # plog("Metocean Next Hour: " +str(round(self.metocean_clouds_inanhour,1))+'%')
                     
-                    plog("Worldweather Next Hour: " +str(round(self.worldweather_nexthour_cloud,1))+'%')
+                    # plog("Worldweather Next Hour: " +str(round(self.worldweather_nexthour_cloud,1))+'%')
                     
-                    plog('**')
+                    # plog('**')
                     
                     plog("Median cloud cover from all estimates: "+str(round(self.medianforecast_current_cloud_cover,1))+'%')
         
-                    plog("**************************************************************")
+                    #plog("**************************************************************")
                 except:
                     plog(traceback.format_exc())
-    
+                
                 if (g_dev['events']['Nightly Reset'] <= ephem.now() < g_dev['events']['End Nightly Reset']):
                     if self.nightly_reset_complete == False:
                         self.nightly_reset_complete = True
@@ -2453,7 +2462,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
         self.opens_this_evening=0
         
         self.keep_open_all_night = False
-        self.keep_closed_all_night   = False          
+        self.keep_closed_all_night = False          
         self.open_at_specific_utc = False
         self.specific_utc_when_to_open = -1.0  
         self.manual_weather_hold_set = False
@@ -2767,11 +2776,11 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
         return
 
     def run_nightly_weather_report(self,enc_status=None, ocn_status=None):
-       
+        
         events = g_dev['events']
 
         obs_win_begin, sunset, sunrise, ephem_now = self.astro_events.getSunEvents()
-        print (ocn_status)
+        #plog(ocn_status)
         # First thing to do at the Cool Down, Open time is to calculate the quality of the evening
         # using the broad weather report.
         try:
@@ -2813,8 +2822,8 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                 OWM_status_json={}
                 OWM_status_json["timestamp"] = round(time.time(), 1)
                 for hourly_report in data['hourly']:
-                    
-                    dt = datetime.datetime.utcfromtimestamp(hourly_report['dt'])  # or .fromtimestamp() for local time
+
+                    dt = datetime.datetime.fromtimestamp( hourly_report['dt'])  # or .fromtimestamp() for local time
                     iso_time = dt.isoformat()  # '2025-05-08T07:00:00'
                     clock_hour = iso_time.split('T')[1].split(':')[0] 
                     
@@ -2948,8 +2957,8 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                 plog ("For Evening of " +str(g_dev['dayhyphened']) )
                 self.hourly_report_holder.append("For LOCAL Evening of " +str(g_dev['dayhyphened']) )
                 
-                
-                utc_string = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")            
+
+                utc_string = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d %H:%M:%S")  #Deprecatied: datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")            
                 plog("Time of Weather Report: " + str(utc_string))
                 self.hourly_report_holder.append("Time of Weather Report (UTC): " + str(utc_string))
                 
@@ -3101,23 +3110,24 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             # BUT ONLY IF THERE IS ACTUALLY A WEATHER STATION! although we will
             # still collect non-weather station stuff.....
             
-            
+
             line_of_weather_info=[]
-            line_of_weather_info.append(str(datetime.datetime.now()))
-            line_of_weather_info.append(time.time())
+            line_of_weather_info.append(str(datetime.datetime.now())[:19])
+            line_of_weather_info.append(round(time.time(), 1))
             # Current cloud % from weather forecast
             line_of_weather_info.append(self.owm_cloud_cover)
             
 
             
             # Reported cloud_cover
+
             
             if self.ocn_exists:
                 try:
                     line_of_weather_info.append(self.predicted_clouds[0])
                 except:
                     line_of_weather_info.append(None)
-                    plog ("using none rather than predicted clouds for weatherline")
+                    #plog ("using none rather than predicted clouds for weatherline")
             else:
                 line_of_weather_info.append(None)
                 
@@ -3226,6 +3236,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                             cloud_next = cloud_list[index_now + 1]
                             self.open_meteo_cloud_cover_next_hour = cloud_next if cloud_next is not None else None
                             plog(f"Open Meteo Cloud Cover for Next Hour ({time_list[index_now + 1]}): {self.open_meteo_cloud_cover_next_hour}%")
+                            
                         else:
                             self.open_meteo_cloud_cover_next_hour = None
                             plog("No cloud cover data available for the next hour.")
@@ -3258,8 +3269,8 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             fields = ["cloudCover"]
             
             # Define the time frame for the data you want to retrieve (now and 1 hour later)
-            start_time = datetime.datetime.utcnow().isoformat() + "Z"
-            end_time = (datetime.datetime.utcnow() + datetime.timedelta(hours=1)).isoformat() + "Z"
+            start_time = datetime.datetime.now(datetime.UTC).isoformat() + "Z"
+            end_time = (datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)).isoformat() + "Z"
             
             # Define the request payload
             params = {
@@ -3285,12 +3296,12 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
                     self.tomorrowio_cloud_inanhour=timelines[0]['intervals'][1]['values']['cloudCover']
                                 
                 else:
-                    plog(f"Error: {response.status_code}, {response.text}")
+                    #plog(f"Error: {response.status_code}, {response.text}") # WER This always faults. Bad start time format.
                     self.tomorrowio_cloud_now=None
                     self.tomorrowio_cloud_inanhour=None
                     
-                plog("TomorrowIO Now: " +str(self.tomorrowio_cloud_now))
-                plog("TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour))
+                #plog("TomorrowIO Now: " +str(self.tomorrowio_cloud_now))
+                #plog("TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour))
             except:
                 plog ("failed to write weatherlog")
                 plog(traceback.format_exc())
@@ -3334,6 +3345,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             
                 # Fetch data from Pirate Weather API
                 url = f"https://api.pirateweather.net/forecast/{API_KEY}/{self.latitude},{self.longitude}?units=si"
+                #print('wema line 3341:  ', url)
                 response = requests.get(url)
                 data = response.json()
             
@@ -3408,7 +3420,7 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             # Next hours
             line_of_weather_info.append(self.open_meteo_cloud_cover_next_hour)
             line_of_weather_info.append(self.owm_cloud_cover_next_hour)
-           
+
             sun_altitude, moon_altitude, moon_illumination, flux_ground, sun_azimuth = self.get_sun_and_moon_info()
         
             # Put in relevant sun and moon potential effects
@@ -3430,252 +3442,252 @@ n    SkyAlert is failing so we are picking up Weather from the ARO-0m30 Skyalert
             
             obs_properties_dict={}
             
-            for obsid in self.obs_ids:
-                uri_status = f"https://status.photonranch.org/status/{obsid}/device"
+            # for obsid in self.obs_ids:
+            #     uri_status = f"https://status.photonranch.org/status/{obsid}/device"
 
                 
-                try:
-                    #plog ("Grabbing obs settings")                            
-                    obs_status=requests.get(uri_status, timeout=20, allow_redirects=False, headers=close_headers, stream=False)
-                    #plog ("Grabbed obs settings")
-                except:
-                    plog ("Some error in getting the obs_settings")
-                    plog(traceback.format_exc())
-                    obs_status=None
+            #     try:
+            #         #plog ("Grabbing obs settings")                            
+            #         obs_status=requests.get(uri_status, timeout=20, allow_redirects=False, headers=close_headers, stream=False)
+            #         #plog ("Grabbed obs settings")
+            #     except:
+            #         plog ("Some error in getting the obs_settings")
+            #         plog(traceback.format_exc())
+            #         obs_status=None
 
-                if '[200]' in str(obs_status): # If reading successful
-                    last_status_time=obs_status.json()['server_timestamp_ms']/1000
-                    try:
-                        if time.time() - last_status_time < 600:
-                            # Get focuser temperatuer
+            #     if '[200]' in str(obs_status): # If reading successful
+            #         last_status_time=obs_status.json()['server_timestamp_ms']/1000
+            #         try:
+            #             if time.time() - last_status_time < 600:
+            #                 # Get focuser temperatuer
                         
-                            focuser_status=obs_status.json()['status']['focuser']
-                            focuser_status=focuser_status[next(iter(focuser_status))] # first focuser
-                            focuser_temperature= focuser_status['focus_temperature']['val']
+            #                 focuser_status=obs_status.json()['status']['focuser']
+            #                 focuser_status=focuser_status[next(iter(focuser_status))] # first focuser
+            #                 focuser_temperature= focuser_status['focus_temperature']['val']
                             
-                            current_fwhm_seeing=obs_status.json()['status']['current_fwhm_seeing']
-                            try:
-                                estimated_sky_transmissiveness= obs_status.json()['status']['estimated_sky_transmissiveness']
-                                #estimated_sky_transmissiveness_filter= obs_status.json()['status']['estimated_sky_transmissiveness_filter']
-                            except:
-                                plog(traceback.format_exc())
-                                estimated_sky_transmissiveness=None
-                                #estimated_sky_transmissiveness_filter=None
+            #                 current_fwhm_seeing=obs_status.json()['status']['current_fwhm_seeing']
+            #                 try:
+            #                     estimated_sky_transmissiveness= obs_status.json()['status']['estimated_sky_transmissiveness']
+            #                     #estimated_sky_transmissiveness_filter= obs_status.json()['status']['estimated_sky_transmissiveness_filter']
+            #                 except:
+            #                     plog(traceback.format_exc())
+            #                     estimated_sky_transmissiveness=None
+            #                     #estimated_sky_transmissiveness_filter=None
                         
-                        else:
-                            focuser_temperature=None
-                            current_fwhm_seeing=None
-                            estimated_sky_transmissiveness=None
-                            #estimated_sky_transmissiveness_filter=None
-                    except:
-                        plog ("Some error in getting the obs status keys")
-                        focuser_temperature=None
-                        current_fwhm_seeing=None
-                        estimated_sky_transmissiveness=None
-                        #estimated_sky_transmissiveness_filter=None
-                        plog(traceback.format_exc())
-                else:
-                    plog ("not successful obs status reading")
-                    focuser_temperature=None
-                    current_fwhm_seeing=None
-                    estimated_sky_transmissiveness=None
-                    #estimated_sky_transmissiveness_filter=None
-                    plog (obs_status)
+            #             else:
+            #                 focuser_temperature=None
+            #                 current_fwhm_seeing=None
+            #                 estimated_sky_transmissiveness=None
+            #                 #estimated_sky_transmissiveness_filter=None
+            #         except:
+            #             plog ("Some error in getting the obs status keys")
+            #             focuser_temperature=None
+            #             current_fwhm_seeing=None
+            #             estimated_sky_transmissiveness=None
+            #             #estimated_sky_transmissiveness_filter=None
+            #             plog(traceback.format_exc())
+            #     else:
+            #         plog ("not successful obs status reading")
+            #         focuser_temperature=None
+            #         current_fwhm_seeing=None
+            #         estimated_sky_transmissiveness=None
+            #         #estimated_sky_transmissiveness_filter=None
+            #         plog (obs_status)
                 
-                obs_properties_dict[obsid]={}
-                obs_properties_dict[obsid]['focuser_temperature']=focuser_temperature
-                obs_properties_dict[obsid]['current_fwhm_seeing']=current_fwhm_seeing
-                obs_properties_dict[obsid]['estimated_sky_transmissiveness']=estimated_sky_transmissiveness
-                #obs_properties_dict[obsid]['estimated_sky_transmissiveness_filter']= estimated_sky_transmissiveness_filter
+            #     obs_properties_dict[obsid]={}
+            #     obs_properties_dict[obsid]['focuser_temperature']=focuser_temperature
+            #     obs_properties_dict[obsid]['current_fwhm_seeing']=current_fwhm_seeing
+            #     obs_properties_dict[obsid]['estimated_sky_transmissiveness']=estimated_sky_transmissiveness
+            #     #obs_properties_dict[obsid]['estimated_sky_transmissiveness_filter']= estimated_sky_transmissiveness_filter
             
             
             
-            line_of_weather_info.append(json.dumps(obs_properties_dict))
+            # line_of_weather_info.append(json.dumps(obs_properties_dict))
 
-            #breakpoint()
+            # #breakpoint()
             
             
             
             
             
-            if self.config['send_hourly_cloud_forecast_emails']:
-                # Your cPanel email credentials
-                smtp_server = self.smtp_server
-                port = self.smtp_port  # For SSL
-                sender_email = self.sender_email
-                password = self.email_password
+            # if self.config['send_hourly_cloud_forecast_emails']:
+            #     # Your cPanel email credentials
+            #     smtp_server = self.smtp_server
+            #     port = self.smtp_port  # For SSL
+            #     sender_email = self.sender_email
+            #     password = self.email_password
                 
                            
-                # Receiver
-                receiver_emails = self.weather_to_emails.replace(' ','').split(',')
+            #     # Receiver
+            #     receiver_emails = self.weather_to_emails.replace(' ','').split(',')
                 
-                for receiver_email in receiver_emails:
+            #     for receiver_email in receiver_emails:
                 
-                    # Create the email
-                    message = MIMEMultipart()
-                    message['From'] = sender_email
-                    message['To'] = receiver_email
-                    message['Subject'] = self.name + ' Cloud Report'
+            #         # Create the email
+            #         message = MIMEMultipart()
+            #         message['From'] = sender_email
+            #         message['To'] = receiver_email
+            #         message['Subject'] = self.name + ' Cloud Report'
                     
-                    body = 'Hello, the clouds are now (hopefully): ' + str(self.medianforecast_current_cloud_cover) +'\n'
+            #         body = 'Hello, the clouds are now (hopefully): ' + str(self.medianforecast_current_cloud_cover) +'\n'
                     
-                    body = body +"OWM cloud cover: " +str(self.owm_cloud_cover) +'\n'
-                    body = body +"Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover)+'\n'    
-                    body = body +"Metocean Now: " +str(self.metocean_clouds_now)+'\n'
-                    body = body +"Pirate Now: " +str(self.pirate_clouds_now)+'\n'
-                    body = body +"WorldWeather Now: " +str(self.worldweather_current_cloud)+'\n'
-                    body = body +"TomorrowIO Now: " +str(self.tomorrowio_cloud_now)+'\n\n'
-                    body = body +"OWM Next Hour: " +str(self.owm_cloud_cover_next_hour)+'\n'
-                    body = body +"Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour)+'\n'
-                    body = body +"TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour)+'\n'
+            #         body = body +"OWM cloud cover: " +str(self.owm_cloud_cover) +'\n'
+            #         body = body +"Open Meteo cloud cover: " +str(self.open_meteo_cloud_cover)+'\n'    
+            #         body = body +"Metocean Now: " +str(self.metocean_clouds_now)+'\n'
+            #         body = body +"Pirate Now: " +str(self.pirate_clouds_now)+'\n'
+            #         body = body +"WorldWeather Now: " +str(self.worldweather_current_cloud)+'\n'
+            #         body = body +"TomorrowIO Now: " +str(self.tomorrowio_cloud_now)+'\n\n'
+            #         body = body +"OWM Next Hour: " +str(self.owm_cloud_cover_next_hour)+'\n'
+            #         body = body +"Open Meteo Next Hour: " +str(self.open_meteo_cloud_cover_next_hour)+'\n'
+            #         body = body +"TomorrowIO Next Hour: " +str(self.tomorrowio_cloud_inanhour)+'\n'
                     
-                    body = body +"WorldWeather Next Hour: " +str(self.worldweather_nexthour_cloud)+'\n'
-                    body = body +"Metocean Next Hour: " +str(self.metocean_clouds_inanhour)+'\n'
-                    body = body +"Pirate Next Hour: " +str(self.pirate_clouds_inanhour)+'\n'
+            #         body = body +"WorldWeather Next Hour: " +str(self.worldweather_nexthour_cloud)+'\n'
+            #         body = body +"Metocean Next Hour: " +str(self.metocean_clouds_inanhour)+'\n'
+            #         body = body +"Pirate Next Hour: " +str(self.pirate_clouds_inanhour)+'\n'
                     
         
-                    message.attach(MIMEText(body, 'plain'))
+            #         message.attach(MIMEText(body, 'plain'))
                     
-                    # Send the email
-                    try:
-                        with smtplib.SMTP_SSL(smtp_server, port) as server:
-                            server.login(sender_email, password)
-                            server.sendmail(sender_email, receiver_email, message.as_string())
-                        plog("Email sent successfully!")
-                    except Exception as e:
-                        plog(f"Error sending email: {e}")
+            #         # Send the email
+            #         try:
+            #             with smtplib.SMTP_SSL(smtp_server, port) as server:
+            #                 server.login(sender_email, password)
+            #                 server.sendmail(sender_email, receiver_email, message.as_string())
+            #             plog("Email sent successfully!")
+            #         except Exception as e:
+            #             plog(f"Error sending email: {e}")
 
             
-            print (line_of_weather_info)
+            # print (line_of_weather_info)
             
-            column_names = ['date','time','OWM_clouds','Local_clouds','Humidity','sky_temp_C','local_temperature_C', 'dewpoint', 'rain_rate','wind_m/s', 'OWM_temperature','openmeteo_clouds', 'avg_forecast_cloudcover', 'OWMClouds_inanhour', 'openmeteoclouds_inanhour','sun_altitude','moon_altitude','moon_illumination','moon_flux_on_ground', 'sun_azimuth', 'tomorrowio_nowclouds','tomorrowio_nexthourclouds','pirate_clouds_now','pirate_clouds_inanhour','metocean_clouds_now','metocean_clouds_inanhour','worldweather_clouds_now','worldweather_clouds_inanhour','obs_dict']
+            # column_names = ['date','time','OWM_clouds','Local_clouds','Humidity','sky_temp_C','local_temperature_C', 'dewpoint', 'rain_rate','wind_m/s', 'OWM_temperature','openmeteo_clouds', 'avg_forecast_cloudcover', 'OWMClouds_inanhour', 'openmeteoclouds_inanhour','sun_altitude','moon_altitude','moon_illumination','moon_flux_on_ground', 'sun_azimuth', 'tomorrowio_nowclouds','tomorrowio_nexthourclouds','pirate_clouds_now','pirate_clouds_inanhour','metocean_clouds_now','metocean_clouds_inanhour','worldweather_clouds_now','worldweather_clouds_inanhour','obs_dict']
             
 
-            # Open the file in append mode and write the line
-            if not self.medianforecast_current_cloud_cover == None:
-                try:
+            # # Open the file in append mode and write the line
+            # if not self.medianforecast_current_cloud_cover == None:
+            #     try:
                     
-                    if not os.path.exists(self.wema_path+self.name + '_weatherlog.csv'):
+            #         if not os.path.exists(self.wema_path+self.name + '_weatherlog.csv'):
                         
-                        with open(self.wema_path+self.name + '_weatherlog.csv', mode='a', newline='') as file:
-                            writer = csv.writer(file)
-                            writer.writerow(column_names)
-                    with open(self.wema_path+self.name + '_weatherlog.csv', mode='a', newline='') as file:
-                        writer = csv.writer(file)
-                        writer.writerow(line_of_weather_info)
-                        plog(f"Data written at {datetime.datetime.now().isoformat()}")  # For logging
-                except:
-                    plog ("failed to write weatherlog")
-                    plog(traceback.format_exc())
+            #             with open(self.wema_path+self.name + '_weatherlog.csv', mode='a', newline='') as file:
+            #                 writer = csv.writer(file)
+            #                 writer.writerow(column_names)
+            #         with open(self.wema_path+self.name + '_weatherlog.csv', mode='a', newline='') as file:
+            #             writer = csv.writer(file)
+            #             writer.writerow(line_of_weather_info)
+            #             plog(f"Data written at {datetime.datetime.now().isoformat()}")  # For logging
+            #     except:
+            #         plog ("failed to write weatherlog")
+            #         plog(traceback.format_exc())
                     
             
-            try:
-                weather_directory=self.wema_path+self.name+ '/weatherfits'
-                if not os.path.exists(weather_directory):
-                    os.makedirs(weather_directory)
-                #file_date_string = str(datetime.datetime.now()).replace(' ', '_').split('.')[0].replace(':', '-')
-                ######## We also need to update our cloud prediction model.
-                # So lets open the weatherlog
-                # Assign column names manually
+            # try:
+            #     weather_directory=self.wema_path+self.name+ '/weatherfits'
+            #     if not os.path.exists(weather_directory):
+            #         os.makedirs(weather_directory)
+            #     #file_date_string = str(datetime.datetime.now()).replace(' ', '_').split('.')[0].replace(':', '-')
+            #     ######## We also need to update our cloud prediction model.
+            #     # So lets open the weatherlog
+            #     # Assign column names manually
                 
                 
                 
-                # Read CSV without a header and assign column names
-                df = pd.read_csv(self.wema_path+self.name + '_weatherlog.csv', header=0)#, names=column_names)
+            #     # Read CSV without a header and assign column names
+            #     df = pd.read_csv(self.wema_path+self.name + '_weatherlog.csv', header=0)#, names=column_names)
                 
-                # # Need to remove some rows with nan values
-                # #df = df.dropna()
+            #     # # Need to remove some rows with nan values
+            #     # #df = df.dropna()
                 
-                # # Convert to years as main value
-                # # Arbitrary reference point is the 1st of janurary 2025
-                # # time.time() then is 1735689600.0
-                # df['time_in_days']= df['time'] - 1735689600.0
-                # df['time_in_days']= df['time_in_days'] / 86400 
-                # df['phase_of_day']= df['time_in_days'] % 1
+            #     # # Convert to years as main value
+            #     # # Arbitrary reference point is the 1st of janurary 2025
+            #     # # time.time() then is 1735689600.0
+            #     # df['time_in_days']= df['time'] - 1735689600.0
+            #     # df['time_in_days']= df['time_in_days'] / 86400 
+            #     # df['phase_of_day']= df['time_in_days'] % 1
                 
-                # df['time_in_years']= df['time'] - 1735689600.0
-                # df['time_in_years']= df['time_in_years'] / 31536000
-                # df['phase_of_year']= df['time_in_years'] % 1
-                
-                
-                # # Solar flux is essentially zero at -18 so set minimum sun altitude to -18
-                # df['sun_altitude'] = df['sun_altitude'].clip(lower=-18)
-                
-                # #To transform the sun altitude so that the relationship with solar flux becomes linear.
-                # df['transformed_sun_altitude']= np.exp( df['sun_altitude'] / 6.0)
-                
-                # X = df[['transformed_sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
-                # y = df['sky_temp_C']
-                
-                # # Train-test split (for verification purposes)
-                # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-                
-                # # Initialize the model
-                # self.sky_temp_model = LinearRegression()
+            #     # df['time_in_years']= df['time'] - 1735689600.0
+            #     # df['time_in_years']= df['time_in_years'] / 31536000
+            #     # df['phase_of_year']= df['time_in_years'] % 1
                 
                 
-                # breakpoint()
-                # # Train the model
-                # self.sky_temp_model.fit(X_train, y_train)
+            #     # # Solar flux is essentially zero at -18 so set minimum sun altitude to -18
+            #     # df['sun_altitude'] = df['sun_altitude'].clip(lower=-18)
                 
-                # # Predict the contributions of the factors to sky_temp_C
-                # df['predicted_factor_contributions'] = self.sky_temp_model.predict(X)
+            #     # #To transform the sun altitude so that the relationship with solar flux becomes linear.
+            #     # df['transformed_sun_altitude']= np.exp( df['sun_altitude'] / 6.0)
                 
-                # # Calculate corrected sky temperature
-                # df['corrected_sky_temp_C'] = df['sky_temp_C'] - df['predicted_factor_contributions']
+            #     # X = df[['transformed_sun_altitude', 'sun_azimuth', 'moon_flux_on_ground']]
+            #     # y = df['sky_temp_C']
                 
-                # # Plotting before and after
-                # plt.figure(figsize=(14, 6))
+            #     # # Train-test split (for verification purposes)
+            #     # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
                 
-                # # Original Sky Temperature Plot
-                # plt.subplot(1, 2, 1)
-                # sns.scatterplot(x=df.index, y=df['sky_temp_C'], label='Original Sky Temperature', color='blue')
-                # plt.title(f'Original Sky Temperature\nR² = {r2_score(y, self.sky_temp_model.predict(X)):.2f}')
-                # plt.xlabel('Index')
-                # plt.ylabel('Sky Temperature (°C)')
-                
-                # # Corrected Sky Temperature Plot
-                # plt.subplot(1, 2, 2)
-                # sns.scatterplot(x=df.index, y=df['corrected_sky_temp_C'], label='Corrected Sky Temperature', color='green')
-                # plt.title('Corrected Sky Temperature (After Removing Factors)')
-                # plt.xlabel('Index')
-                # plt.ylabel('Sky Temperature (°C)')
+            #     # # Initialize the model
+            #     # self.sky_temp_model = LinearRegression()
                 
                 
-                # plt.savefig(weather_directory + '/CorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+            #     # breakpoint()
+            #     # # Train the model
+            #     # self.sky_temp_model.fit(X_train, y_train)
+                
+            #     # # Predict the contributions of the factors to sky_temp_C
+            #     # df['predicted_factor_contributions'] = self.sky_temp_model.predict(X)
+                
+            #     # # Calculate corrected sky temperature
+            #     # df['corrected_sky_temp_C'] = df['sky_temp_C'] - df['predicted_factor_contributions']
+                
+            #     # # Plotting before and after
+            #     # plt.figure(figsize=(14, 6))
+                
+            #     # # Original Sky Temperature Plot
+            #     # plt.subplot(1, 2, 1)
+            #     # sns.scatterplot(x=df.index, y=df['sky_temp_C'], label='Original Sky Temperature', color='blue')
+            #     # plt.title(f'Original Sky Temperature\nR² = {r2_score(y, self.sky_temp_model.predict(X)):.2f}')
+            #     # plt.xlabel('Index')
+            #     # plt.ylabel('Sky Temperature (°C)')
+                
+            #     # # Corrected Sky Temperature Plot
+            #     # plt.subplot(1, 2, 2)
+            #     # sns.scatterplot(x=df.index, y=df['corrected_sky_temp_C'], label='Corrected Sky Temperature', color='green')
+            #     # plt.title('Corrected Sky Temperature (After Removing Factors)')
+            #     # plt.xlabel('Index')
+            #     # plt.ylabel('Sky Temperature (°C)')
+                
+                
+            #     # plt.savefig(weather_directory + '/CorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
     
                 
-                # # Checking if the required columns are present in the DataFrame
-                # required_columns = ['avg_forecast_cloudcover', 'corrected_sky_temp_C']
+            #     # # Checking if the required columns are present in the DataFrame
+            #     # required_columns = ['avg_forecast_cloudcover', 'corrected_sky_temp_C']
                 
-                # if all(col in df.columns for col in required_columns):
-                #     # Plotting avg_forecast_cloudcover vs corrected_sky_temp_C
-                #     plt.figure(figsize=(10, 6))
-                #     sns.scatterplot(data=df, x='avg_forecast_cloudcover', y='corrected_sky_temp_C', color='purple')
-                #     plt.title('Corrected Sky Temperature vs. Average Forecast Cloud Cover')
-                #     plt.xlabel('Average Forecast Cloud Cover (%)')
-                #     plt.ylabel('Corrected Sky Temperature (°C)')
-                #     plt.savefig(weather_directory + '/CloudsvsCorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
+            #     # if all(col in df.columns for col in required_columns):
+            #     #     # Plotting avg_forecast_cloudcover vs corrected_sky_temp_C
+            #     #     plt.figure(figsize=(10, 6))
+            #     #     sns.scatterplot(data=df, x='avg_forecast_cloudcover', y='corrected_sky_temp_C', color='purple')
+            #     #     plt.title('Corrected Sky Temperature vs. Average Forecast Cloud Cover')
+            #     #     plt.xlabel('Average Forecast Cloud Cover (%)')
+            #     #     plt.ylabel('Corrected Sky Temperature (°C)')
+            #     #     plt.savefig(weather_directory + '/CloudsvsCorrectedSkyTemperature_' + str(file_date_string) + '.png', dpi=300, bbox_inches='tight')
     
-                # else:
-                #     missing_columns = [col for col in required_columns if col not in df.columns]
-                #     raise ValueError(f"The following columns are missing from the DataFrame: {missing_columns}")
+            #     # else:
+            #     #     missing_columns = [col for col in required_columns if col not in df.columns]
+            #     #     raise ValueError(f"The following columns are missing from the DataFrame: {missing_columns}")
                 
-                df['sky-ambient'] = df['sky_temp_C'] - df['OWM_temperature']
+            #     df['sky-ambient'] = df['sky_temp_C'] - df['OWM_temperature']
                 
-                # dew point depression
-                df['dew_point_depression'] =  df['OWM_temperature'] - df['dewpoint']                
+            #     # dew point depression
+            #     df['dew_point_depression'] =  df['OWM_temperature'] - df['dewpoint']                
                 
-                try:                    
-                    # Run the updated model with polynomial features included
-                    self.daytime_cloud_model, self.nighttime_cloud_model, self.number_of_daytime_weather_observations, self.number_of_nighttime_weather_observations = fit_cloud_prediction_model(df, weather_directory)     
+            #     try:                    
+            #         # Run the updated model with polynomial features included
+            #         self.daytime_cloud_model, self.nighttime_cloud_model, self.number_of_daytime_weather_observations, self.number_of_nighttime_weather_observations = fit_cloud_prediction_model(df, weather_directory)     
                     
-                except:
-                    plog ("failed model?")
-                    plog(traceback.format_exc())
-            except:
-                plog ("failed model?")
-                plog(traceback.format_exc())
+            #     except:
+            #         plog ("failed model?")
+            #         plog(traceback.format_exc())
+            # except:
+            #     plog ("failed model?")
+            #     plog(traceback.format_exc())
                 
         except Exception as e:
             plog ("OWM failed", e)

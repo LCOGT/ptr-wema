@@ -15,6 +15,50 @@ as sender that an OPEN for example can get through the Events layer. It is Manda
 the receiver (the enclosure in this case) also checks the Events layer. The events layer
 is populated once per observing day with default values. However the dictionary entries
 can be modified for debugging or simulation purposes.
+
+'''
+
+The Boltwood single line file is a weather data text file used for automated observatory control. The file format consists of a single line of space-separated values that are periodically updated by a cloud sensor system. 
+The standard Boltwood II format, also known as the "Clarity" file format, contains the following information in order from left to right: 
+File write date: The date the entry was written.
+File write time: The time the entry was written.
+Temperature scale: Indicates the temperature unit, either Celsius or Fahrenheit.
+Wind speed scale: Indicates the wind speed unit, either Mph or Knots.
+Sky temperature: The sky temperature as measured by the sensor.
+Ambient temperature: The ambient air temperature.
+Sensor temperature: The internal temperature of the sensor.
+Wind speed: The current wind speed.
+Humidity: The relative humidity.
+Dew point: The current dew point.
+Dew heater percentage: A legacy value that is no longer used.
+Rain flag: Indicates if rain is present.
+Wet flag: Indicates if moisture is present.
+Elapsed time since last file write: Time elapsed since the last data entry was written.
+Elapsed days since last write: Days elapsed since the last data entry was written.
+Cloud/Clear flag: A numerical code for sky conditions:
+1 = Clear
+2 = Light clouds
+3 = Very cloudy
+Wind Limit flag: A numerical code for wind conditions:
+1 = Calm
+2 = Windy
+3 = Very windy
+Rain flag: A numerical code for precipitation conditions:
+1 = Dry
+2 = Damp
+3 = Rain
+Darkness flag: A numerical code for lighting conditions:
+1 = Dark
+2 = Dim
+3 = Daylight
+Roof Close flag: An indicator for automated observatory roofs.
+Alert flag: An indicator for alert conditions:
+0 = No Alert
+1 = Alert 
+Many
+
+
+'''
 """
 
 import json
@@ -293,27 +337,19 @@ class ObservingConditions:
 
         #C:/Users/obs/Documents
             try:
-# <<<<<<< Updated upstream
+
                 with open('C://Users//obs//Documents//AAG_SLD.dat', 'r') as sa_rec:
                     #with open('W:\skyalert\weatherdata_nw.txt', 'r') as sa_rec:
                     sa_nw = sa_rec.readline().split()
-                with open('Q://Documents//AAG_SLD.dat', 'r') as sa_rec:
+                with open('//ARO1-0m30//aro1wx//user//Documents//AAG_SLD.dat', 'r') as sa_rec:
                     #with open('W:\skyalert\weatherdata_ne.txt', 'r') as sa_rec:
                         #****Note not reading second cloudwatcher yet.
                     sa_ne = sa_rec.readline().split()
-                    sa_nw = sa_ne
+                    
                 print('Cloud_watcher NW: ', sa_nw, '\n')
-                print('Cloud_watcher NE: no Hum, Press ', sa_ne, '\n')
+                print('Cloud_watcher NE: ', sa_ne, '\n')
 
-# =======
-                # with open('W:\skyalert\weatherdata_nw.txt', 'r') as sa_rec:
-                #     sa_nw = sa_rec.readline().split()
-                # with open('W:\skyalert\weatherdata_ne.txt', 'r') as sa_rec:
-                #     sa_ne = sa_rec.readline().split()
-                # print('SkyAlert NW: w wind ', sa_nw, '\n')
-                # print('SkyAlert NE: no wind ', sa_ne, '\n')
-                
-# >>>>>>> Stashed changes
+
                 #The datetime for the data above needs to be verified as current,
                 #if not current go directly to commanding a close.
 
@@ -326,7 +362,7 @@ class ObservingConditions:
                 self.windspeed = round(float(sa_ne[7]), 1)  # incoming is km/h  Note change os skyalert
                 if self.windspeed > self.gust_memory:
                     self.gust_memory = self.windspeed
-# <<<<<<< Updated upstream
+
                 self.humidity = round(float(sa_ne[8]), 1)
                 self.dewpoint = round(float(sa_ne[9]), 1)
                 
@@ -336,7 +372,7 @@ class ObservingConditions:
 
                 self.wet_alert = int(sa_ne[12])
                 time_since = int(float(sa_ne[13]))
-                plog("time since:  ", time_since)
+                pass#plog("time since:  ", time_since)
                 
                 timestamp=time.time()-time_since
                 self.time_of_update = round(float(sa_ne[14]), 5)
@@ -347,7 +383,7 @@ class ObservingConditions:
                 self.rain_condition = int(sa_ne[17]) # unk, Dry, Wet, Raining  #NB NB NB 20250102 NW unit shows rain at -2C  WER
                 self.daylight_condition = bool(sa_ne[18]) # unk Dark, Light, Very Light
                 self.close_requested = bool(sa_ne[19])
-# =======
+
                 # self.humidity = round(float(sa_nw[8]), 1)
                 # self.dewpoint = round(float(sa_nw[9]), 1)
                 # #Fixed gross error mixing mph and m/s 20231226 WER
@@ -496,7 +532,7 @@ class ObservingConditions:
                 #     sa_nw = sa_ne
                 # print('Cloud_watcher NW: ', sa_nw, '\n')
                 # print('Cloud_watcher NE: no Hum, Press ', sa_ne, '\n')
-                
+                breakpoint()   #Should not get here
                 with open('c://users//obs//Documents//AAG_sld.dat', 'r') as sa_rec:
                     sa_ne = sa_rec.readline().split()
                   
