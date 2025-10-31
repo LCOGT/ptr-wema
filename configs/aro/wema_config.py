@@ -133,13 +133,13 @@ wema_config = {
     'has_local_weather_info' : True,
 
     'bias_dark interval':  110.,   # Takes 102 minutes as of 11/1/23 @ ARO
-    'eve_cool_down_open': -55.0, # How many minutes before sunset to open. Default -65 = an hour-ish before sunset. Gives time to cool and get narrowband flats
+    'eve_cool_down_open': -60, # How many minutes before sunset to open. Default -60 = an hour before sunset. Gives time to cool and get narrowband flats
                                  #  Note 15 minutes of cool down provided.
     'eve_sky_flat_sunset_offset': -40.,  # Before Sunset Minutes  neg means before, + after. Flats take about 33 min @ ARO 110123
-    'end_eve_sky_flats_offset': -1 ,      # How many minutes after civilDusk to do....
-    'clock_and_auto_focus_offset':-10,   #min before start of observing
-    'astro_dark_buffer': 15,   #Min before and after AD to extend observing window
-    'morn_flat_start_offset': -10,       #min from Sunrise
+    'end_eve_sky_flats_offset': 5 ,      # How many minutes before civilDusk to stop flats and park
+    'clock_and_auto_focus_offset':-15,   #min before start of observing and LCO scheduler
+    'astro_dark_buffer': 15,   #Min before and after AD to extend observing window   UNUSED!
+    'morn_flat_start_offset': +5,       #min from after civil dawn
     'morn_flat_end_offset':  +40,        #min from Sunrise
     'morn_close_and_park': 45.0, # How many minutes after sunrise to close. Default 32 minutes = enough time for narrowband flats
     'end_night_processing_time':  90,   #  A guess#'eve_sky_flat_sunset_offset': -60.0,  # Minutes  neg means before, + after.
