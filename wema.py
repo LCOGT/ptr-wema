@@ -313,7 +313,12 @@ class WxEncAgent:
         self.cloud_cover_limit_on = self.config['cloud_cover_limit_on']
         self.lowest_temperature_on = self.config['lowest_ambient_temperature_on']
         self.highest_temperature_on = self.config['highest_ambient_temperature_on']
-                
+        wema_settings_shelf['mode'] = 'Automatic'   #Just to get things going
+        wema_settings_shelf['observing_mode'] = 'Automatic'   #Just to get things going
+        wema_settings_shelf['local_weather_active'] = True   #Just to get things going
+        wema_settings_shelf['owm_active'] = True   #Just to get things going
+        wema_settings_shelf['keep_open_all_night'] = True   #Just to get things going
+        wema_settings_shelf['keep_closed_all_night'] = False   #Just to get things going
         wema_settings_shelf['rain_limit_on'] = self.rain_limit_on
         wema_settings_shelf['warning_rain_limit_setting'] = self.warning_rain_limit_setting
         wema_settings_shelf['rain_limit_setting'] = self.rain_limit_setting
@@ -1883,6 +1888,7 @@ class WxEncAgent:
             config_dict["subscription_type"] = SubscriptionType(name="professional", subdomain="pro", is_paid=False)            
 
             owm = OWM('d5c3eae1b48bf7df3f240b8474af3ed0', config_dict)
+
             mgr = owm.weather_manager()
             
             #breakpoint()

@@ -432,11 +432,11 @@ class ObservingConditions:
         #DO NOT RELY ON THE BOLTWOOD FOR SKY TEMP
 
             try:
-                with open('D:\\weatherdata_0m30.txt', 'r') as sa_rec:
+                with open('C:/Users/user/Documents/AAG_SLD.dat', 'r') as sa_rec:
                     sa_nw = sa_rec.readline().split()
                 #print('Boltwood:     ', bw1, '\n')
                 # print('SkyAlert NE:  ', sa_ne, '\n')
-                # print('SkyAlert NW:  ', sa_nw, '\n')
+                print('SkyAlert NW:  ', sa_nw, '\n')
 
                 #The datetime for the data above needs to be verified as current,
                 #if not current go directly to commanding a close.
@@ -453,18 +453,18 @@ class ObservingConditions:
                 self.humidity = round(float(sa_nw[8]), 1)
                 self.dewpoint = round(float(sa_nw[9]), 1)
                 #Fixed gross error mixing mph and m/s 20231226 WER
-                self.rain_alert = int(sa_nw[11])
-                self.wet_alert = int(sa_nw[12])
+                self.rain_alert =  0   #temp patch defective AAG int(sa_nw[11])
+                self.wet_alert = 0   #temp patch defective AAG intint(sa_nw[12])
                 self.time_since = int(float(sa_nw[13]))
                 plog("time since:  ", self.time_since)
                 self.time_of_update = round(float(sa_nw[14]), 5)
 
 
-                self.cloud_condition = int(sa_nw[15]) # unk, Clear, Cloudy, Very Cloudy
-                self.wind_condition = int(sa_nw[16]) # unk, Calm, Windy, Very Windy
-                self.rain_condition = int(sa_nw[17]) # unk, Dry, Wet, Raining
-                self.daylight_condition = bool(sa_nw[18]) # unk Dark, Light, Very Light
-                self.close_requested = bool(sa_nw[19])
+                self.cloud_condition = 0   #temp patch defective AAG int int(sa_nw[15]) # unk, Clear, Cloudy, Very Cloudy
+                self.wind_condition = 0   #temp patch defective AAG intnt(sa_nw[16]) # unk, Calm, Windy, Very Windy
+                self.rain_condition = 0   #temp patch defective AAG intint(sa_nw[17]) # unk, Dry, Wet, Raining
+                self.daylight_condition =0# bool(sa_nw[18]) # unk Dark, Light, Very Light
+                self.close_requested = 0#bool(sa_nw[19])
                 #Note the rates and cover are synthesized by a lookup.
                 self.rain_rate = rate[self.rain_condition]
                 self.cloud_cover = cover[self.cloud_condition]
@@ -476,10 +476,11 @@ class ObservingConditions:
                     self.rain_rate =1
                 else:
                     self.rain_rate=0
+                    self.wet_flag = False
 
                 if self.cloud_condition==1:
                     self.cloud_cover = 0
-                elif self.cloud_condtion==2:
+                elif self.cloud_condition==2:
                     self.cloud_cover = 40
                 elif self.cloud_condition==3:
                     self.cloud_cover=100
@@ -523,7 +524,7 @@ class ObservingConditions:
                 # NB NB NB This is a very odd problem which showed up at MRC.
 
                 try:
-                    self.new_pressure = round(float(self.pressure[0]), 2)  # was [0]), 2)
+                    self.new_pressure = round(float(self.pressure), 2) # was [0]), 2)
                 except:
                     self.new_pressure = round(float(self.pressure), 2)
 

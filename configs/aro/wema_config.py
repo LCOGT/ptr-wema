@@ -2,9 +2,11 @@
 '''
 
 Created on Fri Feb 07,  11:57:41 2020
-Updated 20220914 WER   This version does not support color camera channel.
-Updates 20231102 WER   This is meant to clean up and refactor wema/obsp architecture.
 
+Updates 20231102 WER   This is meant to clean up and refactor wema/obsp architecture.
+Updates 20251031 New version running on aro1-0m30 alongside obsserver.  (Old WEMA computer is dead.)
+
+Note the Weather station currently is fairly defective and reports rain all the time.
 @author: wrosing
 
 aro-0m30      10.0.0.73
